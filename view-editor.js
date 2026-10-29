@@ -1,4 +1,4 @@
-import { h, icon, toast, modal, loader, emptyState, autosize, askText } from './util.js';
+import { h, icon, toast, modal, loader, emptyState, autosize, askText, sortable } from './util.js';
 import { state, getPost, loadContent, unlockContent, savePost, friendly } from './store.js';
 import { applyTheme } from './theme.js';
 import { compressImage, loadImage, isUrl } from './images.js';
@@ -36,7 +36,7 @@ export async function editor({ params, query, root }) {
     content = r.content;
     lock = r.lock || null;
   }
-  document.title = (editId ? '글 수정' : '새 글') + ' · 프롬프트 서랍';
+  document.title = (editId ? '글 수정' : '새 글') + ' · 서랍';
 
   let kind = prev ? kindOf(prev) : (KINDS[query?.get('kind')] ? query.get('kind') : 'style');
 
@@ -72,7 +72,8 @@ export async function editor({ params, query, root }) {
     p.placeholder = '이 변형에만 쓰는 프롬프트';
     const row = { name, p };
     const el = h('div', { class: 'char-row' },
-      h('div', { class: 'char-head' }, name,
+      h('div', { class: 'char-head' },
+        h('span', { class: 'grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)), name,
         h('button', { class: 'btn ghost sm icon', type: 'button', onclick: () => { varRows.splice(varRows.indexOf(row), 1); el.remove(); }, 'aria-label': '삭제' }, icon('x', 15))),
       p);
     row.el = el;
@@ -81,6 +82,10 @@ export async function editor({ params, query, root }) {
     return row;
   };
   (content?.variants || []).forEach(addVariant);
+  sortable(varBox, {
+    item: '.char-row', handle: '.grip',
+    onSort: (els) => { const next = els.map((el) => varRows.find((r) => r.el === el)).filter(Boolean); varRows.splice(0, varRows.length, ...next); },
+  });
 
   // 생성 설정 (그림체 전용)
   const pf = {};
@@ -105,6 +110,7 @@ export async function editor({ params, query, root }) {
   // 공개 설정
   const pwIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password' });
   const unlistedCb = h('input', { type: 'checkbox', checked: !!prev?.unlisted });
+  const spoilerCb = h('input', { type: 'checkbox', checked: !!prev?.spoiler });
   const visOpts = [
     ['public', 'globe', '공개', '링크를 아는 누구나'],
     ['locked', 'lock', '비밀번호', '비밀번호를 아는 사람만'],
@@ -123,6 +129,9 @@ export async function editor({ params, query, root }) {
       kids.push(h('label', { class: 'field' }, h('span', { class: 'lbl' }, keep ? '새 비밀번호 (선택)' : '비밀번호'), pwIn,
         h('small', { class: 'hint-line' }, '비밀번호는 서버에 저장되지 않아요. 잊으면 복구할 수 없지만, 로그인한 내 계정에서는 비밀번호 없이 열 수 있어요.')));
     }
+    if (vis === 'public') {
+      kids.push(h('label', { class: 'check' }, spoilerCb, h('span', null, '스포일러 가리기 ', h('small', null, '(공개지만 썸네일과 내용을 흐리게 가리고, 눌러야 보여요)'))));
+    }
     if (vis !== 'private') {
       kids.push(h('label', { class: 'check' }, unlistedCb, h('span', null, '내 블로그 목록에 숨기기 ', h('small', null, '(링크를 아는 사람만 접근)'))));
     }
@@ -135,7 +144,7 @@ export async function editor({ params, query, root }) {
   const tagBox = h('div', { class: 'tag-box', onclick: () => tagInput.focus() });
   const paintTags = () => {
     tagBox.replaceChildren(...tags.map((t) =>
-      h('span', { class: 'tag removable' }, '#' + t, h('button', { type: 'button', onclick: (e) => { e.stopPropagation(); tags = tags.filter((x) => x !== t); paintTags(); }, 'aria-label': '삭제' }, '×'))), tagInput);
+      h('span', { class: 'tag removable', 'data-tag': t }, h('span', { class: 'grip', title: '끌어서 순서 바꾸기' }, icon('grip', 12)), '#' + t, h('button', { type: 'button', onclick: (e) => { e.stopPropagation(); tags = tags.filter((x) => x !== t); paintTags(); }, 'aria-label': '삭제' }, '×'))), tagInput);
   };
   const addTagsFrom = (s) => {
     s.split(/[,\n]/).map((x) => x.trim().replace(/^#/, '')).filter(Boolean).forEach((t) => { if (!tags.includes(t) && tags.length < 20) tags.push(t.slice(0, 30)); });
@@ -147,6 +156,7 @@ export async function editor({ params, query, root }) {
   });
   tagInput.addEventListener('blur', () => { if (tagInput.value.trim()) { addTagsFrom(tagInput.value); tagInput.value = ''; } });
   paintTags();
+  sortable(tagBox, { item: '.tag.removable', handle: '.grip', onSort: (els) => { tags = els.map((e) => e.dataset.tag); } });
 
   // ── 가져오기 ──
   const applyMeta = (m) => {
@@ -168,31 +178,19 @@ export async function editor({ params, query, root }) {
   // ── 이미지 ──
   const imgGrid = h('div', { class: 'img-grid' });
   const fileIn = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true });
-  let dragIdx = -1;
   const paintImgs = () => {
     imgGrid.replaceChildren(...imgs.map((im, i) => {
-      if (im.pending) return h('div', { class: 'img-item pending' }, h('span', { class: 'spin' }));
-      const it = h('div', { class: 'img-item', draggable: 'true' },
+      if (im.pending) return h('div', { class: 'img-item pending', 'data-i': i }, h('span', { class: 'spin' }));
+      return h('div', { class: 'img-item', 'data-i': i },
         h('img', { src: im.data || im.src, alt: '', draggable: 'false' }),
+        h('span', { class: 'grip img-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 14)),
         i === 0 ? h('span', { class: 'cover-tag' }, '대표') : null,
         h('div', { class: 'img-tools' },
           i !== 0 ? h('button', { type: 'button', title: '대표 이미지로', onclick: () => { imgs.unshift(imgs.splice(i, 1)[0]); paintImgs(); } }, icon('star', 14)) : null,
           h('button', { type: 'button', title: '삭제', onclick: () => { imgs.splice(i, 1); paintImgs(); } }, icon('x', 14))));
-      it.addEventListener('dragstart', (e) => { dragIdx = i; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', 'img'); });
-      it.addEventListener('dragover', (e) => { if (dragIdx >= 0) { e.preventDefault(); it.classList.add('over'); } });
-      it.addEventListener('dragleave', () => it.classList.remove('over'));
-      it.addEventListener('drop', (e) => {
-        if (dragIdx < 0) return;
-        e.preventDefault(); e.stopPropagation();
-        const [m] = imgs.splice(dragIdx, 1);
-        imgs.splice(i, 0, m);
-        dragIdx = -1;
-        paintImgs();
-      });
-      it.addEventListener('dragend', () => { dragIdx = -1; });
-      return it;
     }));
   };
+  sortable(imgGrid, { item: '.img-item', handle: '.img-grip', onSort: (els) => { imgs = els.map((el) => imgs[Number(el.dataset.i)]); paintImgs(); } });
   async function addFiles(files, { forceMeta = false } = {}) {
     files = [...files].filter((f) => f.type.startsWith('image/'));
     if (!files.length) return;
@@ -270,7 +268,7 @@ export async function editor({ params, query, root }) {
     label.textContent = ' 저장 중…';
     try {
       const id = await savePost({
-        id: editId, prev, kind, title: titleIn.value, vis, unlisted: unlistedCb.checked, tags, content: body,
+        id: editId, prev, kind, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, tags, content: body,
         images: imgs.filter((i) => i.src || i.data), password: pwIn.value, lock, origImages,
         onProgress: (i, n) => { label.textContent = ` 이미지 올리는 중 (${i + 1}/${n})…`; },
       });

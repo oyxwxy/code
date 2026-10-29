@@ -12,7 +12,7 @@ const TABS = [['profile', 'user', '프로필'], ['design', 'palette', '디자인
 export async function settings({ root, query }) {
   if (!state.me) { location.replace('#/login?next=' + encodeURIComponent('/settings')); return; }
   applyTheme(state.me.theme);
-  document.title = '설정 · 프롬프트 서랍';
+  document.title = '설정 · 서랍';
   root.classList.add('settings-wrap');
   let tab = TABS.some((t) => t[0] === query.get('tab')) ? query.get('tab') : 'profile';
   const content = h('div');

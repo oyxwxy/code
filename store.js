@@ -188,8 +188,25 @@ export async function listPosts(ownerUid) {
   }
   let posts = docs.map((d) => ({ id: d.id, ...d.data() }));
   if (!isOwner) posts = posts.filter((p) => !p.unlisted);
-  posts.sort((a, b) => (b.created || 0) - (a.created || 0));
+  // 직접 정한 순서(order)가 있으면 그 순서로, 아직 순서가 없는 새 글은 맨 위에 최신순으로
+  posts.sort((a, b) => {
+    const ao = typeof a.order === 'number', bo = typeof b.order === 'number';
+    if (ao && bo) return a.order - b.order;
+    if (ao !== bo) return ao ? 1 : -1;
+    return (b.created || 0) - (a.created || 0);
+  });
   return posts;
+}
+
+/** 끌어서 바꾼 순서를 저장해요 (순서가 달라진 글만 업데이트) */
+export async function savePostOrder(ordered) {
+  const changed = ordered.map((p, i) => [p, i]).filter(([p, i]) => p.order !== i);
+  for (let i = 0; i < changed.length; i += 400) {
+    const b = writeBatch(db);
+    changed.slice(i, i + 400).forEach(([p, idx]) => b.update(doc(db, 'posts', p.id), { order: idx }));
+    await b.commit();
+  }
+  changed.forEach(([p, i]) => { p.order = i; });
 }
 
 export async function getPost(id) {
@@ -253,7 +270,7 @@ function makeExcerpt(content) {
  * lock: 수정 시 기존 잠금 키 { keyRaw, salt } — password 비우면 이 키로 다시 암호화
  */
 export async function savePost({
-  id, prev = null, kind = 'style', title, vis, unlisted = false, tags = [], content, images = [],
+  id, prev = null, kind = 'style', title, vis, unlisted = false, spoiler = false, tags = [], content, images = [],
   password = '', lock = null, origImages = [], created, onProgress,
 }) {
   const uid = state.user.uid;
@@ -285,10 +302,11 @@ export async function savePost({
 
   const post = {
     owner: uid, handle: state.me.handle, kind, title: (title || '').trim() || '제목 없음', vis,
-    unlisted: !!unlisted && vis !== 'private', tags,
-    excerpt: vis === 'locked' ? '' : makeExcerpt(content),
+    unlisted: !!unlisted && vis !== 'private', spoiler: !!spoiler && vis === 'public', tags,
+    excerpt: vis === 'locked' || (spoiler && vis === 'public') ? '' : makeExcerpt(content),
     thumb, imgCount: urls.length, created: created || prev?.created || now, updated: now,
   };
+  if (typeof prev?.order === 'number') post.order = prev.order;   // 직접 정한 순서 유지
   const body = { owner: uid, vis, updated: now };
   let priv = null;
   if (vis === 'locked') {

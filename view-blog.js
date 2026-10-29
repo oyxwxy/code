@@ -1,5 +1,5 @@
-import { h, icon, fmtDate, loader, emptyState, initial } from './util.js';
-import { state, getProfileByHandle, listPosts } from './store.js';
+import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast } from './util.js';
+import { state, getProfileByHandle, listPosts, savePostOrder, friendly } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
@@ -30,21 +30,25 @@ export function kindBadge(p) {
 
 const safeThumb = (t) => (typeof t === 'string' && (t.startsWith('data:image/') || safeUrl(t)) ? t : '');
 
-export function postCard(p, isOwner) {
+export function postCard(p, isOwner, canSort = false) {
   const th = safeThumb(p.thumb);
   const thumb = th
     ? h('img', { src: th, alt: '', loading: 'lazy', decoding: 'async' })
     : h('div', { class: 'ph' }, icon(p.vis === 'locked' ? 'lock' : p.vis === 'private' ? 'eye-off' : 'image', 28));
   const badge = visBadge(p, isOwner);
   const hid = isOwner && !kindShown(kindOf(p));
-  return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : ''), href: '#/p/' + p.id },
+  const sp = !!p.spoiler && p.vis === 'public';
+  return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : '') + (sp ? ' spoiler' : ''), href: '#/p/' + p.id, draggable: 'false', 'data-id': p.id },
+    canSort ? h('span', { class: 'grip card-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)) : null,
     h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip' }, icon('image', 12), p.imgCount) : null),
     h('div', { class: 'card-body' },
       h('div', { class: 'card-meta' }, kindBadge(p), badge,
+        sp ? h('span', { class: 'vis vis-spoiler' }, icon('eye-off', 13), '스포일러') : null,
         hid ? h('span', { class: 'vis vis-private', title: '이 종류는 다른 사람에게 숨겨져 있어요' }, icon('eye-off', 13), '숨김') : null,
         h('span', null, fmtDate(p.created))),
       h('h3', { class: 'card-title' }, p.title),
-      p.excerpt ? h('p', { class: 'card-ex' }, p.excerpt)
+      sp ? h('p', { class: 'card-ex muted' }, '스포일러 방지 중이에요. 열어서 확인하세요')
+        : p.excerpt ? h('p', { class: 'card-ex' }, p.excerpt)
         : (p.vis === 'locked' ? h('p', { class: 'card-ex muted' }, '비밀번호가 필요한 글이에요') : null),
       p.tags?.length ? h('div', { class: 'tags' }, p.tags.slice(0, 4).map((t) => h('span', { class: 'tag' }, '#' + t))) : null));
 }
@@ -120,6 +124,15 @@ export async function blog({ params, root }) {
     }
   }
 
+  // 화면에 보이는 글들끼리 자리를 바꾸고, 전체 순서에 반영해 저장해요
+  function reorder(ids) {
+    const set = new Set(ids);
+    const byId = new Map(posts.map((p) => [p.id, p]));
+    const slots = posts.map((p, i) => (set.has(p.id) ? i : -1)).filter((i) => i >= 0);
+    slots.forEach((slot, k) => { posts[slot] = byId.get(ids[k]); });
+    savePostOrder(posts).then(() => toast('순서를 저장했어요', { ms: 1600 })).catch((e) => toast(friendly(e)));
+  }
+
   function paint() {
     const ql = q.trim().toLowerCase();
     const rows = posts.filter((p) =>
@@ -136,7 +149,9 @@ export async function blog({ params, root }) {
           isOwner ? '첫 프롬프트를 저장해 볼까요?' : '', isOwner ? h('a', { class: 'btn primary', href: '#/new' }, icon('plus', 15), '새 글 쓰기') : null));
       return;
     }
-    list.append(h('div', { class: 'posts layout-' + theme.layout }, rows.slice(0, shown).map((p) => postCard(p, isOwner))));
+    const box = h('div', { class: 'posts layout-' + theme.layout }, rows.slice(0, shown).map((p) => postCard(p, isOwner, isOwner)));
+    if (isOwner) sortable(box, { item: '.card', handle: '.grip', onSort: (els) => reorder(els.map((e) => e.dataset.id)) });
+    list.append(box);
     if (rows.length > shown) more.append(h('button', { class: 'btn', onclick: () => { shown += PAGE; paint(); } }, `더 보기 (${rows.length - shown})`));
   }
 
@@ -147,6 +162,7 @@ export async function blog({ params, root }) {
     h('div', { class: 'toolbar' }, search, isOwner ? visBox : null),
     posts.length ? h('div', { class: 'kind-filter' }, kindBox) : null,
     topTags.length ? tagBox : null,
+    isOwner && posts.length > 1 ? h('small', { class: 'hint-line sort-hint' }, '카드의 ⋮⋮ 손잡이를 끌어서 순서를 바꿀 수 있어요') : null,
     list, more);
   paintPills();
   paint();

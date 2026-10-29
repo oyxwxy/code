@@ -12,36 +12,59 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+KR:wght@400;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=20261030b">
+  <style>
+    /* 첫 로딩 화면: style.css보다 먼저 보이도록 여기에 직접 적어요 */
+    #boot { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #faf6f0; color: #2d2520; font-family: 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif; transition: opacity .35s ease, visibility .35s; }
+    #boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
+    .boot-in { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 0 24px; }
+    .boot-mark { width: 54px; height: 54px; border-radius: 17px; background: #c2713c; color: #fff; display: grid; place-items: center; box-shadow: 0 12px 28px -10px #c2713c; animation: boot-pulse 1.6s ease-in-out infinite; }
+    .boot-in b { font-size: 20px; letter-spacing: -.02em; }
+    .boot-bar { width: 120px; height: 3px; border-radius: 999px; background: rgb(194 113 60 / .18); overflow: hidden; }
+    .boot-bar i { display: block; width: 40%; height: 100%; border-radius: inherit; background: #c2713c; animation: boot-slide 1.1s ease-in-out infinite; }
+    #boot-msg { color: #8d8279; font-size: 13px; min-height: 18px; }
+    @keyframes boot-pulse { 50% { transform: scale(1.07); } }
+    @keyframes boot-slide { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+    @media (prefers-color-scheme: dark) { #boot { background: #14151c; color: #ecebf3; } #boot-msg { color: #9a98a8; } }
+  </style>
+  <link rel="stylesheet" href="style.css?v=20261030c">
   <!-- 파일을 수정해 다시 올릴 때는 아래 v= 값(과 style.css/app.js의 v=)을 같이 바꿔야 브라우저가 새 파일을 받아요 -->
   <script type="importmap">
   {
     "imports": {
-      "./config.js": "./config.js?v=20261030b",
-      "./fb.js": "./fb.js?v=20261030b",
-      "./util.js": "./util.js?v=20261030b",
-      "./theme.js": "./theme.js?v=20261030b",
-      "./crypto.js": "./crypto.js?v=20261030b",
-      "./imgbb.js": "./imgbb.js?v=20261030b",
-      "./images.js": "./images.js?v=20261030b",
-      "./nai.js": "./nai.js?v=20261030b",
-      "./kinds.js": "./kinds.js?v=20261030b",
-      "./store.js": "./store.js?v=20261030b",
-      "./view-home.js": "./view-home.js?v=20261030b",
-      "./view-blog.js": "./view-blog.js?v=20261030b",
-      "./view-post.js": "./view-post.js?v=20261030b",
-      "./view-editor.js": "./view-editor.js?v=20261030b",
-      "./backup.js": "./backup.js?v=20261030b",
-      "./view-settings.js": "./view-settings.js?v=20261030b"
+      "./config.js": "./config.js?v=20261030c",
+      "./fb.js": "./fb.js?v=20261030c",
+      "./util.js": "./util.js?v=20261030c",
+      "./theme.js": "./theme.js?v=20261030c",
+      "./crypto.js": "./crypto.js?v=20261030c",
+      "./imgbb.js": "./imgbb.js?v=20261030c",
+      "./images.js": "./images.js?v=20261030c",
+      "./nai.js": "./nai.js?v=20261030c",
+      "./kinds.js": "./kinds.js?v=20261030c",
+      "./store.js": "./store.js?v=20261030c",
+      "./view-home.js": "./view-home.js?v=20261030c",
+      "./view-blog.js": "./view-blog.js?v=20261030c",
+      "./view-post.js": "./view-post.js?v=20261030c",
+      "./view-editor.js": "./view-editor.js?v=20261030c",
+      "./backup.js": "./backup.js?v=20261030c",
+      "./view-settings.js": "./view-settings.js?v=20261030c"
     }
   }
   </script>
 </head>
 <body>
+  <div id="boot" role="status" aria-live="polite">
+    <div class="boot-in">
+      <span class="boot-mark"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg></span>
+      <b>서랍</b>
+      <span class="boot-bar"><i></i></span>
+      <span id="boot-msg">서랍을 여는 중이에요…</span>
+    </div>
+  </div>
+  <script>setTimeout(function () { var m = document.getElementById('boot-msg'); if (m) m.textContent = '오래 걸리고 있어요. 계속 그러면 새로고침해 주세요.'; }, 12000);</script>
   <header id="header" class="topbar"></header>
   <main id="view"></main>
   <div id="toasts"></div>
   <noscript><p style="padding:2rem">이 사이트는 JavaScript가 필요해요.</p></noscript>
-  <script type="module" src="app.js?v=20261030b"></script>
+  <script type="module" src="app.js?v=20261030c"></script>
 </body>
 </html>

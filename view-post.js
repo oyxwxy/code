@@ -68,6 +68,15 @@ function openLightbox(ids, start) {
   show(start);
 }
 
+/** 스포일러 방지: 내용을 흐리게 가리고 눌러야 보이게 해요 */
+function spoilerWrap(node) {
+  const wrap = h('div', { class: 'spoiler-wrap' });
+  const cover = h('button', { class: 'spoiler-cover', type: 'button', onclick: () => { wrap.classList.add('open'); cover.remove(); } },
+    icon('eye-off', 24), h('strong', null, '스포일러가 있어요'), h('small', null, '눌러서 보기'));
+  wrap.append(h('div', { class: 'spoiler-body', 'aria-hidden': 'true' }, node), cover);
+  return wrap;
+}
+
 function renderBody(content, kind = 'style') {
   const wrap = h('div', { class: 'post-body' });
   const ids = content.images || [];
@@ -175,7 +184,7 @@ export async function post({ params, root }) {
         btn.textContent = '여는 중…';
         try {
           const u = await unlockContent(p, r.enc, pw.value);
-          bodyBox.replaceChildren(renderBody(u.content, kindOf(p)));
+          bodyBox.replaceChildren(renderBody(u.content, kindOf(p)));   // 비밀번호 글은 이미 가려져 있어서 스포일러 덮개 없음
         } catch (ex) {
           err.textContent = ex?.name === 'OperationError' || ex instanceof DOMException ? '비밀번호가 올바르지 않아요' : friendly(ex);
           btn.disabled = false;
@@ -190,5 +199,6 @@ export async function post({ params, root }) {
     pw.focus();
     return;
   }
-  bodyBox.replaceChildren(renderBody(r.content, kindOf(p)));
+  const body = renderBody(r.content, kindOf(p));
+  bodyBox.replaceChildren(p.spoiler && p.vis === 'public' ? spoilerWrap(body) : body);
 }

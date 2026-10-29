@@ -9,7 +9,7 @@ export const firebaseConfig = {
   measurementId: "G-4XQ5NKRR9N"
 };
 
-export const APP_NAME = '프롬프트 서랍';
+export const APP_NAME = '서랍';
 
 // 아이디를 Firebase 이메일 로그인용 주소로 바꿀 때 쓰는 가짜 도메인 (실제 메일은 발송되지 않아요)
 export const AUTH_DOMAIN = 'pbox.local';

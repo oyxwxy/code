@@ -56,6 +56,7 @@ const ICONS = {
   palette: '<circle cx="13.5" cy="6.5" r=".6"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="8.5" cy="7.5" r=".6"/><circle cx="6.5" cy="12.5" r=".6"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.12a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
   chevl: '<polyline points="15 18 9 12 15 6"/>',
   chevr: '<polyline points="9 18 15 12 9 6"/>',
+  grip: '<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',
   eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
 };
 
@@ -220,4 +221,81 @@ export function lum(hex) {
     return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+// ───────── 끌어서 순서 바꾸기 (마우스·터치 모두) ─────────
+/**
+ * container 안의 item 들을 handle(손잡이)을 끌어서 재정렬해요. 이벤트는 위임이라 항목이 다시 그려져도 한 번만 걸면 돼요.
+ * 끝났을 때 순서가 바뀌었으면 onSort(새 순서의 요소 배열)을 불러요.
+ */
+export function sortable(container, { item, handle, ignore = 'button,input,textarea,select,a', onSort } = {}) {
+  let st = null;
+  const items = () => [...container.children].filter((c) => c.matches(item));
+
+  container.addEventListener('dragstart', (e) => { if (e.target.closest?.(handle)) e.preventDefault(); });
+  container.addEventListener('click', (e) => {
+    if (e.target.closest?.(handle)) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  const tick = () => {
+    if (!st) return;
+    const el = st.el;
+    const vh = window.innerHeight;
+    if (st.y < 70) window.scrollBy(0, -Math.ceil((70 - st.y) / 5));
+    else if (st.y > vh - 70) window.scrollBy(0, Math.ceil((st.y - (vh - 70)) / 5));
+    el.style.transform = '';
+    const own = el.getBoundingClientRect();
+    const inOwn = st.x >= own.left && st.x <= own.right && st.y >= own.top && st.y <= own.bottom;
+    if (!inOwn) {
+      const all = items();
+      const hit = all.find((n) => {
+        if (n === el) return false;
+        const r = n.getBoundingClientRect();
+        return st.x >= r.left && st.x <= r.right && st.y >= r.top && st.y <= r.bottom;
+      });
+      if (hit) {
+        // 끌고 있는 요소는 DOM에서 움직이지 않고, 부딪힌 쪽을 옮겨요 (터치 이벤트가 끊기지 않게)
+        if (all.indexOf(hit) > all.indexOf(el)) el.before(hit); else el.after(hit);
+      }
+    }
+    const b = el.getBoundingClientRect();
+    el.style.transform = `translate(${st.x - st.gx - b.left}px, ${st.y - st.gy - b.top}px)`;
+    st.raf = requestAnimationFrame(tick);
+  };
+  const move = (e) => {
+    if (!st || e.pointerId !== st.id) return;
+    st.x = e.clientX; st.y = e.clientY;
+    e.preventDefault();
+  };
+  const end = (e) => {
+    if (!st || e.pointerId !== st.id) return;
+    cancelAnimationFrame(st.raf);
+    const { el, before } = st;
+    st = null;
+    el.style.transform = '';
+    el.classList.remove('sort-drag');
+    document.body.classList.remove('sorting');
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', end);
+    document.removeEventListener('pointercancel', end);
+    const after = items();
+    if (after.some((n, i) => n !== before[i])) onSort?.(after);
+  };
+  container.addEventListener('pointerdown', (e) => {
+    if (e.button > 0 || st) return;
+    const g = e.target.closest?.(handle);
+    if (!g || !container.contains(g)) return;
+    if (e.target.closest(ignore) && !g.matches(ignore)) return;
+    const el = g.closest(item);
+    if (!el || el.parentElement !== container) return;
+    e.preventDefault();
+    const r = el.getBoundingClientRect();
+    st = { el, id: e.pointerId, gx: e.clientX - r.left, gy: e.clientY - r.top, x: e.clientX, y: e.clientY, before: items(), raf: 0 };
+    el.classList.add('sort-drag');
+    document.body.classList.add('sorting');
+    document.addEventListener('pointermove', move, { passive: false });
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
+    tick();
+  });
 }

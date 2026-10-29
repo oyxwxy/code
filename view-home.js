@@ -18,8 +18,7 @@ export async function home({ root }) {
   root.append(
     h('section', { class: 'hero' },
       h('div', { class: 'hero-mark' }, icon('sparkle', 26)),
-      h('h1', null, '내 프롬프트를,', h('br'), '예쁘게 모아두는 서랍'),
-      h('p', { class: 'lead' }, 'NovelAI 프롬프트와 이미지를 백업하고, 링크 하나로 가볍게 공유하세요. 이미지에서 프롬프트를 바로 가져올 수도 있어요.'),
+      h('h1', null, '내 기록을 한데 모아,', h('br'), 'Drawer'),
       h('div', { class: 'hero-cta' },
         adminExists
           ? [h('a', { class: 'btn primary lg', href: '#/login' }, '로그인'), h('a', { class: 'btn lg', href: '#/join' }, '초대코드로 가입')]

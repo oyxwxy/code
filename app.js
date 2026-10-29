@@ -71,4 +71,8 @@ window.addEventListener('hashchange', route);
 await initAuth();
 onAuth(renderHeader);
 renderHeader();
-route();
+await route();
+
+// 첫 화면이 준비되면 로딩 화면을 걷어요
+const boot = document.getElementById('boot');
+if (boot) { boot.classList.add('done'); setTimeout(() => boot.remove(), 500); }

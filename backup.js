@@ -33,7 +33,7 @@ async function exportAll({ onProgress }) {
     try { r = await loadContent(p, { fresh: true }); } catch { skipped++; continue; }
     if (r.needPassword) { skipped++; continue; }   // 사본이 없는 잠금 글은 건너뜀
     const it = {
-      id: p.id, kind: kindOf(p), title: p.title, vis: p.vis, unlisted: !!p.unlisted, tags: p.tags || [],
+      id: p.id, kind: kindOf(p), title: p.title, vis: p.vis, unlisted: !!p.unlisted, spoiler: !!p.spoiler, tags: p.tags || [],
       created: p.created, updated: p.updated, content: r.content,
     };
     if (r.lock) it.lock = r.lock;
@@ -67,7 +67,7 @@ async function importBackup(data, { onProgress }) {
         .map((ref) => (isUrl(ref) ? { src: ref } : it.images?.[ref] ? { data: it.images[ref] } : null))
         .filter(Boolean);
       await savePost({
-        id: it.id, kind: it.kind || 'style', title: it.title, vis: it.vis || 'private', unlisted: !!it.unlisted, tags: it.tags || [],
+        id: it.id, kind: it.kind || 'style', title: it.title, vis: it.vis || 'private', unlisted: !!it.unlisted, spoiler: !!it.spoiler, tags: it.tags || [],
         content: { ...it.content, images: [] }, images, lock: it.lock || null, created: it.created,
         password: '',
       });
