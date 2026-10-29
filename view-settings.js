@@ -1,5 +1,5 @@
-import { h, icon, toast, copyText, loader, confirmDialog } from './util.js';
-import { state, updateProfile, createInvite, listInvites, listInvitedMembers, signOutUser, friendly } from './store.js';
+import { h, icon, toast, copyText, loader, confirmDialog, askText } from './util.js';
+import { state, updateProfile, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
 import { applyTheme, sanitizeTheme, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME } from './theme.js';
 import { compressImage, uploadImage, removeImages } from './images.js';
 import { postCard, avatarEl } from './view-blog.js';
@@ -68,6 +68,24 @@ function profileTab() {
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '저장');
 
+  const real = hasRealEmail();
+  const onEmail = async () => {
+    const em = await askText({ title: real ? '이메일 변경' : '이메일 등록', label: '새 이메일로 확인 메일을 보내드려요. 메일의 링크를 눌러야 적용돼요.', type: 'email', ok: '다음', placeholder: 'name@example.com' });
+    if (!em) return;
+    const pw = await askText({ title: '비밀번호 확인', label: '현재 비밀번호를 입력해 주세요.', type: 'password' });
+    if (!pw) return;
+    try { await changeEmail(em, pw); toast('확인 메일을 보냈어요. 링크를 누르면 완료돼요. 이후 로그인은 이메일로 하세요', { ms: 8000 }); }
+    catch (e) { toast(friendly(e), { ms: 5000 }); }
+  };
+  const onPw = async () => {
+    const oldPw = await askText({ title: '비밀번호 변경', label: '현재 비밀번호를 입력해 주세요.', type: 'password' });
+    if (!oldPw) return;
+    const newPw = await askText({ title: '새 비밀번호', label: '6자 이상으로 정해 주세요.', type: 'password' });
+    if (!newPw) return;
+    try { await changePassword(oldPw, newPw); toast('비밀번호를 바꿨어요'); }
+    catch (e) { toast(friendly(e), { ms: 5000 }); }
+  };
+
   return h('div', { class: 'tab-body' },
     h('section', { class: 'panel' },
       h('div', { class: 'profile-row' },
@@ -85,6 +103,14 @@ function profileTab() {
       h('div', { class: 'row' },
         h('input', { class: 'input mono', readonly: true, value: location.origin + location.pathname + '#/u/' + me.handle }),
         h('button', { class: 'btn', onclick: () => copyText(location.origin + location.pathname + '#/u/' + me.handle, '주소를 복사했어요') }, icon('copy', 15), '복사'))),
+    h('section', { class: 'panel' },
+      h('h3', { class: 'panel-title' }, '로그인 · 복구'),
+      h('p', { class: 'desc' }, real
+        ? `복구용 이메일: ${state.user.email} (로그인도 이 이메일로 해요. 비밀번호를 잊으면 로그인 화면의 '비밀번호를 잊으셨나요?'로 재설정할 수 있어요.)`
+        : '등록된 이메일이 없어요. 이메일을 등록하면 비밀번호를 잊었을 때 메일로 재설정할 수 있어요.'),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn', onclick: onEmail }, icon('link', 15), real ? '이메일 변경' : '이메일 등록'),
+        h('button', { class: 'btn', onclick: onPw }, icon('lock', 15), '비밀번호 변경'))),
     h('section', { class: 'panel' },
       h('button', { class: 'btn', onclick: async () => { await signOutUser(); location.hash = '#/'; } }, icon('logout', 16), '로그아웃')));
 }

@@ -1,6 +1,7 @@
 // 인증 + Firestore 데이터 계층 (firestore.rules 와 맞물려 있어요)
 import {
   auth, db, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut,
+  sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, updatePassword,
   doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where, writeBatch,
 } from './fb.js';
 import { AUTH_DOMAIN, MEMBER_INVITE_LIMIT } from './config.js';
@@ -23,7 +24,9 @@ export function friendly(e) {
     'auth/wrong-password': '아이디 또는 비밀번호가 올바르지 않아요',
     'auth/user-not-found': '아이디 또는 비밀번호가 올바르지 않아요',
     'auth/invalid-email': '아이디 형식이 올바르지 않아요',
-    'auth/email-already-in-use': '이미 사용 중인 아이디예요',
+    'auth/email-already-in-use': '이미 가입된 이메일(또는 아이디)이에요',
+    'auth/invalid-new-email': '새 이메일 형식이 올바르지 않아요',
+    'auth/requires-recent-login': '보안을 위해 다시 로그인한 뒤 시도해 주세요',
     'auth/weak-password': '비밀번호는 6자 이상이어야 해요',
     'auth/too-many-requests': '시도가 너무 많아요. 잠시 후 다시 해주세요',
     'auth/network-request-failed': '네트워크 연결을 확인해 주세요',
@@ -74,8 +77,12 @@ export async function handleAvailable(handle) {
   return !(await getDoc(doc(db, 'handles', normalizeHandle(handle)))).exists();
 }
 
-export async function signUp({ handle, password, display, inviteCode: code }) {
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function signUp({ handle, password, display, email, inviteCode: code }) {
   handle = normalizeHandle(handle);
+  email = (email || '').trim().toLowerCase();
+  if (email && !EMAIL_RE.test(email)) throw new Error('이메일 형식이 올바르지 않아요');
   if (!HANDLE_RE.test(handle)) throw new Error('아이디는 영문 소문자·숫자·밑줄(_) 3~20자예요');
   if ((password || '').length < 6) throw new Error('비밀번호는 6자 이상이어야 해요');
   const adminExists = await checkAdminExists();
@@ -90,7 +97,7 @@ export async function signUp({ handle, password, display, inviteCode: code }) {
   }
   if (!(await handleAvailable(handle))) throw new Error('이미 사용 중인 아이디예요');
 
-  const cred = await createUserWithEmailAndPassword(auth, toEmail(handle), password);
+  const cred = await createUserWithEmailAndPassword(auth, email || toEmail(handle), password);
   const uid = cred.user.uid;
   try {
     const batch = writeBatch(db);
@@ -115,10 +122,12 @@ export async function signUp({ handle, password, display, inviteCode: code }) {
   await refreshMe();
 }
 
-export async function signIn(handle, password) {
-  handle = normalizeHandle(handle);
-  if (!handle || !password) throw new Error('아이디와 비밀번호를 입력해 주세요');
-  await signInWithEmailAndPassword(auth, toEmail(handle), password);
+export async function signIn(idOrEmail, password) {
+  const id = (idOrEmail || '').trim();
+  if (!id || !password) throw new Error('아이디(또는 이메일)와 비밀번호를 입력해 주세요');
+  // 이메일로 가입한 계정은 이메일로, 이메일 없이 가입한 계정은 아이디로 로그인해요
+  const email = id.includes('@') && !id.startsWith('@') ? id.toLowerCase() : toEmail(normalizeHandle(id));
+  await signInWithEmailAndPassword(auth, email, password);
   await refreshMe();
   if (!state.me) {
     await fbSignOut(auth);
@@ -343,4 +352,37 @@ export async function listInvites() {
 export async function listInvitedMembers() {
   const s = await getDocs(query(collection(db, 'profiles'), where('invitedBy', '==', state.user.uid)));
   return s.docs.map((d) => ({ uid: d.id, ...d.data() }));
+}
+
+// ───────── 비밀번호 찾기 · 계정 보안 ─────────
+/** 복구용 실제 이메일이 등록된 계정인지 */
+export const hasRealEmail = () => !!state.user?.email && !state.user.email.endsWith('@' + AUTH_DOMAIN);
+
+/** 비밀번호 재설정 메일 보내기. 없는 이메일이어도 같은 결과를 보여줘요(가입 여부 노출 방지) */
+export async function resetPassword(email) {
+  email = (email || '').trim();
+  if (!EMAIL_RE.test(email)) throw new Error('이메일 형식이 올바르지 않아요');
+  try { await sendPasswordResetEmail(auth, email); }
+  catch (e) { if (e.code !== 'auth/user-not-found') throw e; }
+}
+
+async function reauth(password) {
+  const u = auth.currentUser;
+  if (!u?.email) throw new Error('로그인이 필요해요');
+  await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, password));
+  return u;
+}
+
+/** 복구용 이메일 등록/변경: 새 이메일로 확인 메일을 보내고, 링크를 누르면 바뀌어요 */
+export async function changeEmail(newEmail, password) {
+  newEmail = (newEmail || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(newEmail)) throw new Error('이메일 형식이 올바르지 않아요');
+  const u = await reauth(password);
+  await verifyBeforeUpdateEmail(u, newEmail);
+}
+
+export async function changePassword(oldPassword, newPassword) {
+  if ((newPassword || '').length < 6) throw new Error('새 비밀번호는 6자 이상이어야 해요');
+  const u = await reauth(oldPassword);
+  await updatePassword(u, newPassword);
 }
