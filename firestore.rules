@@ -1,0 +1,96 @@
+// ===== Firestore 규칙 (Firebase 콘솔 > Firestore > 규칙 탭에 붙여넣기) =====
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function D(path) { return /databases/$(database)/documents/$(path); }
+    function isAdmin() {
+      return exists(D('meta/admin')) && get(D('meta/admin')).data.uid == request.auth.uid;
+    }
+
+    // 최초 가입자가 관리자 (메타 문서를 가장 먼저 만든 사람)
+    match /meta/{d} {
+      allow read: if true;
+      allow create: if d == 'admin' && request.auth.uid == request.resource.data.uid
+                    && existsAfter(D('profiles/' + request.auth.uid));
+    }
+
+    // 주소용 아이디 중복 방지 (문서 ID = 아이디)
+    match /handles/{h} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+    }
+
+    // 추천 코드
+    match /invites/{code} {
+      allow get: if true;
+      allow list: if request.auth != null && resource.data.owner == request.auth.uid;
+      allow create: if request.auth.uid == request.resource.data.owner
+        && request.resource.data.uses == 0
+        && (isAdmin() || (request.resource.data.max == 1
+            && getAfter(D('profiles/' + request.auth.uid)).data.inviteCount
+               == get(D('profiles/' + request.auth.uid)).data.inviteCount + 1
+            && getAfter(D('profiles/' + request.auth.uid)).data.inviteCount <= 3));
+      // 가입과 같은 배치에서 사용 횟수 +1 만 가능
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses'])
+        && request.resource.data.uses == resource.data.uses + 1
+        && request.resource.data.uses <= resource.data.max
+        && !exists(D('profiles/' + request.auth.uid))
+        && existsAfter(D('profiles/' + request.auth.uid));
+    }
+
+    match /profiles/{uid} {
+      allow read: if true;
+      allow create: if request.auth.uid == uid
+        && request.resource.data.handle.matches('^[a-z0-9_]{3,20}$')
+        && getAfter(D('handles/' + request.resource.data.handle)).data.uid == uid
+        && request.resource.data.inviteCount == 0
+        && (
+          // 첫 가입자 = 관리자
+          (!exists(D('meta/admin')) && request.resource.data.isAdmin == true
+            && getAfter(D('meta/admin')).data.uid == uid)
+          ||
+          // 그 외에는 유효한 추천 코드 필수
+          (request.resource.data.isAdmin == false
+            && get(D('invites/' + request.resource.data.inviteCode)).data.uses
+               < get(D('invites/' + request.resource.data.inviteCode)).data.max
+            && getAfter(D('invites/' + request.resource.data.inviteCode)).data.uses
+               == get(D('invites/' + request.resource.data.inviteCode)).data.uses + 1
+            && request.resource.data.invitedBy
+               == get(D('invites/' + request.resource.data.inviteCode)).data.owner)
+        );
+      allow update: if request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['display', 'bio', 'theme', 'inviteCount'])
+        && (!('inviteCount' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.inviteCount == resource.data.inviteCount + 1);
+    }
+
+    // 글 (메타) — 비공개는 주인만
+    match /posts/{id} {
+      allow read: if resource.data.vis != 'private' || resource.data.owner == request.auth.uid;
+      allow create: if request.auth.uid == request.resource.data.owner;
+      allow update: if request.auth.uid == resource.data.owner && request.resource.data.owner == resource.data.owner;
+      allow delete: if request.auth.uid == resource.data.owner;
+    }
+
+    // 글 본문 — 비밀번호 글은 암호문만 저장돼 있어서 읽혀도 비밀번호 없이는 못 엶
+    match /bodies/{id} {
+      allow read: if resource.data.vis in ['public', 'locked'] || resource.data.owner == request.auth.uid;
+      allow create: if request.auth.uid == request.resource.data.owner;
+      allow update: if request.auth.uid == resource.data.owner && request.resource.data.owner == resource.data.owner;
+      allow delete: if request.auth.uid == resource.data.owner;
+    }
+
+    // 이미지 (브라우저에서 줄인 JPEG 데이터). 문서 ID를 아는 사람만 읽을 수 있고 목록 조회는 불가
+    match /images/{id} {
+      allow get: if true;
+      allow create: if request.auth.uid == request.resource.data.owner && request.resource.data.d.size() < 950000;
+      allow delete: if request.auth.uid == resource.data.owner;
+    }
+
+    // 주인 전용 금고 (비밀번호 글의 복구 키)
+    match /users/{uid}/private/{d} {
+      allow read, write: if request.auth.uid == uid;
+    }
+  }
+}
