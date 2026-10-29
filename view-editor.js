@@ -4,7 +4,7 @@ import { applyTheme } from './theme.js';
 import { compressImage, loadImage, isUrl } from './images.js';
 import { readImageMeta, parseGenText, PARAM_FIELDS } from './nai.js';
 import { MAX_IMAGES } from './config.js';
-import { KINDS, kindOf } from './kinds.js';
+import { KINDS, kindOf, kindLabel } from './kinds.js';
 
 const MODELS = ['NovelAI Diffusion V5 Full', 'NovelAI Diffusion V5 Curated', 'NovelAI Diffusion V4.5 Full', 'NovelAI Diffusion V4.5 Curated', 'NovelAI Diffusion V4 Full', 'NovelAI Diffusion V4 Curated', 'NovelAI Diffusion Anime V3', 'NovelAI Diffusion Furry V3'];
 const SAMPLERS = ['Euler', 'Euler Ancestral', 'DPM++ 2S Ancestral', 'DPM++ 2M', 'DPM++ 2M SDE', 'DPM++ SDE', 'DDIM'];
@@ -298,8 +298,7 @@ export async function editor({ params, query, root }) {
   const notesPanel = panel('메모', notesIn);
   const visPanel = panel('공개 설정', segBox, visExtra);
   const imgPanel = panel('이미지', drop, fileIn, imgGrid,
-    h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`),
-    h('small', { class: 'hint-line' }, '올릴 때 메타데이터(프롬프트 정보 등)는 모두 지워지고, 이미지는 ImgBB에 저장돼요.'));
+    h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`));
   const tagPanel = panel('태그', tagBox);
   const paramPanel = panel('생성 설정', paramGrid, ...datalists,
     h('small', { class: 'hint-line' }, 'Effort는 V5 Full 전용이에요. Medium은 14 steps·Euler Ancestral로 고정돼요.'));
@@ -315,7 +314,7 @@ export async function editor({ params, query, root }) {
   const paintKind = () => {
     kindBox.replaceChildren(...Object.entries(KINDS).map(([k, v]) =>
       h('button', { type: 'button', class: 'kind-opt' + (kind === k ? ' on' : ''), onclick: () => { kind = k; paintKind(); } },
-        icon(v.icon, 18), h('strong', null, v.label), h('small', null, v.desc))));
+        icon(v.icon, 18), h('strong', null, kindLabel(k)), h('small', null, v.desc))));
     promptTitle.textContent = TITLES[kind];
     promptIn.placeholder = PHS[kind];
     titleIn.placeholder = TPH[kind];

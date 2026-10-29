@@ -1,6 +1,7 @@
 import { h, icon, toast, copyText, loader, confirmDialog, askText } from './util.js';
 import { state, updateProfile, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
 import { applyTheme, sanitizeTheme, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME } from './theme.js';
+import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages } from './images.js';
 import { postCard, avatarEl } from './view-blog.js';
 import { backupTab } from './backup.js';
@@ -138,7 +139,7 @@ function designTab() {
   let dirty = false;
   const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
     saveBtn.disabled = true;
-    try { await updateProfile({ theme: T }); dirty = false; toast('디자인을 저장했어요'); }
+    try { T = sanitizeTheme(T); await updateProfile({ theme: T }); dirty = false; toast('디자인을 저장했어요'); }
     catch (e) { toast(friendly(e)); }
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '디자인 저장');
@@ -152,6 +153,27 @@ function designTab() {
     applyTheme(T);
     paintPreview();
     if (rebuild) build();
+  };
+
+  // 글 종류 이름·공개 (입력 중에는 다시 그리지 않아서 포커스가 유지돼요)
+  const setKind = (k, patch) => {
+    T = { ...T, kinds: { ...T.kinds, [k]: { ...T.kinds[k], ...patch } } };
+    dirty = true;
+    applyTheme(T);
+    paintPreview();
+  };
+  const kindRow = (k, v) => {
+    const cur = T.kinds[k];
+    const state = h('span', { class: 'sw-txt' }, cur.show ? '다른 사람에게 보임' : '나만 봄');
+    const cb = h('input', { type: 'checkbox', checked: cur.show, onchange: (e) => { state.textContent = e.target.checked ? '다른 사람에게 보임' : '나만 봄'; setKind(k, { show: e.target.checked }); } });
+    const name = h('input', {
+      class: 'input', maxlength: String(MAX_KIND_NAME), placeholder: v.label, value: cur.name, 'aria-label': `${v.label} 이름`,
+      oninput: (e) => setKind(k, { name: e.target.value }),
+    });
+    return h('div', { class: 'kset-row' },
+      h('span', { class: 'kset-ic' }, icon(v.icon, 18)),
+      name,
+      h('label', { class: 'switch' }, cb, h('span', { class: 'trk' }), state));
   };
 
   function build() {
@@ -216,9 +238,13 @@ function designTab() {
             T = { ...T, banner: '' };
             try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
           } }, '배너 지우기') : null, bannerFile) : null),
+      h('section', { class: 'panel' },
+        h('h3', { class: 'panel-title' }, '글 종류 이름 · 공개'),
+        h('p', { class: 'desc' }, '이름을 바꾸고, 다른 사람에게 보여줄지 정해요. 숨긴 종류는 다른 사람의 블로그 목록과 필터에서 빠지고, 내 블로그에서는 그대로 보여요. 이름을 비우면 기본 이름으로 돌아가요.'),
+        h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('디자인을 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner });
+          if (await confirmDialog('디자인을 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, kinds: T.kinds });
         } }, '기본값으로'),
         saveBtn),
       h('h3', { class: 'preview-title' }, '미리보기'),

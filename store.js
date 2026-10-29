@@ -35,7 +35,8 @@ export function friendly(e) {
     unavailable: '서버에 연결할 수 없어요',
     'resource-exhausted': 'Firebase 무료 사용량을 넘었어요',
   };
-  return map[c] || e?.message || '알 수 없는 오류가 났어요';
+  const m = typeof e?.message === 'string' && e.message !== 'null' && e.message !== 'undefined' ? e.message : '';
+  return map[c] || m || '알 수 없는 오류가 났어요';
 }
 
 // ───────── 인증 ─────────

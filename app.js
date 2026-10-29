@@ -63,7 +63,7 @@ async function route() {
   } catch (e) {
     console.error(e);
     if (token !== navToken) return;
-    root.replaceChildren(emptyState('문제가 생겼어요', e?.message || String(e), h('a', { class: 'btn', href: '#/' }, '처음으로')));
+    root.replaceChildren(emptyState('문제가 생겼어요', (e && e.message && e.message !== 'null' ? e.message : '알 수 없는 오류가 났어요'), h('a', { class: 'btn', href: '#/' }, '처음으로')));
   }
 }
 

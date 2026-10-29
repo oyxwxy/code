@@ -2,7 +2,7 @@ import { h, icon, fmtDate, loader, emptyState, initial } from './util.js';
 import { state, getProfileByHandle, listPosts } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
-import { KINDS, kindOf } from './kinds.js';
+import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
 import { APP_NAME } from './config.js';
 
 export function avatarEl(prof, cls = '') {
@@ -25,7 +25,7 @@ export function visBadge(p, isOwner) {
 
 export function kindBadge(p) {
   const k = kindOf(p);
-  return h('span', { class: 'kind kind-' + k }, icon(KINDS[k].icon, 12), KINDS[k].label);
+  return h('span', { class: 'kind kind-' + k }, icon(KINDS[k].icon, 12), kindLabel(k));
 }
 
 const safeThumb = (t) => (typeof t === 'string' && (t.startsWith('data:image/') || safeUrl(t)) ? t : '');
@@ -36,10 +36,13 @@ export function postCard(p, isOwner) {
     ? h('img', { src: th, alt: '', loading: 'lazy', decoding: 'async' })
     : h('div', { class: 'ph' }, icon(p.vis === 'locked' ? 'lock' : p.vis === 'private' ? 'eye-off' : 'image', 28));
   const badge = visBadge(p, isOwner);
-  return h('a', { class: 'card' + (th ? '' : ' no-thumb'), href: '#/p/' + p.id },
+  const hid = isOwner && !kindShown(kindOf(p));
+  return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : ''), href: '#/p/' + p.id },
     h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip' }, icon('image', 12), p.imgCount) : null),
     h('div', { class: 'card-body' },
-      h('div', { class: 'card-meta' }, kindBadge(p), badge, h('span', null, fmtDate(p.created))),
+      h('div', { class: 'card-meta' }, kindBadge(p), badge,
+        hid ? h('span', { class: 'vis vis-private', title: '이 종류는 다른 사람에게 숨겨져 있어요' }, icon('eye-off', 13), '숨김') : null,
+        h('span', null, fmtDate(p.created))),
       h('h3', { class: 'card-title' }, p.title),
       p.excerpt ? h('p', { class: 'card-ex' }, p.excerpt)
         : (p.vis === 'locked' ? h('p', { class: 'card-ex muted' }, '비밀번호가 필요한 글이에요') : null),
@@ -61,7 +64,10 @@ export async function blog({ params, root }) {
   applyTheme(theme);
   document.title = `${prof.display || prof.handle} · ${APP_NAME}`;
   const isOwner = state.user?.uid === prof.uid;
-  const posts = await listPosts(prof.uid);
+  const allPosts = await listPosts(prof.uid);
+  // 글쓴이가 숨긴 종류는 다른 사람에게 보이지 않아요 (본인은 그대로 다 보여요)
+  const posts = isOwner ? allPosts : allPosts.filter((p) => kindShown(kindOf(p)));
+  const bioText = (prof.bio || '').replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim();
 
   // ── 헤더 ──
   const banner = theme.header === 'banner'
@@ -78,7 +84,7 @@ export async function blog({ params, root }) {
       h('div', { class: 'head-text' },
         h('h1', { class: 'blog-name' }, prof.display || prof.handle),
         h('div', { class: 'blog-handle' }, '@' + prof.handle),
-        prof.bio ? h('p', { class: 'blog-bio' }, prof.bio) : null,
+        bioText ? h('p', { class: 'blog-bio' }, bioText) : null,
         h('div', { class: 'blog-stats' }, `글 ${posts.length}개`),
         isOwner ? h('div', { class: 'head-actions' },
           h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), '새 글'),
@@ -99,8 +105,10 @@ export async function blog({ params, root }) {
   function paintPills() {
     const kc = { all: posts.length };
     posts.forEach((p) => { const k = kindOf(p); kc[k] = (kc[k] || 0) + 1; });
-    kindBox.replaceChildren(...[['all', '전체'], ...Object.entries(KINDS).map(([k, v]) => [k, v.label])].map(([k, label]) =>
-      h('button', { class: 'pill' + (kindFilter === k ? ' on' : ''), onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, `${label} ${kc[k] || 0}`)));
+    const kinds = Object.keys(KINDS).filter((k) => isOwner || kindShown(k));
+    kindBox.replaceChildren(...[['all', '전체', null], ...kinds.map((k) => [k, kindLabel(k), KINDS[k].icon])].map(([k, label, ic]) =>
+      h('button', { class: 'pill' + (kindFilter === k ? ' on' : '') + (k !== 'all' && !kindShown(k) ? ' dim' : ''), title: k !== 'all' && !kindShown(k) ? '다른 사람에게는 숨겨진 종류예요' : null,
+        onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, `${label} ${kc[k] || 0}`)));
     tagBox.replaceChildren(...(topTags.length ? [
       h('button', { class: 'pill' + (tag ? '' : ' on'), onclick: () => { tag = null; shown = PAGE; paintPills(); paint(); } }, '전체'),
       ...topTags.map((t) => h('button', { class: 'pill' + (tag === t ? ' on' : ''), onclick: () => { tag = tag === t ? null : t; shown = PAGE; paintPills(); paint(); } }, '#' + t)),

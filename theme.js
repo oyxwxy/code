@@ -1,4 +1,5 @@
 import { mix, lum } from './util.js';
+import { KINDS, MAX_KIND_NAME, setKindPrefs } from './kinds.js';
 
 // 프리셋은 배경색 + 포인트색 두 가지만 정하면 나머지 색은 자동 계산돼요
 export const PRESETS = [
@@ -31,10 +32,20 @@ export const LAYOUTS = {
 export const RADII = { sharp: '4px', soft: '14px', round: '26px' };
 export const HEADERS = { center: '가운데', left: '왼쪽', banner: '배너' };
 
+/** 글 종류별 { show: 다른 사람에게 보이기, name: 바꾼 이름('' = 기본 이름) } */
+export function sanitizeKinds(k) {
+  const out = {};
+  for (const key of Object.keys(KINDS)) {
+    const x = k && typeof k === 'object' ? k[key] : null;
+    out[key] = { show: x?.show !== false, name: typeof x?.name === 'string' ? x.name.trim().slice(0, MAX_KIND_NAME) : '' };
+  }
+  return out;
+}
+
 export const DEFAULT_THEME = {
   preset: 'cream', bg: '#faf6f0', accent: '#c2713c',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
-  avatar: '', banner: '',
+  avatar: '', banner: '', kinds: sanitizeKinds(null),
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -53,6 +64,7 @@ export function sanitizeTheme(t) {
     header: HEADERS[t.header] ? t.header : d.header,
     avatar: typeof t.avatar === 'string' ? t.avatar : '',
     banner: typeof t.banner === 'string' ? t.banner : '',
+    kinds: sanitizeKinds(t.kinds),
   };
 }
 
@@ -71,6 +83,7 @@ export function palette(bg, accent) {
 
 export function applyTheme(raw) {
   const t = sanitizeTheme(raw);
+  setKindPrefs(t.kinds);
   const p = palette(t.bg, t.accent);
   const s = document.documentElement.style;
   s.setProperty('--bg', p.bg);
