@@ -3,7 +3,7 @@ import { KINDS, MAX_KIND_NAME, setKindPrefs } from './kinds.js';
 
 // 프리셋은 배경색 + 포인트색 두 가지만 정하면 나머지 색은 자동 계산돼요
 export const PRESETS = [
-  { id: 'cream',    name: '크림',     bg: '#faf6f0', accent: '#c2713c' },
+  { id: 'cream',    name: '기본',     bg: '#f1f8f5', accent: '#678e85' },
   { id: 'mint',     name: '민트',     bg: '#f1f8f5', accent: '#2f9e84' },
   { id: 'lavender', name: '라벤더',   bg: '#f6f3fb', accent: '#7c5cd6' },
   { id: 'rose',     name: '로즈',     bg: '#fdf2f4', accent: '#d6456b' },
@@ -43,7 +43,7 @@ export function sanitizeKinds(k) {
 }
 
 export const DEFAULT_THEME = {
-  preset: 'cream', bg: '#faf6f0', accent: '#c2713c',
+  preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
   avatar: '', banner: '', kinds: sanitizeKinds(null),
 };
@@ -56,8 +56,10 @@ export function sanitizeTheme(t) {
   const d = DEFAULT_THEME;
   return {
     preset: typeof t.preset === 'string' ? t.preset : d.preset,
-    bg: HEX.test(t.bg) ? t.bg : d.bg,
-    accent: HEX.test(t.accent) ? t.accent : d.accent,
+    // 예전 기본 배경(크림색)을 그대로 저장해 둔 계정도 새 기본 배경으로 바뀌어요
+    bg: HEX.test(t.bg) ? (t.preset === 'cream' && t.bg.toLowerCase() === '#faf6f0' ? d.bg : t.bg) : d.bg,
+    // 예전 기본 포인트색(주황)을 그대로 저장해 둔 계정도 새 기본색으로 바뀌어요
+    accent: HEX.test(t.accent) ? (t.preset === 'cream' && t.accent.toLowerCase() === '#c2713c' ? d.accent : t.accent) : d.accent,
     font: FONTS[t.font] ? t.font : d.font,
     layout: LAYOUTS[t.layout] ? t.layout : d.layout,
     radius: RADII[t.radius] ? t.radius : d.radius,

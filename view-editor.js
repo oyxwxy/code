@@ -11,6 +11,11 @@ const SAMPLERS = ['Euler', 'Euler Ancestral', 'DPM++ 2S Ancestral', 'DPM++ 2M', 
 const PLACEHOLDERS = { model: 'NovelAI Diffusion V5 Full', sampler: 'Euler Ancestral', steps: '28', scale: '5', cfgRescale: '0', schedule: 'karras', seed: '', size: '832x1216', extra: 'SMEA, Variety+ 등' };
 const normEffort = (x) => { const v = String(x || '').toLowerCase(); return v === 'medium' ? 'Medium' : v === 'high' ? 'High' : ''; };
 
+const ymd = (ts) => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const panel = (title, ...kids) => h('section', { class: 'panel' }, title ? h('h3', { class: 'panel-title' }, title) : null, ...kids);
 
 export async function editor({ params, query, root }) {
@@ -36,7 +41,7 @@ export async function editor({ params, query, root }) {
     content = r.content;
     lock = r.lock || null;
   }
-  document.title = (editId ? '글 수정' : '새 글') + ' · 서랍';
+  document.title = (editId ? '글 수정' : '새 글') + ' · Drawer';
 
   let kind = prev ? kindOf(prev) : (KINDS[query?.get('kind')] ? query.get('kind') : 'style');
 
@@ -106,6 +111,9 @@ export async function editor({ params, query, root }) {
     h('datalist', { id: 'dl-model' }, MODELS.map((m) => h('option', { value: m }))),
     h('datalist', { id: 'dl-sampler' }, SAMPLERS.map((m) => h('option', { value: m }))),
   ];
+
+  // 작성일 (직접 지정)
+  const dateIn = h('input', { class: 'input', type: 'date', value: ymd(prev?.created || Date.now()) });
 
   // 공개 설정
   const pwIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password' });
@@ -263,12 +271,19 @@ export async function editor({ params, query, root }) {
         .map((r, i) => ({ name: r.name.value.trim() || `변형 ${i + 1}`, prompt: r.p.value.replace(/\s+$/, '') }))
         .filter((v) => v.prompt);
     }
+    // 날짜를 바꾸지 않았으면 원래 시각을 그대로 두고, 바꿨으면 고른 날짜 + 지금 시각으로 저장해요
+    let created;
+    if (dateIn.value && dateIn.value !== ymd(prev?.created || Date.now())) {
+      const [y, m, d] = dateIn.value.split('-').map(Number);
+      const n = new Date();
+      created = new Date(y, m - 1, d, n.getHours(), n.getMinutes(), n.getSeconds()).getTime();
+    }
     saveBtn.disabled = true;
     const label = saveBtn.lastChild;
     label.textContent = ' 저장 중…';
     try {
       const id = await savePost({
-        id: editId, prev, kind, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, tags, content: body,
+        id: editId, prev, kind, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, tags, content: body, created,
         images: imgs.filter((i) => i.src || i.data), password: pwIn.value, lock, origImages,
         onProgress: (i, n) => { label.textContent = ` 이미지 올리는 중 (${i + 1}/${n})…`; },
       });
@@ -295,6 +310,7 @@ export async function editor({ params, query, root }) {
     h('small', { class: 'hint-line' }, '보기 화면에서 변형마다 따로 복사할 수 있고, 기본 프롬프트와 함께 복사하는 버튼도 있어요.'));
   const notesPanel = panel('메모', notesIn);
   const visPanel = panel('공개 설정', segBox, visExtra);
+  const datePanel = panel('작성일', dateIn, h('small', { class: 'hint-line' }, '글에 표시되는 날짜예요. 원하는 날짜로 바꿀 수 있어요. 목록 순서는 블로그에서 카드를 끌어서 정해요.'));
   const imgPanel = panel('이미지', drop, fileIn, imgGrid,
     h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`));
   const tagPanel = panel('태그', tagBox);
@@ -320,7 +336,7 @@ export async function editor({ params, query, root }) {
       ...(kind === 'style' ? [negPanel] : []),
       ...(kind === 'character' ? [variantPanel] : []),
       notesPanel);
-    sideBox.replaceChildren(visPanel, imgPanel, tagPanel, ...(kind === 'style' ? [paramPanel] : []), importPanel);
+    sideBox.replaceChildren(visPanel, datePanel, imgPanel, tagPanel, ...(kind === 'style' ? [paramPanel] : []), importPanel);
   };
   paintKind();
 

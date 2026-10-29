@@ -3,50 +3,50 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>프롬프트 서랍</title>
+  <title>Drawer</title>
   <meta name="description" content="NovelAI 프롬프트를 백업하고 링크로 공유하는 나만의 서랍">
-  <meta name="theme-color" content="#faf6f0">
+  <meta name="theme-color" content="#f1f8f5">
   <meta name="robots" content="noindex">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23c2713c'/%3E%3Cpath d='M16 6l2.6 7.4L26 16l-7.4 2.6L16 26l-2.6-7.4L6 16l7.4-2.6z' fill='white'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23678e85'/%3E%3Cpath d='M16 6l2.6 7.4L26 16l-7.4 2.6L16 26l-2.6-7.4L6 16l7.4-2.6z' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+KR:wght@400;600;700&display=swap">
   <style>
     /* 첫 로딩 화면: style.css보다 먼저 보이도록 여기에 직접 적어요 */
-    #boot { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #faf6f0; color: #2d2520; font-family: 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif; transition: opacity .35s ease, visibility .35s; }
+    #boot { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: #f1f8f5; color: #2d2520; font-family: 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif; transition: opacity .35s ease, visibility .35s; }
     #boot.done { opacity: 0; visibility: hidden; pointer-events: none; }
     .boot-in { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 0 24px; }
-    .boot-mark { width: 54px; height: 54px; border-radius: 17px; background: #c2713c; color: #fff; display: grid; place-items: center; box-shadow: 0 12px 28px -10px #c2713c; animation: boot-pulse 1.6s ease-in-out infinite; }
+    .boot-mark { width: 54px; height: 54px; border-radius: 17px; background: #678e85; color: #fff; display: grid; place-items: center; box-shadow: 0 12px 28px -10px #678e85; animation: boot-pulse 1.6s ease-in-out infinite; }
     .boot-in b { font-size: 20px; letter-spacing: -.02em; }
-    .boot-bar { width: 120px; height: 3px; border-radius: 999px; background: rgb(194 113 60 / .18); overflow: hidden; }
-    .boot-bar i { display: block; width: 40%; height: 100%; border-radius: inherit; background: #c2713c; animation: boot-slide 1.1s ease-in-out infinite; }
+    .boot-bar { width: 120px; height: 3px; border-radius: 999px; background: rgb(103 142 133 / .18); overflow: hidden; }
+    .boot-bar i { display: block; width: 40%; height: 100%; border-radius: inherit; background: #678e85; animation: boot-slide 1.1s ease-in-out infinite; }
     #boot-msg { color: #8d8279; font-size: 13px; min-height: 18px; }
     @keyframes boot-pulse { 50% { transform: scale(1.07); } }
     @keyframes boot-slide { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
     @media (prefers-color-scheme: dark) { #boot { background: #14151c; color: #ecebf3; } #boot-msg { color: #9a98a8; } }
   </style>
-  <link rel="stylesheet" href="style.css?v=20261030c">
+  <link rel="stylesheet" href="style.css?v=20261030f">
   <!-- 파일을 수정해 다시 올릴 때는 아래 v= 값(과 style.css/app.js의 v=)을 같이 바꿔야 브라우저가 새 파일을 받아요 -->
   <script type="importmap">
   {
     "imports": {
-      "./config.js": "./config.js?v=20261030c",
-      "./fb.js": "./fb.js?v=20261030c",
-      "./util.js": "./util.js?v=20261030c",
-      "./theme.js": "./theme.js?v=20261030c",
-      "./crypto.js": "./crypto.js?v=20261030c",
-      "./imgbb.js": "./imgbb.js?v=20261030c",
-      "./images.js": "./images.js?v=20261030c",
-      "./nai.js": "./nai.js?v=20261030c",
-      "./kinds.js": "./kinds.js?v=20261030c",
-      "./store.js": "./store.js?v=20261030c",
-      "./view-home.js": "./view-home.js?v=20261030c",
-      "./view-blog.js": "./view-blog.js?v=20261030c",
-      "./view-post.js": "./view-post.js?v=20261030c",
-      "./view-editor.js": "./view-editor.js?v=20261030c",
-      "./backup.js": "./backup.js?v=20261030c",
-      "./view-settings.js": "./view-settings.js?v=20261030c"
+      "./config.js": "./config.js?v=20261030f",
+      "./fb.js": "./fb.js?v=20261030f",
+      "./util.js": "./util.js?v=20261030f",
+      "./theme.js": "./theme.js?v=20261030f",
+      "./crypto.js": "./crypto.js?v=20261030f",
+      "./imgbb.js": "./imgbb.js?v=20261030f",
+      "./images.js": "./images.js?v=20261030f",
+      "./nai.js": "./nai.js?v=20261030f",
+      "./kinds.js": "./kinds.js?v=20261030f",
+      "./store.js": "./store.js?v=20261030f",
+      "./view-home.js": "./view-home.js?v=20261030f",
+      "./view-blog.js": "./view-blog.js?v=20261030f",
+      "./view-post.js": "./view-post.js?v=20261030f",
+      "./view-editor.js": "./view-editor.js?v=20261030f",
+      "./backup.js": "./backup.js?v=20261030f",
+      "./view-settings.js": "./view-settings.js?v=20261030f"
     }
   }
   </script>
@@ -55,9 +55,9 @@
   <div id="boot" role="status" aria-live="polite">
     <div class="boot-in">
       <span class="boot-mark"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></svg></span>
-      <b>서랍</b>
+      <b>Drawer</b>
       <span class="boot-bar"><i></i></span>
-      <span id="boot-msg">서랍을 여는 중이에요…</span>
+      <span id="boot-msg">여는 중이에요…</span>
     </div>
   </div>
   <script>setTimeout(function () { var m = document.getElementById('boot-msg'); if (m) m.textContent = '오래 걸리고 있어요. 계속 그러면 새로고침해 주세요.'; }, 12000);</script>
@@ -65,6 +65,6 @@
   <main id="view"></main>
   <div id="toasts"></div>
   <noscript><p style="padding:2rem">이 사이트는 JavaScript가 필요해요.</p></noscript>
-  <script type="module" src="app.js?v=20261030c"></script>
+  <script type="module" src="app.js?v=20261030f"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /* ───────── 토큰 (테마가 JS로 덮어써요) ───────── */
 :root {
-  --bg: #faf6f0; --surface: #fffdfa; --text: #2d2520; --muted: #8d8279; --border: #ebe2d6;
-  --accent: #c2713c; --accent-soft: #f4e5d6; --on-accent: #fff;
+  --bg: #f1f8f5; --surface: #fafdfc; --text: #272827; --muted: #8c908e; --border: #dbe2df;
+  --accent: #678e85; --accent-soft: #dee9e5; --on-accent: #fff;
   --radius: 14px; --danger: #d64545;
   --font: 'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', 'D2Coding', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -142,6 +142,8 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 /* ───────── 블로그 머리말 ───────── */
 .blog-head { margin-bottom: 26px; }
 .blog-head .head-in { display: flex; gap: 22px; align-items: flex-start; }
+.head-side { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: none; max-width: 140px; }
+.head-side .blog-handle { font-size: 13px; text-align: center; line-height: 1.3; }
 .head-text { min-width: 0; flex: 1 1 auto; align-self: center; }
 .blog-name { font-size: 28px; letter-spacing: -.03em; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
 .blog-handle { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
@@ -379,6 +381,8 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
   .blog-head .head-in { gap: 16px; }
   .head-left .head-in { flex-direction: column; align-items: flex-start; }
   .head-text { align-self: stretch; }
+  .head-left .head-side, .head-banner .head-side { align-items: flex-start; max-width: none; }
+  .head-left .head-side .blog-handle, .head-banner .head-side .blog-handle { text-align: left; }
   .head-banner .head-in { flex-direction: column; align-items: flex-start; gap: 4px; padding: 0 12px; }
   .head-banner .head-text { align-self: stretch; padding-top: 6px; }
   .head-banner .banner { height: 140px; }
@@ -468,7 +472,8 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 .sort-drag { position: relative; z-index: 60; transition: none !important; pointer-events: none; opacity: .96; box-shadow: 0 18px 40px -12px rgb(0 0 0 / .38); cursor: grabbing; }
 .card.sort-drag:hover { transform: none; }
 body.sorting { user-select: none; -webkit-user-select: none; cursor: grabbing; }
-.sort-hint { margin: -2px 0 10px; text-align: right; }
+.sort-bar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px 10px; margin: -2px 0 10px; }
+.sort-bar .hint-line { margin: 0; }
 
 /* ───────── 스포일러 방지 ───────── */
 .vis-spoiler { background: color-mix(in srgb, #8b5cf6 16%, var(--surface)); color: #7c4ddb; }

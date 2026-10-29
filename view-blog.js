@@ -1,4 +1,4 @@
-import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast } from './util.js';
+import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog } from './util.js';
 import { state, getProfileByHandle, listPosts, savePostOrder, friendly } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
@@ -84,10 +84,9 @@ export async function blog({ params, root }) {
   const head = h('header', { class: 'blog-head head-' + theme.header },
     banner,
     h('div', { class: 'head-in' },
-      avatarEl(prof, 'lg'),
+      h('div', { class: 'head-side' }, avatarEl(prof, 'lg'), h('div', { class: 'blog-handle' }, '@' + prof.handle)),
       h('div', { class: 'head-text' },
         h('h1', { class: 'blog-name' }, prof.display || prof.handle),
-        h('div', { class: 'blog-handle' }, '@' + prof.handle),
         bioText ? h('p', { class: 'blog-bio' }, bioText) : null,
         h('div', { class: 'blog-stats' }, `글 ${posts.length}개`),
         isOwner ? h('div', { class: 'head-actions' },
@@ -133,6 +132,13 @@ export async function blog({ params, root }) {
     savePostOrder(posts).then(() => toast('순서를 저장했어요', { ms: 1600 })).catch((e) => toast(friendly(e)));
   }
 
+  async function sortByDate() {
+    if (!(await confirmDialog('직접 정한 순서가 사라지고, 작성일이 최신인 글이 위로 와요. 계속할까요?', { ok: '정리하기' }))) return;
+    posts.sort((a, b) => (b.created || 0) - (a.created || 0));
+    paint();
+    savePostOrder(posts).then(() => toast('작성일 순으로 정리했어요', { ms: 1800 })).catch((e) => toast(friendly(e)));
+  }
+
   function paint() {
     const ql = q.trim().toLowerCase();
     const rows = posts.filter((p) =>
@@ -162,7 +168,9 @@ export async function blog({ params, root }) {
     h('div', { class: 'toolbar' }, search, isOwner ? visBox : null),
     posts.length ? h('div', { class: 'kind-filter' }, kindBox) : null,
     topTags.length ? tagBox : null,
-    isOwner && posts.length > 1 ? h('small', { class: 'hint-line sort-hint' }, '카드의 ⋮⋮ 손잡이를 끌어서 순서를 바꿀 수 있어요') : null,
+    isOwner && posts.length > 1 ? h('div', { class: 'sort-bar' },
+      h('small', { class: 'hint-line' }, '카드의 ⋮⋮ 손잡이를 끌어서 순서를 바꿀 수 있어요'),
+      h('button', { class: 'btn ghost sm', onclick: sortByDate }, '작성일 최신순으로 정리')) : null,
     list, more);
   paintPills();
   paint();

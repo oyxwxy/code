@@ -228,7 +228,7 @@ export function lum(hex) {
  * container 안의 item 들을 handle(손잡이)을 끌어서 재정렬해요. 이벤트는 위임이라 항목이 다시 그려져도 한 번만 걸면 돼요.
  * 끝났을 때 순서가 바뀌었으면 onSort(새 순서의 요소 배열)을 불러요.
  */
-export function sortable(container, { item, handle, ignore = 'button,input,textarea,select,a', onSort } = {}) {
+export function sortable(container, { item, handle, onSort } = {}) {
   let st = null;
   const items = () => [...container.children].filter((c) => c.matches(item));
 
@@ -285,7 +285,6 @@ export function sortable(container, { item, handle, ignore = 'button,input,texta
     if (e.button > 0 || st) return;
     const g = e.target.closest?.(handle);
     if (!g || !container.contains(g)) return;
-    if (e.target.closest(ignore) && !g.matches(ignore)) return;
     const el = g.closest(item);
     if (!el || el.parentElement !== container) return;
     e.preventDefault();
