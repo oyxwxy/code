@@ -215,13 +215,11 @@ export async function blog({ params, query, root }) {
         onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, label)));
     // 게시판: 다른 사람에게는 글이 있는 게시판만 보여요. '미분류'는 설정에서 켜고 끌 수 있어요
     const has = new Set(posts.map((p) => boardOf(p) || NONE));
-    const boardN = new Map();   // 게시판별 글 개수 ('전체'는 posts.length)
-    posts.forEach((p) => { const k = boardOf(p) || NONE; boardN.set(k, (boardN.get(k) || 0) + 1); });
     const entries = [['all', '전체', 'grid'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
       ...(showUncat && (isOwner || has.has(NONE)) ? [[NONE, '미분류', 'file']] : [])];
     boardBox.replaceChildren(...entries.map(([k, label, ic]) =>
       h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; paintPills(); paint(); } },
-        icon(ic, 15), h('span', null, label), h('em', { class: 'side-n', 'aria-label': `글 ${k === 'all' ? posts.length : (boardN.get(k) || 0)}개` }, k === 'all' ? posts.length : (boardN.get(k) || 0)))));
+        icon(ic, 15), h('span', null, label))));
   }
 
   // 화면에 보이는 글들끼리 자리를 바꾸고, 전체 순서에 반영해 저장해요
@@ -295,7 +293,7 @@ export async function blog({ params, query, root }) {
 
   const hasSide = boards.length > 0 || topTags.length > 0 || !!nbZone;
   const side = hasSide ? h('aside', { class: 'blog-side' },
-    boards.length ? h('div', { class: 'side-sec' }, h('h4', null, '게시판'), boardBox) : null,
+    boards.length ? h('div', { class: 'side-sec' }, h('h4', null, '게시판', h('em', { class: 'side-total', title: '전체 글 개수' }, posts.length)), boardBox) : null,
     topTags.length ? h('div', { class: 'side-sec' }, h('h4', null, '태그'), tagBox) : null,
     nbZone) : null;
   const main = h('div', { class: 'blog-main' },
