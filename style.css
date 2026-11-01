@@ -684,7 +684,7 @@ a.board-badge:hover { border-color: var(--accent); }
 
 
 /* ═════════ 이미지 크게 보기 ═════════ */
-.lightbox { position: fixed; inset: 0; z-index: 100; background: rgb(8 8 10 / 0); backdrop-filter: blur(0); overflow: hidden; transition: background .22s, backdrop-filter .22s, opacity .18s; overscroll-behavior: contain; }
+.lightbox { position: fixed; inset: 0; z-index: 100; background: rgb(8 8 10 / 0); backdrop-filter: blur(0); overflow: hidden; transition: background .22s, backdrop-filter .22s, opacity .18s; }
 .lightbox.in { background: rgb(8 8 10 / .94); backdrop-filter: blur(6px); }
 .lightbox.out { opacity: 0; }
 .lb-stage { position: absolute; inset: 0; touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden; }
@@ -717,7 +717,8 @@ a.board-badge:hover { border-color: var(--accent); }
 .blog-main { min-width: 0; }
 .blog-body.has-side .layout-list, .blog-body.has-side .layout-journal { margin-inline: 0; }
 .blog-body.has-side .layout-list { max-width: none; }
-.blog-side { position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 22px; padding-bottom: 8px; }
+.blog-side { position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; gap: 22px; padding-bottom: 8px; }
+.blog-side::-webkit-scrollbar { display: none; }
 .side-sec h4 { margin: 0 0 8px; padding-left: 10px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .side-list { display: flex; flex-direction: column; gap: 2px; }
 .side-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-size: 14px; font-weight: 500; text-align: left; transition: background .15s, color .15s; }
@@ -907,3 +908,9 @@ a.board-badge:hover { border-color: var(--accent); }
 .img-tools button.on { box-shadow: 0 0 0 2px #fff; }
 
 .sp-tag { font-size: 10.5px; padding: 2px 6px; }
+
+/* 배너가 많으면 배너 목록만 스크롤 (스크롤바는 숨기고, 더 있으면 아래쪽이 흐려져요) */
+.nb-list { max-height: 232px; overflow-y: auto; scrollbar-width: none; }
+.nb-list::-webkit-scrollbar { display: none; }
+.nb-list.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent); mask-image: linear-gradient(#000 calc(100% - 22px), transparent); }
+.nb-list.more.end { -webkit-mask-image: none; mask-image: none; }

@@ -319,7 +319,15 @@ function neighborZone(prof, theme, isOwner) {
       } }, icon('x', 12)));
       return wrap;
     }));
+    markScroll(); requestAnimationFrame(markScroll);
   };
+  // 넘치면 아래쪽을 흐리게 해서 '더 있다'는 걸 알려요 (스크롤바는 숨김)
+  const markScroll = () => {
+    const more = nbs.scrollHeight > nbs.clientHeight + 2;
+    nbs.classList.toggle('more', more);
+    nbs.classList.toggle('end', more && nbs.scrollTop + nbs.clientHeight >= nbs.scrollHeight - 2);
+  };
+  nbs.addEventListener('scroll', markScroll, { passive: true });
 
   let mineEl = null;
   {   // 이미지를 정하지 않아도 이름이 적힌 기본 배너가 걸려요
