@@ -1,9 +1,9 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, neighborsOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
+import { state, neighborsOn, ddayOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveBannerImage, saveNeighborBanner, loadImage } from './images.js';
-import { colorField, stepper, iconField } from './widgets.js';
+import { colorField, stepper, iconField, datePicker } from './widgets.js';
 import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 
@@ -35,7 +35,46 @@ export async function settings({ root, query }) {
   await show();
 }
 
-// ───────── 알림 (누가 내 이웃 배너를 가져갔는지) ─────────
+// ───────── 디데이 ─────────
+function ddayPanel() {
+  const rows = [];
+  const box = h('div', { class: 'dd-edit' });
+  const add = (e = {}) => {
+    if (rows.length >= MAX_DDAYS) { toast(`디데이는 ${MAX_DDAYS}개까지예요`); return null; }
+    const r = { id: e.id || rid(), kind: e.kind === 'dday' ? 'dday' : 'couple' };
+    const emoji = h('input', { class: 'input dd-emoji', maxlength: '4', value: txt(e.emoji) || '💗', 'aria-label': '아이콘(이모지)' });
+    const name = h('input', { class: 'input', maxlength: '20', placeholder: '이름 (예: 우리 기념일)', value: txt(e.name) });
+    const date = datePicker({ value: txt(e.date), label: '날짜 선택' });
+    const seg = h('div', { class: 'side-seg', role: 'group', 'aria-label': '종류' });
+    const paintSeg = () => seg.replaceChildren(...[['couple', '커플'], ['dday', '디데이']].map(([k, label]) =>
+      h('button', { type: 'button', class: 'side-opt' + (r.kind === k ? ' on' : ''), onclick: () => { r.kind = k; paintSeg(); } }, label)));
+    paintSeg();
+    const el = h('div', { class: 'dd-row' },
+      h('div', { class: 'dd-row-top' }, emoji, name,
+        h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '삭제', onclick: () => { rows.splice(rows.indexOf(r), 1); el.remove(); } }, icon('x', 15))),
+      h('div', { class: 'dd-row-bot' }, seg, date.el));
+    Object.assign(r, { el, emoji, name, date });
+    rows.push(r);
+    box.append(el);
+    return r;
+  };
+  sanitizeDdays(state.me.theme.ddays).forEach(add);
+  const save = h('button', { class: 'btn primary', type: 'button', onclick: async () => {
+    const list = sanitizeDdays(rows.map((r) => ({ id: r.id, name: r.name.value, date: r.date.value, kind: r.kind, emoji: r.emoji.value })));
+    if (list.length < rows.filter((r) => r.name.value.trim() || r.date.value).length) { toast('이름과 날짜를 모두 채워 주세요'); return; }
+    save.disabled = true;
+    try { await updateProfile({ theme: { ...sanitizeTheme(state.me.theme), ddays: list } }); toast('디데이를 저장했어요'); }
+    catch (e) { toast(friendly(e)); }
+    finally { save.disabled = false; }
+  } }, icon('check', 16), '디데이 저장');
+  return h('section', { class: 'panel' },
+    h('h3', { class: 'panel-title' }, '디데이'),
+    h('p', { class: 'desc' }, '블로그 이름 오른쪽에 가장 가까운 기념일이 나오고, 누르면 전체 목록이 열려요. "커플"은 만난 날부터 D+일수를 세고 100일·주년을 기념일로 계산해요. "디데이"는 정한 날까지 D-일수를 세요.'),
+    box,
+    h('div', { class: 'row' }, h('button', { class: 'btn sm', type: 'button', onclick: () => add({})?.name.focus() }, icon('plus', 14), '디데이 추가'), save));
+}
+
+// ───────── 알림 (누가 내 배너를 가져갔는지) ─────────
 function bellButton() {
   const badge = h('span', { class: 'bell-badge', hidden: true });
   const btn = h('button', { class: 'bell-btn', type: 'button', title: '알림', 'aria-label': '알림' }, icon('bell', 18), badge);
@@ -143,6 +182,7 @@ function profileTab() {
       h('label', { class: 'field' }, h('span', { class: 'lbl' }, '소개'), bio),
       h('div', { class: 'row' }, saveBtn)),
     faviconPanel(),
+    ddayOn() ? ddayPanel() : null,
     h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '내 블로그 주소'),
       h('p', { class: 'desc' }, '이 링크를 공유하면 공개 글과 비밀번호 글 목록을 볼 수 있어요.'),
@@ -406,7 +446,7 @@ function designTab() {
       } catch (e) { toast(friendly(e)); }
     });
 
-    // 이웃 배너: 다른 블로그의 이웃 목록에 걸리는 작은 이미지 (4:1)
+    // 배너: 블로그 태그 아래에 걸리는 작은 이미지 (4:1)
     const nbFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
     nbFile.addEventListener('change', async () => {
       const f = nbFile.files[0];
@@ -419,21 +459,21 @@ function designTab() {
         await updateProfile({ theme: T });
         if (old && old !== id) removeImages([old]);
         dirty = false;
-        toast('이웃 배너를 바꿨어요');
+        toast('배너를 바꿨어요');
         build();
       } catch (e) { toast(friendly(e)); }
     });
     const nbPanel = () => h('section', { class: 'panel' },
-      h('h3', { class: 'panel-title' }, '이웃 배너'),
-      h('p', { class: 'desc' }, '다른 블로그의 이웃 목록에 걸리는 작은 이미지예요 (가로 4 : 세로 1, 가운데를 잘라 맞춰요). 이 배너를 누르면 상대가 바로 자기 이웃으로 가져갈 수 있고, 마우스를 올리면 블로그 이름과 핸들이 보여요.'),
+      h('h3', { class: 'panel-title' }, '배너'),
+      h('p', { class: 'desc' }, '블로그 태그 아래에 걸리는 작은 이미지예요 (가로 4 : 세로 1, 가운데를 잘라 맞춰요). 이 배너를 누르면 상대가 바로 자기 배너 목록으로 가져갈 수 있고, 마우스를 올리면 블로그 이름과 핸들이 보여요.'),
       T.nbBanner ? h('div', { class: 'nb-preview' }, bannerEl({ ...state.me, theme: T }, { cls: 'mine' })) : null,
       h('div', { class: 'row' },
-        h('button', { class: 'btn sm', onclick: () => nbFile.click() }, icon('image', 14), T.nbBanner ? '이웃 배너 바꾸기' : '이웃 배너 이미지 선택'),
+        h('button', { class: 'btn sm', onclick: () => nbFile.click() }, icon('image', 14), T.nbBanner ? '배너 바꾸기' : '배너 이미지 선택'),
         T.nbBanner ? h('button', { class: 'btn ghost sm', onclick: async () => {
           const old = T.nbBanner;
           T = { ...T, nbBanner: '' };
           try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
-        } }, '이웃 배너 지우기') : null, nbFile));
+        } }, '배너 지우기') : null, nbFile));
 
     host.replaceChildren(
       h('section', { class: 'panel' },
@@ -468,7 +508,7 @@ function designTab() {
             T = { ...T, banner: '' };
             try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
           } }, '대문 배너 지우기') : null, bannerFile) : null,
-        T.header === 'banner' ? h('p', { class: 'desc' }, '대문 배너는 블로그 맨 위에 걸리는 큰 이미지예요. 이웃 목록에 걸리는 작은 "이웃 배너"와는 달라요.') : null),
+        T.header === 'banner' ? h('p', { class: 'desc' }, '대문 배너는 블로그 맨 위에 걸리는 큰 이미지예요. 태그 아래에 걸리는 작은 "배너"와는 달라요.') : null),
       neighborsOn() ? nbPanel() : null,
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '글 안의 버튼'),

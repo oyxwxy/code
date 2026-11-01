@@ -23,5 +23,8 @@ export const BETA_HANDLES = ['wxyz'];
 // 이웃 배너 기능: false 면 관리자·BETA_HANDLES 에게만 보여요. 전체에 열려면 true 로 바꾸세요.
 export const NEIGHBORS_FOR_ALL = false;
 
+// 디데이 기능: false 면 관리자·BETA_HANDLES 에게만 보여요. 전체에 열려면 true.
+export const DDAY_FOR_ALL = false;
+
 // 이미지 호스팅(ImgBB) API 키. 브라우저 코드에 들어가므로 공개된다는 점을 알고 쓰세요
 export const IMGBB_KEY = 'cd95c1a1e9387659cd79b2b33902dce1';

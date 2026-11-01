@@ -812,3 +812,33 @@ a.board-badge:hover { border-color: var(--accent); }
 .notif-text a { color: inherit; text-decoration: none; }
 .notif-text small { flex-basis: 100%; }
 @media (max-width: 760px) { .nb-banner { max-width: 220px; } .nb-zone .nb-list { flex-direction: row; flex-wrap: wrap; } .nb-list .nb-item { width: 220px; max-width: 100%; } }
+
+
+/* ───────── 디데이 ───────── */
+.name-row { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
+.head-center .name-row { justify-content: center; }
+.dd-pill { --dd: #e0679a; display: inline-flex; align-items: center; gap: 6px; max-width: min(260px, 100%); height: 32px; padding: 0 14px; border: 2px solid color-mix(in srgb, var(--dd) 35%, var(--surface)); border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--dd) 8%, var(--surface)), color-mix(in srgb, #5aa7e8 14%, var(--surface))); color: var(--dd); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.dd-pill:hover { filter: brightness(.97); }
+.dd-pill svg { flex: none; fill: currentColor; }
+.dd-pill-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-wrap { min-width: min(380px, 80vw); }
+.dd-head { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; margin-bottom: 12px; }
+.dd-head i { flex: 1; height: 2px; border-radius: 2px; background: var(--border); }
+.dd-head b { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 10px; font-size: 12px; }
+.dd-list { display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow-y: auto; padding: 2px; }
+.dd-card { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-radius: 24px; border: 2px solid var(--dd-edge);
+  background: linear-gradient(135deg, var(--dd-bg), color-mix(in srgb, var(--dd-bg) 30%, #fff)); }
+.dd-ic { flex: none; width: 64px; height: 64px; display: grid; place-items: center; font-size: 30px; border-radius: 20px; background: color-mix(in srgb, var(--dd-bg) 70%, #fff);
+  border: 3px solid #fff; box-shadow: 0 5px 0 var(--dd-edge); margin-bottom: 5px; }
+.dd-info { min-width: 0; }
+.dd-name { font-size: 15px; font-weight: 700; color: #4b5b73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-big { font-size: 38px; font-weight: 800; line-height: 1.15; color: #34455e; letter-spacing: -.01em; }
+.dd-meta { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #7b8aa0; }
+.dd-tag { display: inline-flex; align-items: center; gap: 4px; font-style: normal; font-weight: 700; font-size: 13px; color: #34455e; background: #fff; border-radius: 999px; padding: 2px 10px; }
+.dd-tag svg { fill: #e0679a; stroke: #e0679a; }
+.dd-edit { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+.dd-row { border: 1px dashed var(--border); border-radius: var(--r-sm); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.dd-row-top, .dd-row-bot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dd-row-top .input { flex: 1; min-width: 0; }
+.dd-row-top .dd-emoji { flex: none; width: 56px; text-align: center; padding-inline: 0; }

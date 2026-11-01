@@ -33,6 +33,7 @@ export const LAYOUTS = {
 export const RADII = { sharp: '4px', soft: '14px', round: '26px' };
 export const HEADERS = { center: '가운데', left: '왼쪽', banner: '대문 배너' };
 export const MAX_NEIGHBORS = 30;
+export const MAX_DDAYS = 12;
 
 /** 글 종류별 { show: 다른 사람에게 보이기, name: 바꾼 이름('' = 기본 이름) } */
 export function sanitizeKinds(k) {
@@ -150,10 +151,30 @@ export function setFavicon(f) {
 export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
-  avatar: '', banner: '', nbBanner: '', neighbors: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
+  avatar: '', banner: '', nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/** 디데이 목록 정리: { id, name, date:'YYYY-MM-DD', kind:'couple'|'dday', emoji } */
+export function sanitizeDdays(list) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const e of list) {
+    if (!e || typeof e !== 'object' || typeof e.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.date)) continue;
+    const [y, m, d] = e.date.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) continue;
+    const name = String(e.name ?? '').trim().slice(0, 20);
+    if (!name) continue;
+    out.push({
+      id: typeof e.id === 'string' && e.id ? e.id.slice(0, 20) : Math.random().toString(36).slice(2, 10),
+      name, date: e.date, kind: e.kind === 'dday' ? 'dday' : 'couple', emoji: clampIconText(e.emoji) || '💗',
+    });
+    if (out.length >= MAX_DDAYS) break;
+  }
+  return out;
+}
 
 /** 저장된(또는 남의) 테마를 안전한 값으로 정리 */
 export function sanitizeTheme(t) {
@@ -173,6 +194,7 @@ export function sanitizeTheme(t) {
     banner: typeof t.banner === 'string' ? t.banner : '',
     nbBanner: typeof t.nbBanner === 'string' ? t.nbBanner : '',
     neighbors: Array.isArray(t.neighbors) ? [...new Set(t.neighbors.filter((x) => typeof x === 'string' && x))].slice(0, MAX_NEIGHBORS) : [],
+    ddays: sanitizeDdays(t.ddays),
     kinds: sanitizeKinds(t.kinds),
     boards: sanitizeBoards(t.boards),
     uncat: t.uncat !== false,

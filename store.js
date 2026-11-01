@@ -4,7 +4,7 @@ import {
   sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, updatePassword,
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, writeBatch,
 } from './fb.js';
-import { AUTH_DOMAIN, BETA_HANDLES, NEIGHBORS_FOR_ALL } from './config.js';
+import { AUTH_DOMAIN, BETA_HANDLES, NEIGHBORS_FOR_ALL, DDAY_FOR_ALL } from './config.js';
 import { rid, inviteCode, txt } from './util.js';
 import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE, MAX_NEIGHBORS } from './theme.js';
 import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
@@ -389,6 +389,9 @@ export async function listInvitedMembers() {
 /** 이웃 배너 기능을 쓸 수 있는 사람인지 (보는 사람 기준) */
 export const neighborsOn = () => !!state.me && (NEIGHBORS_FOR_ALL || isBeta());
 
+/** 디데이 기능을 쓸 수 있는 사람인지 (보는 사람 기준) */
+export const ddayOn = () => !!state.me && (DDAY_FOR_ALL || isBeta());
+
 export const myNeighbors = () => sanitizeTheme(state.me?.theme).neighbors;
 export const isNeighbor = (uid) => myNeighbors().includes(uid);
 
@@ -398,7 +401,7 @@ export async function takeNeighbor(owner) {
   if (!owner?.uid || owner.uid === me) return;
   const cur = myNeighbors();
   if (cur.includes(owner.uid)) return;
-  if (cur.length >= MAX_NEIGHBORS) throw new Error(`이웃은 최대 ${MAX_NEIGHBORS}명까지 가져갈 수 있어요`);
+  if (cur.length >= MAX_NEIGHBORS) throw new Error(`가져온 배너는 최대 ${MAX_NEIGHBORS}개까지예요`);
   const b = writeBatch(db);
   b.update(doc(db, 'profiles', me), clean({ theme: { ...sanitizeTheme(state.me.theme), neighbors: [...cur, owner.uid] } }));
   b.set(doc(db, 'notifs', owner.uid, 'items', me), { at: Date.now(), read: false });

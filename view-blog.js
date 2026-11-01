@@ -1,9 +1,10 @@
 import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog, txt } from './util.js';
-import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
+import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
 import { selectField } from './widgets.js';
+import { ddayPill } from './dday.js';
 import { APP_NAME } from './config.js';
 
 export function avatarEl(prof, cls = '') {
@@ -119,7 +120,9 @@ export async function blog({ params, query, root }) {
     h('div', { class: 'head-in' },
       h('div', { class: 'head-side' }, avatarEl(prof, 'lg'), h('div', { class: 'blog-handle' }, '@' + prof.handle)),
       h('div', { class: 'head-text' },
-        h('h1', { class: 'blog-name' }, txt(prof.display) || prof.handle),
+        h('div', { class: 'name-row' },
+          h('h1', { class: 'blog-name' }, txt(prof.display) || prof.handle),
+          ddayOn() && theme.ddays.length ? ddayPill(theme.ddays) : null),
         bioText ? h('p', { class: 'blog-bio' }, bioText) : null,
         isOwner ? h('div', { class: 'head-actions' },
           h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), '새 글'),
@@ -305,15 +308,15 @@ export function bannerEl(p, { href = null, onclick = null, cls = '' } = {}) {
 function neighborZone(prof, theme, isOwner) {
   const hasMine = !!theme.nbBanner;
   const nbs = h('div', { class: 'nb-list' });
-  const zone = h('div', { class: 'side-sec nb-zone' }, h('h4', null, '이웃'));
+  const zone = h('div', { class: 'side-sec nb-zone' }, h('h4', null, '배너'));
   const paintNeighbors = async () => {
     const mine = isOwner ? state.me.theme.neighbors : theme.neighbors;
     const profs = (await Promise.all(mine.map((u) => getProfile(u).catch(() => null)))).filter(Boolean);
     nbs.replaceChildren(...profs.map((p) => {
       const wrap = h('div', { class: 'nb-item' }, bannerEl(p, { href: '#/u/' + p.handle }));
-      if (isOwner) wrap.append(h('button', { class: 'nb-x', type: 'button', title: '이웃에서 빼기', 'aria-label': '이웃에서 빼기', onclick: async () => {
-        if (!(await confirmDialog(`${txt(p.display) || p.handle} 님의 배너를 이웃에서 뺄까요?`, { ok: '빼기', danger: true }))) return;
-        try { await dropNeighbor(p.uid); toast('이웃에서 뺐어요'); paintNeighbors(); } catch (e) { toast(friendly(e)); }
+      if (isOwner) wrap.append(h('button', { class: 'nb-x', type: 'button', title: '내 배너 목록에서 빼기', 'aria-label': '내 배너 목록에서 빼기', onclick: async () => {
+        if (!(await confirmDialog(`${txt(p.display) || p.handle} 님의 배너를 내 배너 목록에서 뺄까요?`, { ok: '빼기', danger: true }))) return;
+        try { await dropNeighbor(p.uid); toast('내 배너 목록에서 뺐어요'); paintNeighbors(); } catch (e) { toast(friendly(e)); }
       } }, icon('x', 12)));
       return wrap;
     }));
@@ -329,18 +332,18 @@ function neighborZone(prof, theme, isOwner) {
         if (!state.me) { toast('로그인하면 배너를 가져갈 수 있어요'); return; }
         try {
           if (isNeighbor(prof.uid)) {
-            if (!(await confirmDialog('이미 내 이웃 배너로 가져온 블로그예요. 이웃에서 뺄까요?', { ok: '빼기', danger: true }))) return;
-            await dropNeighbor(prof.uid); toast('이웃에서 뺐어요');
-          } else { await takeNeighbor(prof); toast('배너를 내 이웃 목록으로 가져갔어요'); }
+            if (!(await confirmDialog('이미 내 배너 목록에 가져온 배너예요. 목록에서 뺄까요?', { ok: '빼기', danger: true }))) return;
+            await dropNeighbor(prof.uid); toast('내 배너 목록에서 뺐어요');
+          } else { await takeNeighbor(prof); toast('배너를 내 배너 목록으로 가져갔어요'); }
           paintTaken();
         } catch (e) { toast(friendly(e)); }
       } });
-      mineEl.title = '눌러서 내 이웃 배너로 가져가기';
+      mineEl.title = '눌러서 내 배너 목록으로 가져가기';
       paintTaken();
     }
   }
   zone.append(h('div', { class: 'nb-mine' }, mineEl,
-    isOwner && !hasMine ? h('a', { class: 'nb-empty', href: '#/settings?tab=design' }, '이웃 배너를 만들어 보세요') : null), nbs);
+    isOwner && !hasMine ? h('a', { class: 'nb-empty', href: '#/settings?tab=design' }, '배너를 만들어 보세요') : null), nbs);
   paintNeighbors();
   return zone;
 }
