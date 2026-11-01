@@ -1,6 +1,6 @@
 import { openImageCropper } from './crop.js';
 import { h, icon, toast, modal, loader, emptyState, autosize, askText, sortable, rid, txt } from './util.js';
-import { state, getPost, loadContent, unlockContent, savePost, saveBoards, friendly } from './store.js';
+import { state, getPost, listPosts, loadContent, unlockContent, savePost, saveBoards, friendly } from './store.js';
 import { applyTheme, sanitizeBoards, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
 import { datePicker, selectField, comboField } from './widgets.js';
 import { compressImage, loadImage, isUrl } from './images.js';
@@ -50,9 +50,10 @@ export async function editor({ params, query, root }) {
   // ── 이미지 상태: { src(올라간 주소) | data(아직 안 올린 데이터) } ──
   const origImages = [...(content?.images || [])];
   let imgs = [];
-  for (const ref of origImages) {
-    if (isUrl(ref)) imgs.push({ src: ref });
-    else { const d = await loadImage(ref); if (d) imgs.push({ data: d }); }   // 예전 방식 글은 저장할 때 ImgBB로 옮겨져요
+  for (const [idx, ref] of origImages.entries()) {
+    const sp = (content?.imgSp || []).includes(idx);
+    if (isUrl(ref)) imgs.push({ src: ref, spoiler: sp });
+    else { const d = await loadImage(ref); if (d) imgs.push({ data: d, spoiler: sp }); }   // 예전 방식 글은 저장할 때 ImgBB로 옮겨져요
   }
 
   // ── 입력 요소 ──
@@ -107,12 +108,14 @@ export async function editor({ params, query, root }) {
     const name = h('input', { class: 'input', placeholder: '변형 이름 (예: 사복, 교복, 수영복)', maxlength: '40', value: txt(v.name) });
     const p = mkTa(v.prompt, 3);
     p.placeholder = '이 변형에만 쓰는 프롬프트';
-    const row = { name, p };
+    const sp = h('input', { type: 'checkbox', checked: !!v.spoiler });
+    const row = { name, p, sp };
     const el = h('div', { class: 'char-row' },
       h('div', { class: 'char-head' },
         h('span', { class: 'grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)), name,
         h('button', { class: 'btn ghost sm icon', type: 'button', onclick: () => { varRows.splice(varRows.indexOf(row), 1); el.remove(); }, 'aria-label': '삭제' }, icon('x', 15))),
-      p);
+      p,
+      h('label', { class: 'check' }, sp, h('span', null, '스포일러 가리기 ', h('small', null, '(이 프롬프트만 흐리게 가리고, 눌러야 보여요)'))));
     row.el = el;
     varRows.push(row);
     varBox.append(el);
@@ -201,7 +204,31 @@ export async function editor({ params, query, root }) {
   // 태그
   const tagInput = h('input', { class: 'tag-input', placeholder: '태그 입력 후 Enter' });
   const tagBox = h('div', { class: 'tag-box', onclick: () => tagInput.focus() });
+  // 이전 글에서 쓴 태그: 눌러서 바로 추가 (많이 쓴 순서)
+  const SUGGEST_SHOW = 16;
+  const pastTags = [];
+  let suggestAll = false;
+  const suggestBox = h('div', { class: 'tag-suggest', hidden: true });
+  const paintSuggest = () => {
+    const avail = pastTags.filter((t) => !tags.includes(t));
+    suggestBox.hidden = avail.length === 0;
+    if (!avail.length) return;
+    const list = suggestAll ? avail : avail.slice(0, SUGGEST_SHOW);
+    suggestBox.replaceChildren(
+      h('small', { class: 'hint-line' }, '이전 글에서 쓴 태그 — 눌러서 추가'),
+      h('div', { class: 'tag-suggest-list' },
+        list.map((t) => h('button', { type: 'button', class: 'pill sm', title: '이 태그 추가', onclick: () => { addTagsFrom(t); } }, '#' + t)),
+        avail.length > SUGGEST_SHOW ? h('button', { type: 'button', class: 'pill sm more', onclick: () => { suggestAll = !suggestAll; paintSuggest(); } }, suggestAll ? '접기' : `+${avail.length - SUGGEST_SHOW}개 더`) : null));
+  };
+  listPosts(state.user.uid).then((posts) => {
+    const cnt = new Map();
+    posts.forEach((p) => (p.tags || []).map(txt).filter(Boolean).forEach((t) => cnt.set(t, (cnt.get(t) || 0) + 1)));
+    pastTags.push(...[...cnt.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]));
+    paintSuggest();
+  }).catch(() => { /* 태그 추천을 못 불러와도 글쓰기는 그대로 해요 */ });
+
   const paintTags = () => {
+    paintSuggest();
     tagBox.replaceChildren(...tags.map((t) =>
       h('span', { class: 'tag removable', 'data-tag': t }, h('span', { class: 'grip', title: '끌어서 순서 바꾸기' }, icon('grip', 12)), '#' + t, h('button', { type: 'button', onclick: (e) => { e.stopPropagation(); tags = tags.filter((x) => x !== t); paintTags(); }, 'aria-label': '삭제' }, '×'))), tagInput);
   };
@@ -244,7 +271,9 @@ export async function editor({ params, query, root }) {
         h('img', { src: im.data || im.src, alt: '', draggable: 'false' }),
         h('span', { class: 'grip img-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 14)),
         i === 0 ? h('span', { class: 'cover-tag' }, '대표') : null,
+        im.spoiler ? h('span', { class: 'sp-tag' }, icon('eye-off', 11), '스포일러') : null,
         h('div', { class: 'img-tools' },
+          h('button', { type: 'button', class: im.spoiler ? 'on' : '', title: im.spoiler ? '스포일러 가리기 끄기' : '스포일러로 가리기', onclick: () => { im.spoiler = !im.spoiler; paintImgs(); } }, icon('eye-off', 14)),
           h('button', { type: 'button', title: '자르기 (선택)', onclick: () => cropImg(im) }, icon('crop', 14)),
           i !== 0 ? h('button', { type: 'button', title: '대표 이미지로', onclick: () => { imgs.unshift(imgs.splice(i, 1)[0]); paintImgs(); } }, icon('star', 14)) : null,
           h('button', { type: 'button', title: '삭제', onclick: () => { imgs.splice(i, 1); paintImgs(); } }, icon('x', 14))));
@@ -341,7 +370,7 @@ export async function editor({ params, query, root }) {
     }
     if (kind === 'character') {
       body.variants = varRows
-        .map((r, i) => ({ name: r.name.value.trim() || `변형 ${i + 1}`, prompt: r.p.value.replace(/\s+$/, '') }))
+        .map((r, i) => ({ name: r.name.value.trim() || `변형 ${i + 1}`, prompt: r.p.value.replace(/\s+$/, ''), ...(r.sp.checked ? { spoiler: true } : {}) }))
         .filter((v) => v.prompt);
     }
     // 날짜를 바꾸지 않았으면 원래 시각을 그대로 두고, 바꿨으면 고른 날짜 + 지금 시각으로 저장해요
@@ -396,7 +425,7 @@ export async function editor({ params, query, root }) {
   const datePanel = panel('작성일', dateIn.el, h('small', { class: 'hint-line' }, '글에 표시되는 날짜예요. 원하는 날짜로 바꿀 수 있어요. 목록 순서는 블로그에서 카드를 끌어서 정해요.'));
   const imgPanel = panel('이미지', drop, fileIn, imgGrid,
     h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`));
-  const tagPanel = panel('태그', tagBox);
+  const tagPanel = panel('태그', tagBox, suggestBox);
   const paramPanel = panel('생성 설정', paramGrid,
     h('small', { class: 'hint-line' }, 'Effort는 V5 Full 전용이에요. Medium은 14 steps·Euler Ancestral로 고정돼요.'));
   const importPanel = panel('가져오기',

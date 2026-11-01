@@ -18,7 +18,7 @@ const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').ma
  * refs: 이미지 주소(또는 예전 방식 이미지 ID) 배열
  * onOpen(index): 이미지를 눌렀을 때 (크게 보기)
  */
-export function imageGallery(refs, { onOpen } = {}) {
+export function imageGallery(refs, { onOpen, spoilers = new Set(), revealed = new Set() } = {}) {
   const root = h('div', { class: 'gal' }, h('div', { class: 'gal-skel' }, h('span', { class: 'spin' })));
 
   (async () => {
@@ -37,10 +37,20 @@ export function imageGallery(refs, { onOpen } = {}) {
       else slides.push({ kind: it.portrait ? 'solo' : 'wide', items: [it] });
     }
 
+    // 스포일러로 가린 이미지: 처음엔 흐리게 가리고, 한 번 누르면 풀려요 (그 다음부터는 크게 보기)
+    const figs = new Map();
+    const unhide = (i) => { revealed.add(i); const f = figs.get(i); if (f) { f.classList.remove('sp'); f.querySelector('.sp-cover')?.remove(); f.setAttribute('aria-label', `이미지 ${i + 1} 크게 보기`); } };
+    root.reveal = unhide;
     const fig = (it) => {
       if (!it.src) return h('div', { class: 'gfig missing' }, '이미지를 불러올 수 없어요');
-      return h('button', { class: 'gfig', type: 'button', onclick: () => onOpen?.(it.index), 'aria-label': `이미지 ${it.index + 1} 크게 보기` },
-        h('img', { src: it.src, alt: '', draggable: 'false', decoding: 'async' }));
+      const hidden = spoilers.has(it.index) && !revealed.has(it.index);
+      const el = h('button', { class: 'gfig' + (hidden ? ' sp' : ''), type: 'button',
+        onclick: () => { if (el.classList.contains('sp')) unhide(it.index); else onOpen?.(it.index); },
+        'aria-label': hidden ? `이미지 ${it.index + 1} (스포일러, 눌러서 보기)` : `이미지 ${it.index + 1} 크게 보기` },
+        h('img', { src: it.src, alt: '', draggable: 'false', decoding: 'async' }),
+        hidden ? h('span', { class: 'sp-cover' }, icon('eye-off', 22), h('strong', null, '스포일러'), h('small', null, '눌러서 보기')) : null);
+      figs.set(it.index, el);
+      return el;
     };
     const only = items.length === 1;
     const slideEls = slides.map((s) => h('div', { class: `gslide ${s.kind}` + (only ? ' only' : '') }, s.items.map(fig)));

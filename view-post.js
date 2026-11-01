@@ -75,15 +75,21 @@ function renderBody(content, kind = 'style') {
   // 글쓴이가 칸마다 바꾼 이름 (비어 있으면 기본 이름)
   const L = { prompt: txt(content.labels?.prompt).trim(), negative: txt(content.labels?.negative).trim(), notes: txt(content.labels?.notes).trim() };
   const ids = content.images || [];
-  if (ids.length) wrap.append(imageGallery(ids, { onOpen: (idx) => openLightbox(ids, idx) }));
+  if (ids.length) {
+    const spoilers = new Set((content.imgSp || []).filter((n) => Number.isInteger(n)));   // 스포일러로 가린 이미지 번호
+    const revealed = new Set();
+    const gal = imageGallery(ids, { spoilers, revealed, onOpen: (idx) => openLightbox(ids, idx, { spoilers, revealed, onReveal: (i) => gal.reveal?.(i) }) });
+    wrap.append(gal);
+  }
   if (kind === 'character') {
     wrap.append(promptBlock(L.prompt || '캐릭터 프롬프트', content.prompt, { variant: 'pos' }));
     (content.variants || []).forEach((v) => {
       const both = [txt(content.prompt), txt(v.prompt)].filter((x) => x.trim()).join(', ');
-      wrap.append(promptBlock(txt(v.name) || '변형', v.prompt, {
+      const blk = promptBlock(txt(v.name) || '변형', v.prompt, {
         variant: 'pos',
         extra: [h('button', { class: 'btn sm', onclick: () => copyText(both, '기본 + 변형을 함께 복사했어요') }, ...btnKids('withBase'))],
-      }));
+      });
+      if (blk) wrap.append(v.spoiler ? spoilerWrap(blk) : blk);   // 변형마다 스포일러 가리기
     });
   } else {
     wrap.append(promptBlock(L.prompt || (kind === 'style' ? '그림체 프롬프트' : '프롬프트'), content.prompt, { variant: 'pos' }));

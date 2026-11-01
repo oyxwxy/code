@@ -8,7 +8,7 @@ import { loadImage } from './images.js';
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const MAX_ZOOM = 6;
 
-export function openLightbox(refs, start = 0) {
+export function openLightbox(refs, start = 0, { spoilers = new Set(), revealed = new Set(), onReveal } = {}) {
   let i = clamp(start, 0, refs.length - 1), token = 0;
   let nat = null;                       // 현재 이미지 원본 크기
   const view = { s: 1, x: 0, y: 0 };    // 확대 배율 / 이동량(px)
@@ -29,8 +29,11 @@ export function openLightbox(refs, start = 0) {
     zoomTxt,
     h('button', { class: 'lb-btn sm', type: 'button', 'aria-label': '확대', onclick: () => zoomBy(1.4) }, icon('plus', 18)));
 
+  const spCover = h('button', { class: 'lb-sp', type: 'button', onclick: () => {
+    revealed.add(i); onReveal?.(i); box.classList.remove('sp-hidden');
+  } }, icon('eye-off', 26), h('strong', null, '스포일러'), h('small', null, '눌러서 보기'));
   const box = h('div', { class: 'lightbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': '이미지 크게 보기' },
-    stage, spin,
+    stage, spCover, spin,
     h('button', { class: 'lb-btn lb-close', type: 'button', 'aria-label': '닫기', onclick: () => close() }, icon('x', 22)),
     prevBtn, nextBtn, count, tools);
 
@@ -74,6 +77,7 @@ export function openLightbox(refs, start = 0) {
   async function go(n) {
     if (!multi && img.src) return;
     i = (n + refs.length) % refs.length;
+    box.classList.toggle('sp-hidden', spoilers.has(i) && !revealed.has(i));
     count.textContent = multi ? `${i + 1} / ${refs.length}` : '';
     const my = ++token;
     img.classList.add('loading');

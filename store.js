@@ -301,7 +301,9 @@ export async function savePost({
     }
     urls.push(im.src);
   }
+  const imgSp = images.map((im, i) => (im.spoiler ? i : -1)).filter((i) => i >= 0);   // 스포일러로 가린 이미지 번호
   content = { ...content, images: urls };
+  if (imgSp.length) content.imgSp = imgSp; else delete content.imgSp;
 
   let thumb = '';
   const first = images[0];
@@ -319,7 +321,7 @@ export async function savePost({
     title: (title || '').trim() || '제목 없음', vis,
     unlisted: !!unlisted && vis !== 'private', spoiler: !!spoiler && vis === 'public', tags,
     excerpt: '',   // 목록 카드에는 프롬프트·메모 내용을 보여주지 않아요
-    thumb, imgCount: urls.length, created: created || prev?.created || now, updated: now,
+    thumb, thumbSp: !!images[0]?.spoiler && vis !== 'locked', imgCount: urls.length, created: created || prev?.created || now, updated: now,
   };
   if (typeof prev?.order === 'number') post.order = prev.order;   // 직접 정한 순서 유지
   const body = { owner: uid, vis, updated: now };

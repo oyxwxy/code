@@ -61,7 +61,7 @@ export function postCard(p, isOwner, canSort = false, boardLabel = null) {
   const box = h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip' }, icon('image', 12), p.imgCount) : null);
   if (img) fitThumb(img, box, th);
   const tags = (p.tags || []).map(txt).filter(Boolean);
-  return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : '') + (sp ? ' spoiler' : ''), href: '#/p/' + p.id, draggable: 'false', 'data-id': p.id },
+  return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : '') + (sp ? ' spoiler' : '') + (p.thumbSp ? ' thumb-sp' : ''), href: '#/p/' + p.id, draggable: 'false', 'data-id': p.id },
     canSort ? h('span', { class: 'grip card-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)) : null,
     isOwner ? h('span', { class: 'card-check', 'aria-hidden': 'true' }, icon('check', 14)) : null,
     box,
