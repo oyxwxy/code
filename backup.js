@@ -1,9 +1,10 @@
 // 백업(내보내기) / 복원(가져오기) / NovelAI 이미지 일괄 가져오기
-import { h, icon, toast, copyText, downloadBlob, confirmDialog } from './util.js';
-import { state, listPosts, loadContent, savePost, friendly } from './store.js';
+import { h, icon, toast, copyText, downloadBlob, confirmDialog, txt } from './util.js';
+import { state, listPosts, loadContent, savePost, saveBoards, friendly } from './store.js';
+import { sanitizeBoards } from './theme.js';
+import { selectField } from './widgets.js';
 import { loadImage, compressImage, isUrl } from './images.js';
 import { readImageMeta } from './nai.js';
-import { selectField } from './pickers.js';
 import { KINDS, kindOf, kindLabel } from './kinds.js';
 
 const FORMAT = 'promptbox-backup';
@@ -34,7 +35,7 @@ async function exportAll({ onProgress }) {
     try { r = await loadContent(p, { fresh: true }); } catch { skipped++; continue; }
     if (r.needPassword) { skipped++; continue; }   // 사본이 없는 잠금 글은 건너뜀
     const it = {
-      id: p.id, kind: kindOf(p), title: p.title, vis: p.vis, unlisted: !!p.unlisted, spoiler: !!p.spoiler, tags: p.tags || [],
+      id: p.id, kind: kindOf(p), board: p.board || '', title: txt(p.title), vis: p.vis, unlisted: !!p.unlisted, spoiler: !!p.spoiler, tags: p.tags || [],
       created: p.created, updated: p.updated, content: r.content,
     };
     if (r.lock) it.lock = r.lock;
@@ -48,8 +49,9 @@ async function exportAll({ onProgress }) {
   }
   onProgress(posts.length, posts.length, '완료');
   const data = {
-    format: FORMAT, version: 2, exported: Date.now(),
+    format: FORMAT, version: 3, exported: Date.now(),
     profile: { handle: state.me.handle, display: state.me.display, bio: state.me.bio },
+    boards: sanitizeBoards(state.me.theme.boards),
     posts: items,
   };
   return { blob: new Blob([JSON.stringify(data)], { type: 'application/json' }), count: items.length, skipped };
@@ -58,6 +60,11 @@ async function exportAll({ onProgress }) {
 async function importBackup(data, { onProgress }) {
   if (data?.format !== FORMAT || !Array.isArray(data.posts)) throw new Error('이 사이트의 백업 파일이 아니에요');
   const mine = new Set((await listPosts(state.user.uid)).map((p) => p.id));
+  // 백업에 들어 있는 게시판 중 내 계정에 없는 것은 추가해요
+  const have = sanitizeBoards(state.me.theme.boards);
+  const extra = sanitizeBoards(data.boards).filter((b) => !have.some((x) => x.id === b.id));
+  if (extra.length) { try { await saveBoards([...have, ...extra]); } catch (e) { console.error(e); } }
+  const boardIds = new Set(sanitizeBoards(state.me.theme.boards).map((b) => b.id));
   let ok = 0, skip = 0, fail = 0;
   for (let i = 0; i < data.posts.length; i++) {
     const it = data.posts[i];
@@ -68,7 +75,7 @@ async function importBackup(data, { onProgress }) {
         .map((ref) => (isUrl(ref) ? { src: ref } : it.images?.[ref] ? { data: it.images[ref] } : null))
         .filter(Boolean);
       await savePost({
-        id: it.id, kind: it.kind || 'style', title: it.title, vis: it.vis || 'private', unlisted: !!it.unlisted, spoiler: !!it.spoiler, tags: it.tags || [],
+        id: it.id, kind: it.kind || 'style', board: boardIds.has(it.board) ? it.board : '', title: it.title, vis: it.vis || 'private', unlisted: !!it.unlisted, spoiler: !!it.spoiler, tags: it.tags || [],
         content: { ...it.content, images: [] }, images, lock: it.lock || null, created: it.created,
         password: '',
       });
@@ -124,8 +131,11 @@ export function backupTab() {
 
   // ── 이미지 일괄 가져오기 ──
   const bulkIn = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true });
-  const bulkKind = selectField({ options: Object.keys(KINDS).map((k) => [k, kindLabel(k)]), value: 'style', label: '글 종류', block: true });
-  const bulkVis = selectField({ options: [['private', '비공개'], ['public', '공개'], ['locked', '비밀번호']], value: 'private', label: '공개 범위', block: true });
+  const showPw = () => { bulkPw.style.display = bulkVis.value === 'locked' ? '' : 'none'; };
+  const bulkKind = selectField({ options: Object.keys(KINDS).map((k) => [k, kindLabel(k)]), value: 'style', label: '글 종류' });
+  const bulkVis = selectField({ options: [['private', '비공개'], ['public', '공개'], ['locked', '비밀번호']], value: 'private', label: '공개 범위', onChange: () => showPw() });
+  const myBoards = sanitizeBoards(state.me.theme.boards);
+  const bulkBoard = selectField({ options: [['', '미분류'], ...myBoards.map((b) => [b.id, b.name])], value: '', label: '게시판' });
   const bulkPw = h('input', { class: 'input', type: 'password', placeholder: '비밀번호 (잠금일 때)', autocomplete: 'new-password' });
   const bulkTags = h('input', { class: 'input', placeholder: '태그 (쉼표로 구분, 선택)' });
   const bulkProg = progressBar();
@@ -144,7 +154,7 @@ export function backupTab() {
         const [data, meta] = await Promise.all([compressImage(f), readImageMeta(f)]);
         if (!meta) noMeta++;
         await savePost({
-          kind, title: f.name.replace(/\.[^.]+$/, ''), vis, tags,
+          kind, board: bulkBoard.value, title: f.name.replace(/\.[^.]+$/, ''), vis, tags,
           content: contentFromMeta(kind, meta),
           images: [{ data }], password: vis === 'locked' ? bulkPw.value : '',
         });
@@ -155,8 +165,6 @@ export function backupTab() {
     toast(`${ok}개 글을 만들었어요${noMeta ? ` (프롬프트 정보 없음 ${noMeta})` : ''}${fail ? ` · 실패 ${fail}` : ''}`, { ms: 5000 });
     setTimeout(() => bulkProg.hide(), 1500);
   });
-  const showPw = () => { bulkPw.style.display = bulkVis.value === 'locked' ? '' : 'none'; };
-  bulkVis.addEventListener('change', showPw);
   showPw();
 
   wrap.append(
@@ -172,8 +180,9 @@ export function backupTab() {
       h('h3', { class: 'panel-title' }, 'NovelAI 이미지로 한 번에 만들기'),
       h('p', { class: 'desc' }, '이미지를 여러 장 고르면, 이미지마다 프롬프트를 읽어 글을 하나씩 만들어요. 올릴 때 메타데이터는 지워져요. (그림체는 부정·생성 설정까지, 캐릭터는 V4 캐릭터 프롬이 변형으로 들어가요)'),
       h('div', { class: 'grid-2' },
-        h('label', { class: 'field' }, h('span', { class: 'lbl' }, '글 종류'), bulkKind),
-        h('label', { class: 'field' }, h('span', { class: 'lbl' }, '공개 범위'), bulkVis, bulkPw)),
+        h('div', { class: 'field' }, h('span', { class: 'lbl' }, '글 종류'), bulkKind.el),
+        h('div', { class: 'field' }, h('span', { class: 'lbl' }, '공개 범위'), bulkVis.el, bulkPw)),
+      myBoards.length ? h('div', { class: 'field' }, h('span', { class: 'lbl' }, '게시판'), bulkBoard.el) : null,
       h('label', { class: 'field' }, h('span', { class: 'lbl' }, '공통 태그'), bulkTags),
       h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: () => bulkIn.click() }, icon('image', 16), '이미지 선택하고 만들기'), bulkIn), bulkProg.el));
   return wrap;

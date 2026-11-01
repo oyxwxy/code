@@ -3,7 +3,7 @@ export const $ = (sel, root = document) => root.querySelector(sel);
 
 export function append(el, kids) {
   for (const k of kids.flat(Infinity)) {
-    if (k == null || k === false || k === 'null' || k === 'undefined') continue;
+    if (k == null || k === false) continue;
     el.append(k.nodeType ? k : document.createTextNode(String(k)));
   }
 }
@@ -18,7 +18,7 @@ export function h(tag, attrs, ...kids) {
       if (k === 'class') el.className = v;
       else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
       else if (k === 'html') el.innerHTML = v;
-      else if (k === 'value') value = v === 'null' || v === 'undefined' ? '' : v;
+      else if (k === 'value') value = v;
       else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
       else if (k === 'checked' || k === 'disabled' || k === 'selected') el[k] = !!v;
       else el.setAttribute(k, v === true ? '' : v);
@@ -56,11 +56,13 @@ const ICONS = {
   palette: '<circle cx="13.5" cy="6.5" r=".6"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="8.5" cy="7.5" r=".6"/><circle cx="6.5" cy="12.5" r=".6"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.12a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
   chevl: '<polyline points="15 18 9 12 15 6"/>',
   chevr: '<polyline points="9 18 15 12 9 6"/>',
-  chevd: '<polyline points="6 9 12 15 18 9"/>',
-  minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
-  calendar: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
   grip: '<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',
   eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  chevd: '<polyline points="6 9 12 15 18 9"/>',
+  folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
+  move: '<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>',
 };
 
 export function icon(name, size = 18) {
@@ -150,6 +152,13 @@ export function emptyState(title, desc, action) {
   return h('div', { class: 'empty' }, h('h3', null, title), desc ? h('p', null, desc) : null, action || null);
 }
 
+/** 화면에 찍을 글: null · undefined · 'null' 같은 값은 빈 글자로 (화면에 'null'이 보이지 않게) */
+export const txt = (v) => {
+  if (v == null) return '';
+  const s = String(v);
+  return /^\s*(null|undefined|NaN)\s*$/i.test(s) ? '' : s;
+};
+
 export const initial = (s) => (s || '?').trim().slice(0, 1).toUpperCase();
 
 // ───────── 값 도우미 ─────────
@@ -167,7 +176,7 @@ export function inviteCode(n = 10) {
 }
 
 export function fmtDate(ts) {
-  if (!ts || Number.isNaN(new Date(ts).getTime())) return '';
+  if (!ts) return '';
   return new Date(ts).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 

@@ -1,14 +1,14 @@
-import { h, icon, toast, copyText, loader, confirmDialog, askText } from './util.js';
-import { state, updateProfile, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
-import { colorField, numberField } from './pickers.js';
-import { applyTheme, sanitizeTheme, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME } from './theme.js';
+import { h, icon, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
+import { state, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
-import { compressImage, uploadImage, removeImages } from './images.js';
+import { compressImage, uploadImage, removeImages, makeIcon } from './images.js';
+import { colorField, stepper } from './widgets.js';
 import { postCard, avatarEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { MEMBER_INVITE_LIMIT } from './config.js';
 
-const TABS = [['profile', 'user', '프로필'], ['design', 'palette', '디자인'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
+const TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '디자인'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 
 export async function settings({ root, query }) {
   if (!state.me) { location.replace('#/login?next=' + encodeURIComponent('/settings')); return; }
@@ -23,7 +23,7 @@ export async function settings({ root, query }) {
   async function show() {
     content.replaceChildren(loader());
     if (tab !== 'design') applyTheme(state.me.theme);
-    const node = tab === 'profile' ? profileTab() : tab === 'design' ? designTab() : tab === 'invite' ? await inviteTab() : backupTab();
+    const node = tab === 'profile' ? profileTab() : tab === 'boards' ? boardsTab() : tab === 'design' ? designTab() : tab === 'invite' ? await inviteTab() : backupTab();
     content.replaceChildren(node);
   }
   root.append(
@@ -99,6 +99,7 @@ function profileTab() {
       h('label', { class: 'field' }, h('span', { class: 'lbl' }, '표시 이름'), display),
       h('label', { class: 'field' }, h('span', { class: 'lbl' }, '소개'), bio),
       h('div', { class: 'row' }, saveBtn)),
+    faviconPanel(),
     h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '내 블로그 주소'),
       h('p', { class: 'desc' }, '이 링크를 공유하면 공개 글과 비밀번호 글 목록을 볼 수 있어요.'),
@@ -115,6 +116,137 @@ function profileTab() {
         h('button', { class: 'btn', onclick: onPw }, icon('lock', 15), '비밀번호 변경'))),
     h('section', { class: 'panel' },
       h('button', { class: 'btn', onclick: async () => { await signOutUser(); location.hash = '#/'; } }, icon('logout', 16), '로그아웃')));
+}
+
+// ───────── 파비콘 (브라우저 탭 아이콘) ─────────
+function faviconPanel() {
+  const prev = h('div', { class: 'fav-prev' });
+  const paint = () => {
+    const href = faviconHref(sanitizeTheme(state.me.theme).favicon);
+    prev.replaceChildren(
+      h('img', { class: 'fav-big', src: href, alt: '파비콘 미리보기' }),
+      h('div', { class: 'fav-tab' }, h('img', { src: href, alt: '' }), h('span', null, `${txt(state.me.display) || state.me.handle} · Drawer`)));
+  };
+  const save = async (favicon) => {
+    await updateProfile({ theme: { ...sanitizeTheme(state.me.theme), favicon } });
+    applyTheme(state.me.theme);
+    paint();
+  };
+
+  const file = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  file.addEventListener('change', async () => {
+    const f = file.files[0];
+    file.value = '';
+    if (!f) return;
+    try {
+      const url = await uploadImage(await makeIcon(f), 'icon');
+      await save({ type: 'image', src: url });
+      toast('파비콘을 바꿨어요');
+    } catch (e) { toast(friendly(e)); }
+  });
+
+  const openText = () => {
+    const cur = sanitizeTheme(state.me.theme).favicon;
+    let bg = cur?.type === 'text' ? cur.bg : sanitizeTheme(state.me.theme).accent;
+    const input = h('input', { class: 'input', maxlength: '8', placeholder: '✨ 또는 A', value: cur?.type === 'text' ? cur.text : '✨', 'aria-label': '글자 또는 이모지', autocomplete: 'off' });
+    const big = h('img', { class: 'fav-big', alt: '' });
+    const draw = () => { big.src = faviconHref({ type: 'text', text: clampIconText(input.value) || '?', bg }); };
+    const color = colorField({ value: bg, label: '아이콘 배경색', onInput: (v) => { bg = v; draw(); } });
+    input.addEventListener('input', draw);
+    draw();
+    modal({
+      title: '글자·이모지로 파비콘 만들기',
+      body: h('div', { class: 'fav-maker' },
+        big,
+        h('div', { class: 'fav-fields' },
+          h('div', { class: 'field' }, h('span', { class: 'lbl' }, '글자 또는 이모지 (최대 2글자)'), input),
+          h('div', { class: 'field' }, h('span', { class: 'lbl' }, '배경색'), color.el))),
+      actions: [{ label: '취소', kind: 'ghost' }, {
+        label: '적용', kind: 'primary',
+        onClick: async () => {
+          const text = clampIconText(input.value);
+          if (!text) { toast('글자나 이모지를 입력해 주세요'); return false; }
+          try { await save({ type: 'text', text, bg }); toast('파비콘을 바꿨어요'); }
+          catch (e) { toast(friendly(e)); return false; }
+        },
+      }],
+    });
+    setTimeout(() => input.focus(), 80);
+  };
+
+  const reset = async () => {
+    try { await save(null); toast('기본 아이콘으로 되돌렸어요'); } catch (e) { toast(friendly(e)); }
+  };
+  paint();
+  return h('section', { class: 'panel' },
+    h('h3', { class: 'panel-title' }, '파비콘'),
+    h('p', { class: 'desc' }, '브라우저 탭에 뜨는 작은 아이콘이에요. 내 블로그와 내 글을 보는 사람에게는 내가 정한 아이콘이 보여요. 이미지는 가운데를 정사각형으로 잘라 올려요.'),
+    prev,
+    h('div', { class: 'row' },
+      h('button', { class: 'btn sm', onclick: () => file.click() }, icon('image', 14), '이미지 올리기'),
+      h('button', { class: 'btn sm', onclick: openText }, icon('sparkle', 14), '글자·이모지로 만들기'),
+      h('button', { class: 'btn ghost sm', onclick: reset }, '기본으로'), file));
+}
+
+// ───────── 게시판 ─────────
+function boardsTab() {
+  let boards = sanitizeBoards(state.me.theme.boards).map((b) => ({ ...b }));
+  const listEl = h('div', { class: 'bset' });
+  const empty = h('p', { class: 'desc' }, '아직 게시판이 없어요. 아래에서 첫 게시판을 만들어 보세요.');
+  const newIn = h('input', { class: 'input', maxlength: String(MAX_BOARD_NAME), placeholder: '새 게시판 이름 (예: 완성작, 연구 중)', 'aria-label': '새 게시판 이름' });
+  let dirty = false;
+  const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
+    saveBtn.disabled = true;
+    try {
+      await saveBoards(boards);
+      boards = sanitizeBoards(state.me.theme.boards).map((b) => ({ ...b }));
+      dirty = false;
+      paint();
+      toast('게시판을 저장했어요');
+    } catch (e) { toast(friendly(e)); }
+    finally { saveBtn.disabled = false; }
+  } }, icon('check', 16), '저장');
+  const note = h('small', { class: 'hint-line' });
+
+  const touch = () => { dirty = true; note.textContent = '저장하지 않은 변경이 있어요'; };
+  function paint() {
+    note.textContent = dirty ? '저장하지 않은 변경이 있어요' : '';
+    empty.hidden = boards.length > 0;
+    listEl.replaceChildren(...boards.map((b) =>
+      h('div', { class: 'bset-row', 'data-id': b.id },
+        h('span', { class: 'grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)),
+        h('span', { class: 'kset-ic' }, icon('folder', 18)),
+        h('input', { class: 'input', maxlength: String(MAX_BOARD_NAME), value: b.name, 'aria-label': '게시판 이름', oninput: (e) => { b.name = e.target.value; touch(); } }),
+        h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '게시판 삭제', onclick: async () => {
+          if (!(await confirmDialog(`'${b.name}' 게시판을 지울까요? 이 게시판의 글은 지워지지 않고 '미분류'로 돌아가요.`, { ok: '삭제', danger: true }))) return;
+          boards = boards.filter((x) => x.id !== b.id);
+          touch();
+          paint();
+        } }, icon('trash', 15)))));
+  }
+  sortable(listEl, {
+    item: '.bset-row', handle: '.grip',
+    onSort: (els) => { const by = new Map(boards.map((b) => [b.id, b])); boards = els.map((e) => by.get(e.dataset.id)).filter(Boolean); touch(); },
+  });
+  const add = () => {
+    const name = newIn.value.trim();
+    if (!name) return;
+    if (boards.length >= MAX_BOARDS) { toast(`게시판은 최대 ${MAX_BOARDS}개까지예요`); return; }
+    boards.push({ id: rid(8), name: name.slice(0, MAX_BOARD_NAME) });
+    newIn.value = '';
+    touch();
+    paint();
+    newIn.focus();
+  };
+  newIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+  paint();
+  return h('div', { class: 'tab-body' },
+    h('section', { class: 'panel' },
+      h('h3', { class: 'panel-title' }, '게시판'),
+      h('p', { class: 'desc' }, '글을 분류하는 폴더예요. 글쓰기에서 게시판을 고르고, 블로그 위쪽 탭으로 게시판별로 모아 봐요. 이미 있는 글은 블로그에서 ‘게시판으로 옮기기’로 한꺼번에 옮길 수 있어요. 글이 없는 게시판은 다른 사람에게 보이지 않아요.'),
+      empty, listEl,
+      h('div', { class: 'row' }, newIn, h('button', { class: 'btn', onclick: add }, icon('plus', 15), '추가'))),
+    h('div', { class: 'row between' }, note, saveBtn));
 }
 
 // ───────── 디자인 ─────────
@@ -184,8 +316,11 @@ function designTab() {
         style: { background: p.bg, '--sw': p.accent },
         onclick: () => set({ preset: p.id, bg: p.bg, accent: p.accent }),
       }, h('i'), h('span', null, p.name))));
-    const bgIn = colorField({ value: T.bg, label: '배경색', swatches: PRESETS.map((x) => x.bg), onInput: (c) => set({ preset: 'custom', bg: c }, false), onDone: () => build() });
-    const acIn = colorField({ value: T.accent, label: '포인트색', swatches: PRESETS.map((x) => x.accent), onInput: (c) => set({ preset: 'custom', accent: c }, false), onDone: () => build() });
+    // 브라우저 기본 색 선택기 대신 직접 만든 선택기 (고르는 동안 바로 적용돼요)
+    // 화면을 다시 그리면 열려 있는 창 밖을 누르는 순간 버튼이 바뀌어 클릭이 씹히므로, 프리셋 표시만 제자리에서 풀어요
+    const custom = (patch) => { set({ preset: 'custom', ...patch }, false); host.querySelectorAll('.swatch.on').forEach((e) => e.classList.remove('on')); };
+    const bgIn = colorField({ value: T.bg, label: '배경색', onInput: (v) => custom({ bg: v }) });
+    const acIn = colorField({ value: T.accent, label: '포인트색', onInput: (v) => custom({ accent: v }) });
 
     const bannerFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
     bannerFile.addEventListener('change', async () => {
@@ -210,8 +345,8 @@ function designTab() {
         h('h3', { class: 'panel-title' }, '색상'),
         sw,
         h('div', { class: 'color-row' },
-          h('div', { class: 'color-item' }, h('span', null, '배경색'), bgIn),
-          h('div', { class: 'color-item' }, h('span', null, '포인트색'), acIn),
+          h('div', { class: 'cf-item' }, h('span', null, '배경색'), bgIn.el),
+          h('div', { class: 'cf-item' }, h('span', null, '포인트색'), acIn.el),
           h('small', { class: 'hint-line' }, '배경이 어두우면 자동으로 다크 모드가 돼요'))),
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '글꼴'),
@@ -244,7 +379,7 @@ function designTab() {
         h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('디자인을 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, kinds: T.kinds });
+          if (await confirmDialog('디자인을 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, kinds: T.kinds, boards: T.boards, favicon: T.favicon });
         } }, '기본값으로'),
         saveBtn),
       h('h3', { class: 'preview-title' }, '미리보기'),
@@ -265,13 +400,13 @@ async function inviteTab() {
   catch (e) { toast(friendly(e)); }
 
   const link = (code) => location.origin + location.pathname + '#/join/' + code;
-  const maxIn = numberField({ value: 1, min: 1, max: 1000, label: '사용 횟수' });
+  const maxIn = stepper({ value: 1, min: 1, max: 1000 });
   const left = Math.max(0, MEMBER_INVITE_LIMIT - (me.inviteCount || 0));
 
   const make = h('button', { class: 'btn primary', onclick: async () => {
     make.disabled = true;
     try {
-      const code = await createInvite(isAdmin ? Number(maxIn.value) || 1 : 1);
+      const code = await createInvite(isAdmin ? maxIn.value : 1);
       await copyText(link(code), '초대 링크를 만들어 복사했어요');
       wrap.replaceWith(await inviteTab());
     } catch (e) { toast(friendly(e)); make.disabled = false; }
@@ -284,7 +419,7 @@ async function inviteTab() {
       h('p', { class: 'desc' }, isAdmin
         ? '코드 하나로 여러 명이 가입할 수 있게 사용 횟수를 정할 수 있어요.'
         : `초대코드는 1회용이고 최대 ${MEMBER_INVITE_LIMIT}개까지 만들 수 있어요. (남은 개수 ${left}개)`),
-      h('div', { class: 'row' }, isAdmin ? h('label', { class: 'inline' }, h('span', null, '사용 가능 횟수'), maxIn) : null, make)),
+      h('div', { class: 'row' }, isAdmin ? h('div', { class: 'inline' }, h('span', null, '사용 가능 횟수'), maxIn.el) : null, make)),
     h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '내가 만든 초대코드'),
       invites.length ? h('div', { class: 'list' }, invites.map((i) =>

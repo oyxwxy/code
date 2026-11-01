@@ -1,10 +1,10 @@
-import { h, icon, toast, modal, loader, emptyState, autosize, askText, sortable } from './util.js';
-import { state, getPost, loadContent, unlockContent, savePost, friendly } from './store.js';
-import { applyTheme } from './theme.js';
+import { h, icon, toast, modal, loader, emptyState, autosize, askText, sortable, rid, txt } from './util.js';
+import { state, getPost, loadContent, unlockContent, savePost, saveBoards, friendly } from './store.js';
+import { applyTheme, sanitizeBoards, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
+import { datePicker, selectField, comboField } from './widgets.js';
 import { compressImage, loadImage, isUrl } from './images.js';
 import { readImageMeta, parseGenText, PARAM_FIELDS } from './nai.js';
 import { MAX_IMAGES } from './config.js';
-import { dateField, selectField, comboField } from './pickers.js';
 import { KINDS, kindOf, kindLabel } from './kinds.js';
 
 const MODELS = ['NovelAI Diffusion V5 Full', 'NovelAI Diffusion V5 Curated', 'NovelAI Diffusion V4.5 Full', 'NovelAI Diffusion V4.5 Curated', 'NovelAI Diffusion V4 Full', 'NovelAI Diffusion V4 Curated', 'NovelAI Diffusion Anime V3', 'NovelAI Diffusion Furry V3'];
@@ -57,9 +57,9 @@ export async function editor({ params, query, root }) {
   // ── 입력 요소 ──
   let vis = prev?.vis || 'public';
   let tags = [...(prev?.tags || [])];
-  const titleIn = h('input', { class: 'input title-input', maxlength: '120', value: prev?.title || '' });
+  const titleIn = h('input', { class: 'input title-input', maxlength: '120', value: txt(prev?.title) });
   const mkTa = (value, rows, cls = 'mono') => {
-    const t = h('textarea', { class: 'textarea ' + cls, rows: String(rows), spellcheck: 'false', value: value || '' });
+    const t = h('textarea', { class: 'textarea ' + cls, rows: String(rows), spellcheck: 'false', value: txt(value) });
     autosize(t);
     return t;
   };
@@ -73,7 +73,7 @@ export async function editor({ params, query, root }) {
   const varBox = h('div', { class: 'chars' });
   const varRows = [];
   const addVariant = (v = {}) => {
-    const name = h('input', { class: 'input', placeholder: '변형 이름 (예: 사복, 교복, 수영복)', maxlength: '40', value: v.name || '' });
+    const name = h('input', { class: 'input', placeholder: '변형 이름 (예: 사복, 교복, 수영복)', maxlength: '40', value: txt(v.name) });
     const p = mkTa(v.prompt, 3);
     p.placeholder = '이 변형에만 쓰는 프롬프트';
     const row = { name, p };
@@ -93,21 +93,47 @@ export async function editor({ params, query, root }) {
     onSort: (els) => { const next = els.map((el) => varRows.find((r) => r.el === el)).filter(Boolean); varRows.splice(0, varRows.length, ...next); },
   });
 
-  // 생성 설정 (그림체 전용)
+  // 생성 설정 (그림체 전용) — 드롭다운·추천 목록도 브라우저 기본 대신 직접 만든 위젯이에요
   const pf = {};
   const paramGrid = h('div', { class: 'param-grid' }, PARAM_FIELDS.map(([k, label]) => {
+    const val = txt(content?.params?.[k]);
+    let node, custom = true;
     if (k === 'effort') {
-      pf[k] = selectField({ options: [['', '선택 안 함'], ['Medium', 'Medium'], ['High', 'High']], value: normEffort(content?.params?.effort), label: 'Effort', block: true });
+      pf[k] = selectField({ options: [['', '선택 안 함'], ['Medium', 'Medium'], ['High', 'High']], value: normEffort(val), label: 'Effort' });
+      node = pf[k].el;
     } else if (k === 'model' || k === 'sampler') {
-      pf[k] = comboField({ options: k === 'model' ? MODELS : SAMPLERS, placeholder: PLACEHOLDERS[k] || '', value: content?.params?.[k] ?? '' });
+      pf[k] = comboField({ options: k === 'model' ? MODELS : SAMPLERS, value: val, placeholder: PLACEHOLDERS[k] || '', label: label });
+      node = pf[k].el;
     } else {
-      pf[k] = h('input', { class: 'input', placeholder: PLACEHOLDERS[k] || '', value: content?.params?.[k] ?? '' });
+      pf[k] = h('input', { class: 'input', placeholder: PLACEHOLDERS[k] || '', value: val });
+      node = pf[k];
+      custom = false;
     }
-    return h('div', { class: 'pf' + (k === 'extra' || k === 'model' ? ' wide' : '') }, h('span', null, label), pf[k]);
+    return h(custom ? 'div' : 'label', { class: 'pf' + (k === 'extra' || k === 'model' ? ' wide' : '') }, h('span', null, label), node);
   }));
 
   // 작성일 (직접 지정)
-  const dateIn = dateField({ value: ymd(prev?.created || Date.now()), label: '작성일' });
+  const dateIn = datePicker({ value: ymd(prev?.created || Date.now()), label: '작성일 선택' });
+
+  // 게시판 (글 분류)
+  let boards = sanitizeBoards(state.me.theme.boards);
+  let board = boards.some((b) => b.id === prev?.board) ? prev.board : '';
+  const boardOpts = () => [['', '미분류'], ...boards.map((b) => [b.id, b.name])];
+  const boardSel = selectField({ options: boardOpts(), value: board, label: '게시판', onChange: (v) => { board = v; } });
+  async function addBoard() {
+    if (boards.length >= MAX_BOARDS) { toast(`게시판은 최대 ${MAX_BOARDS}개까지 만들 수 있어요`); return; }
+    const name = await askText({ title: '새 게시판', label: '게시판 이름을 입력해 주세요.', ok: '만들기', placeholder: '예: 완성작, 연구 중' });
+    if (!name || !name.trim()) return;
+    const nb = { id: rid(8), name: name.trim().slice(0, MAX_BOARD_NAME) };
+    try {
+      await saveBoards([...boards, nb]);
+      boards = sanitizeBoards(state.me.theme.boards);
+      board = nb.id;
+      boardSel.setOptions(boardOpts());
+      boardSel.value = nb.id;
+      toast(`'${nb.name}' 게시판을 만들었어요`);
+    } catch (e) { toast(friendly(e)); }
+  }
 
   // 공개 설정
   const pwIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password' });
@@ -165,8 +191,8 @@ export async function editor({ params, query, root }) {
     promptIn.value = m.prompt || '';
     negIn.value = m.negative || '';
     for (const [k] of PARAM_FIELDS) {
-      const v = m.params?.[k];
-      if (v == null || v === '') continue;
+      const v = txt(m.params?.[k]);
+      if (!v) continue;
       pf[k].value = k === 'effort' ? normEffort(v) : v;
     }
     if (kind === 'character' && m.chars?.length) {
@@ -258,7 +284,7 @@ export async function editor({ params, query, root }) {
     if (kind === 'style') {
       body.negative = negIn.value.replace(/\s+$/, '');
       body.params = {};
-      for (const [k] of PARAM_FIELDS) { const v = pf[k].value.trim(); if (v) body.params[k] = v; }
+      for (const [k] of PARAM_FIELDS) { const v = txt(pf[k].value).trim(); if (v) body.params[k] = v; }
     }
     if (kind === 'character') {
       body.variants = varRows
@@ -277,7 +303,7 @@ export async function editor({ params, query, root }) {
     label.textContent = ' 저장 중…';
     try {
       const id = await savePost({
-        id: editId, prev, kind, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, tags, content: body, created,
+        id: editId, prev, kind, board, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, tags, content: body, created,
         images: imgs.filter((i) => i.src || i.data), password: pwIn.value, lock, origImages,
         onProgress: (i, n) => { label.textContent = ` 이미지 올리는 중 (${i + 1}/${n})…`; },
       });
@@ -304,7 +330,10 @@ export async function editor({ params, query, root }) {
     h('small', { class: 'hint-line' }, '보기 화면에서 변형마다 따로 복사할 수 있고, 기본 프롬프트와 함께 복사하는 버튼도 있어요.'));
   const notesPanel = panel('메모', notesIn);
   const visPanel = panel('공개 설정', segBox, visExtra);
-  const datePanel = panel('작성일', dateIn, h('small', { class: 'hint-line' }, '글에 표시되는 날짜예요. 원하는 날짜로 바꿀 수 있어요. 목록 순서는 블로그에서 카드를 끌어서 정해요.'));
+  const boardPanel = panel('게시판', boardSel.el,
+    h('div', { class: 'row tight' }, h('button', { class: 'btn sm', type: 'button', onclick: addBoard }, icon('plus', 14), '새 게시판')),
+    h('small', { class: 'hint-line' }, '글을 분류하는 폴더예요. 블로그에서 게시판별로 모아 볼 수 있어요.'));
+  const datePanel = panel('작성일', dateIn.el, h('small', { class: 'hint-line' }, '글에 표시되는 날짜예요. 원하는 날짜로 바꿀 수 있어요. 목록 순서는 블로그에서 카드를 끌어서 정해요.'));
   const imgPanel = panel('이미지', drop, fileIn, imgGrid,
     h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`));
   const tagPanel = panel('태그', tagBox);
@@ -330,7 +359,7 @@ export async function editor({ params, query, root }) {
       ...(kind === 'style' ? [negPanel] : []),
       ...(kind === 'character' ? [variantPanel] : []),
       notesPanel);
-    sideBox.replaceChildren(visPanel, datePanel, imgPanel, tagPanel, ...(kind === 'style' ? [paramPanel] : []), importPanel);
+    sideBox.replaceChildren(boardPanel, visPanel, datePanel, imgPanel, tagPanel, ...(kind === 'style' ? [paramPanel] : []), importPanel);
   };
   paintKind();
 

@@ -5,8 +5,8 @@ import {
   doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where, writeBatch,
 } from './fb.js';
 import { AUTH_DOMAIN, MEMBER_INVITE_LIMIT } from './config.js';
-import { rid, inviteCode } from './util.js';
-import { DEFAULT_THEME, sanitizeTheme } from './theme.js';
+import { rid, inviteCode, txt } from './util.js';
+import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE } from './theme.js';
 import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
 import { makeThumb, uploadImage, removeImages, safeUrl, isUrl } from './images.js';
 
@@ -35,7 +35,7 @@ export function friendly(e) {
     unavailable: '서버에 연결할 수 없어요',
     'resource-exhausted': 'Firebase 무료 사용량을 넘었어요',
   };
-  const m = typeof e?.message === 'string' && e.message !== 'null' && e.message !== 'undefined' ? e.message : '';
+  const m = typeof e?.message === 'string' ? txt(e.message) : '';
   return map[c] || m || '알 수 없는 오류가 났어요';
 }
 
@@ -198,6 +198,22 @@ export async function listPosts(ownerUid) {
   return posts;
 }
 
+// ───────── 게시판 ─────────
+/** 게시판 목록(이름 · 순서)을 저장해요. 프로필의 theme 안에 들어가서 보안 규칙을 바꿀 필요가 없어요 */
+export async function saveBoards(boards) {
+  await updateProfile({ theme: { ...sanitizeTheme(state.me.theme), boards: sanitizeBoards(boards) } });
+}
+
+/** 글 여러 개를 한 게시판으로 옮겨요 (board가 ''이면 미분류) */
+export async function movePosts(ids, board) {
+  const b = BOARD_ID_RE.test(board || '') ? board : '';
+  for (let i = 0; i < ids.length; i += 400) {
+    const batch = writeBatch(db);
+    ids.slice(i, i + 400).forEach((id) => batch.update(doc(db, 'posts', id), { board: b }));
+    await batch.commit();
+  }
+}
+
 /** 끌어서 바꾼 순서를 저장해요 (순서가 달라진 글만 업데이트) */
 export async function savePostOrder(ordered) {
   const changed = ordered.map((p, i) => [p, i]).filter(([p, i]) => p.order !== i);
@@ -270,7 +286,7 @@ function makeExcerpt(content) {
  * lock: 수정 시 기존 잠금 키 { keyRaw, salt } — password 비우면 이 키로 다시 암호화
  */
 export async function savePost({
-  id, prev = null, kind = 'style', title, vis, unlisted = false, spoiler = false, tags = [], content, images = [],
+  id, prev = null, kind = 'style', board = '', title, vis, unlisted = false, spoiler = false, tags = [], content, images = [],
   password = '', lock = null, origImages = [], created, onProgress,
 }) {
   const uid = state.user.uid;
@@ -301,7 +317,8 @@ export async function savePost({
   }
 
   const post = {
-    owner: uid, handle: state.me.handle, kind, title: (title || '').trim() || '제목 없음', vis,
+    owner: uid, handle: state.me.handle, kind, board: BOARD_ID_RE.test(board || '') ? board : '',
+    title: (title || '').trim() || '제목 없음', vis,
     unlisted: !!unlisted && vis !== 'private', spoiler: !!spoiler && vis === 'public', tags,
     excerpt: vis === 'locked' || (spoiler && vis === 'public') ? '' : makeExcerpt(content),
     thumb, imgCount: urls.length, created: created || prev?.created || now, updated: now,

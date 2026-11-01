@@ -1,6 +1,7 @@
-import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog } from './util.js';
+import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
 import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly } from './store.js';
-import { applyTheme, DEFAULT_THEME } from './theme.js';
+import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
+import { imageGallery } from './gallery.js';
 import { loadImage } from './images.js';
 import { PARAM_FIELDS } from './nai.js';
 import { avatarEl, visBadge, kindBadge } from './view-blog.js';
@@ -22,7 +23,8 @@ export function splitTokens(text) {
 }
 
 function promptBlock(label, text, { variant = '', extra = [] } = {}) {
-  if (!text || !text.trim()) return null;
+  text = txt(text);
+  if (!text.trim()) return null;
   let chips = false;
   const body = h('div', { class: 'block-body' });
   const paint = () => {
@@ -77,86 +79,15 @@ function spoilerWrap(node) {
   return wrap;
 }
 
-
-/** 이미지 불러와서 가로/세로 크기 알아내기 */
-function probe(id) {
-  return loadImage(id).then((u) => new Promise((res) => {
-    if (!u) return res({ id, url: null });
-    const im = new Image();
-    im.onload = () => res({ id, url: u, w: im.naturalWidth, h: im.naturalHeight });
-    im.onerror = () => res({ id, url: null });
-    im.src = u;
-  }));
-}
-
-/**
- * 이미지 보기 방식 통일:
- *  - 세로로 긴 그림은 2장씩, 한 장만 있으면 그 한 장만(가운데)
- *  - 가로로 긴(또는 정사각) 그림은 잘리지 않게 한 장씩 전체
- *  - 화면이 2개 이상이면 옆으로 넘기는 버튼 · 점 · 스와이프
- */
-export function imageSlider(ids) {
-  const root = h('div', { class: 'slider' }, h('div', { class: 'sl-skel' }));
-  Promise.all(ids.map(probe)).then((items) => {
-    items.forEach((it, i) => { it.i = i; it.portrait = !!it.url && it.h > it.w * 1.08; });
-    // 화면(슬라이드) 묶기: 연달아 나온 세로 그림은 2장씩, 가로 그림은 1장씩
-    const slides = [];
-    for (let k = 0; k < items.length;) {
-      const a = items[k], b = items[k + 1];
-      if (a.portrait && b && b.portrait) { slides.push([a, b]); k += 2; }
-      else { slides.push([a]); k += 1; }
-    }
-    const mkShot = (it) => {
-      const fig = h('button', { class: 'shot', type: 'button', onclick: () => openLightbox(ids, it.i), 'aria-label': `이미지 ${it.i + 1} 크게 보기` });
-      if (it.url) fig.append(h('img', { src: it.url, alt: '', decoding: 'async' }));
-      else fig.classList.add('missing');
-      return fig;
-    };
-    const slideEls = slides.map((g) => h('div', { class: 'slide ' + (g.length === 2 ? 'pair' : g[0].portrait ? 'one-p' : 'land') }, g.map(mkShot)));
-    const view = h('div', { class: 'sl-view', tabindex: slides.length > 1 ? '0' : null, role: 'group', 'aria-label': '이미지' }, h('div', { class: 'sl-track' }, slideEls));
-    root.replaceChildren(view);
-    let cur = 0;
-    const fit = () => { const el = slideEls[cur]; if (el) view.style.height = el.offsetHeight + 'px'; };
-    const go = (n) => { n = Math.max(0, Math.min(slides.length - 1, n)); view.scrollTo({ left: n * view.clientWidth, behavior: 'smooth' }); };
-    if (slides.length > 1) {
-      const prev = h('button', { class: 'sl-btn sl-prev', type: 'button', 'aria-label': '이전 이미지', onclick: () => go(cur - 1) }, icon('chevl', 20));
-      const next = h('button', { class: 'sl-btn sl-next', type: 'button', 'aria-label': '다음 이미지', onclick: () => go(cur + 1) }, icon('chevr', 20));
-      const dots = h('div', { class: 'sl-dots' }, slides.map((_, n) => h('button', { class: 'sl-dot', type: 'button', 'aria-label': `${n + 1}번째 화면`, onclick: () => go(n) })));
-      const paint = () => {
-        prev.disabled = cur === 0; next.disabled = cur === slides.length - 1;
-        [...dots.children].forEach((d, n) => d.classList.toggle('on', n === cur));
-        fit();
-      };
-      let raf = 0;
-      view.addEventListener('scroll', () => {
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => { const n = Math.round(view.scrollLeft / (view.clientWidth || 1)); if (n !== cur) { cur = n; paint(); } });
-      }, { passive: true });
-      view.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); }
-        else if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
-      });
-      root.append(prev, next, dots);
-      paint();
-    }
-    // 이미지가 다 그려지거나 창 크기가 바뀌면 높이를 다시 맞춰요
-    if ('ResizeObserver' in window) { const ro = new ResizeObserver(() => fit()); slideEls.forEach((el) => ro.observe(el)); }
-    slideEls.forEach((el) => el.querySelectorAll('img').forEach((im) => { if (!im.complete) im.addEventListener('load', fit, { once: true }); }));
-    addEventListener('resize', () => { if (root.isConnected) { view.scrollTo({ left: cur * view.clientWidth }); fit(); } });
-    requestAnimationFrame(fit);
-  });
-  return root;
-}
-
 function renderBody(content, kind = 'style') {
   const wrap = h('div', { class: 'post-body' });
   const ids = content.images || [];
-  if (ids.length) wrap.append(imageSlider(ids));
+  if (ids.length) wrap.append(imageGallery(ids, { onOpen: (idx) => openLightbox(ids, idx) }));
   if (kind === 'character') {
     wrap.append(promptBlock('캐릭터 프롬프트', content.prompt, { variant: 'char' }));
     (content.variants || []).forEach((v) => {
-      const both = [content.prompt, v.prompt].filter((x) => x && x.trim()).join(', ');
-      wrap.append(promptBlock(v.name || '변형', v.prompt, {
+      const both = [txt(content.prompt), txt(v.prompt)].filter((x) => x.trim()).join(', ');
+      wrap.append(promptBlock(txt(v.name) || '변형', v.prompt, {
         variant: 'char',
         extra: [h('button', { class: 'btn sm', onclick: () => copyText(both, '기본 + 변형을 함께 복사했어요') }, icon('copy', 14), '기본과 함께')],
       }));
@@ -171,18 +102,18 @@ function renderBody(content, kind = 'style') {
   wrap.append(promptBlock('네거티브 프롬프트', content.negative, { variant: 'neg' }));
 
   const pr = content.params || {};
-  const filled = PARAM_FIELDS.filter(([k]) => pr[k] != null && String(pr[k]).trim() !== '');
+  const filled = PARAM_FIELDS.filter(([k]) => txt(pr[k]).trim() !== '');
   if (filled.length) {
-    const asText = filled.map(([k, label]) => `${label}: ${pr[k]}`).join(', ');
+    const asText = filled.map(([k, label]) => `${label}: ${txt(pr[k])}`).join(', ');
     wrap.append(h('section', { class: 'block' },
       h('div', { class: 'block-head' }, h('h3', null, '생성 설정'),
         h('div', { class: 'block-tools' }, h('button', { class: 'btn sm', onclick: () => copyText(asText, '설정을 복사했어요') }, icon('copy', 14), '복사'))),
       h('div', { class: 'params' }, filled.map(([k, label]) =>
-        h('div', { class: 'param' }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, String(pr[k])))))));
+        h('div', { class: 'param' }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, txt(pr[k])))))));
   }
-  if (content.notes?.trim()) {
+  if (txt(content.notes).trim()) {
     wrap.append(h('section', { class: 'block' }, h('div', { class: 'block-head' }, h('h3', null, '메모')),
-      h('div', { class: 'block-body' }, h('div', { class: 'notes' }, content.notes))));
+      h('div', { class: 'block-body' }, h('div', { class: 'notes' }, txt(content.notes)))));
   }
   return wrap;
 }
@@ -199,22 +130,29 @@ export async function post({ params, root }) {
   }
   const author = await getProfile(p.owner);
   applyTheme(author?.theme);
-  document.title = `${p.title} · ${APP_NAME}`;
+  const title = txt(p.title) || '제목 없음';
+  document.title = `${title} · ${APP_NAME}`;
   const isOwner = state.user?.uid === p.owner;
+  const handle = txt(author?.handle) || txt(p.handle);
+  const authorName = txt(author?.display) || handle;
+  const board = sanitizeTheme(author?.theme).boards.find((b) => b.id === p.board);
 
   const share = () => {
     const url = location.origin + location.pathname + '#/p/' + p.id;
     copyText(url, p.vis === 'locked' ? '링크를 복사했어요. 비밀번호도 함께 알려주세요' : p.vis === 'private' ? '링크를 복사했어요 (비공개라 나만 열 수 있어요)' : '링크를 복사했어요');
   };
 
+  const tags = (p.tags || []).map(txt).filter(Boolean);
   const head = h('header', { class: 'post-head' },
-    h('a', { class: 'back', href: '#/u/' + (author?.handle || p.handle) }, icon('back', 16), author?.display || p.handle),
-    h('div', { class: 'post-vis' }, kindBadge(p), visBadge(p, true)),
-    h('h1', { class: 'post-title' }, p.title),
+    h('a', { class: 'back', href: '#/u/' + handle }, icon('back', 16), authorName),
+    h('div', { class: 'post-vis' }, kindBadge(p),
+      board ? h('a', { class: 'kind board-badge', href: `#/u/${handle}?board=${board.id}`, title: '이 게시판의 글 보기' }, icon('folder', 12), board.name) : null,
+      visBadge(p, true)),
+    h('h1', { class: 'post-title' }, title),
     h('div', { class: 'post-meta' },
-      author ? h('a', { class: 'by', href: '#/u/' + author.handle }, avatarEl(author, 'xs'), h('span', null, author.display || author.handle)) : null,
+      author ? h('a', { class: 'by', href: '#/u/' + author.handle }, avatarEl(author, 'xs'), h('span', null, authorName)) : null,
       h('span', null, fmtDate(p.created))),
-    p.tags?.length ? h('div', { class: 'tags' }, p.tags.map((t) => h('a', { class: 'tag', href: '#/u/' + (author?.handle || p.handle) }, '#' + t))) : null,
+    tags.length ? h('div', { class: 'tags' }, tags.map((t) => h('a', { class: 'tag', href: '#/u/' + handle }, '#' + t))) : null,
     h('div', { class: 'post-actions' },
       h('button', { class: 'btn sm', onclick: share }, icon('link', 15), '링크 복사'),
       isOwner ? h('a', { class: 'btn sm', href: '#/edit/' + p.id }, icon('edit', 15), '수정') : null,

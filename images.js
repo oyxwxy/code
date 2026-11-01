@@ -71,3 +71,18 @@ export async function makeThumb(src, edge = 480) {
   ctx.drawImage(img, 0, 0, w, hh);
   return c.toDataURL(format(), 0.72);
 }
+
+/**
+ * 파비콘용: 가운데를 정사각형으로 잘라 size 픽셀 PNG로 다시 그려요 (투명 배경 유지, 메타데이터 없음)
+ */
+export async function makeIcon(file, size = 128) {
+  const bmp = await createImageBitmap(file);
+  const s = Math.min(bmp.width, bmp.height);
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, size, size);
+  bmp.close?.();
+  return c.toDataURL('image/png');
+}

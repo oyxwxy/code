@@ -1,5 +1,6 @@
 import { mix, lum } from './util.js';
 import { KINDS, MAX_KIND_NAME, setKindPrefs } from './kinds.js';
+import { safeUrl } from './imgbb.js';
 
 // 프리셋은 배경색 + 포인트색 두 가지만 정하면 나머지 색은 자동 계산돼요
 export const PRESETS = [
@@ -42,10 +43,81 @@ export function sanitizeKinds(k) {
   return out;
 }
 
+// ───────── 게시판 (글 분류) ─────────
+export const MAX_BOARDS = 20;
+export const MAX_BOARD_NAME = 20;
+export const BOARD_ID_RE = /^[a-z0-9]{4,16}$/;
+
+/** 게시판 목록 [{ id, name }] 을 안전한 값으로 정리 (순서는 그대로 유지) */
+export function sanitizeBoards(b) {
+  const out = [], seen = new Set();
+  if (Array.isArray(b)) {
+    for (const x of b) {
+      const id = typeof x?.id === 'string' && BOARD_ID_RE.test(x.id) ? x.id : '';
+      const name = typeof x?.name === 'string' ? x.name.trim().slice(0, MAX_BOARD_NAME) : '';
+      if (!id || !name || seen.has(id)) continue;
+      seen.add(id);
+      out.push({ id, name });
+      if (out.length >= MAX_BOARDS) break;
+    }
+  }
+  return out;
+}
+
+// ───────── 파비콘 (사람마다 따로) ─────────
+export const DEFAULT_ICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23678e85'/%3E%3Cpath d='M16 6l2.6 7.4L26 16l-7.4 2.6L16 26l-2.6-7.4L6 16l7.4-2.6z' fill='white'/%3E%3C/svg%3E";
+
+/** 글자·이모지 아이콘에 들어갈 글자: 최대 2글자(이모지는 한 글자로 셈) */
+export function clampIconText(s) {
+  s = String(s ?? '').trim();
+  const parts = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s)].map((x) => x.segment)
+    : Array.from(s);
+  return parts.slice(0, 2).join('');
+}
+
+/** { type:'image', src } | { type:'text', text, bg } | null */
+export function sanitizeFavicon(f) {
+  if (!f || typeof f !== 'object') return null;
+  if (f.type === 'image') { const src = safeUrl(f.src); return src ? { type: 'image', src } : null; }
+  if (f.type === 'text') {
+    const text = clampIconText(f.text);
+    return text && HEX.test(f.bg) ? { type: 'text', text, bg: f.bg.toLowerCase() } : null;
+  }
+  return null;
+}
+
+const xmlEsc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/** 파비콘 설정 → <link rel=icon>에 넣을 주소 */
+export function faviconHref(f) {
+  f = sanitizeFavicon(f);
+  if (!f) return DEFAULT_ICON;
+  if (f.type === 'image') return f.src;
+  const fg = lum(f.bg) > 0.5 ? '#14110f' : '#ffffff';
+  const n = Array.from(f.text).length;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='${f.bg}'/>`
+    + `<text x='16' y='17' text-anchor='middle' dominant-baseline='central' font-size='${n > 1 ? 15 : 19}' font-weight='700' font-family='system-ui,sans-serif' fill='${fg}'>${xmlEsc(f.text)}</text></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+let iconNow = '';
+export function setFavicon(f) {
+  const href = faviconHref(f);
+  if (href === iconNow) return;
+  iconNow = href;
+  // 같은 요소의 href만 바꾸면 브라우저가 무시하는 경우가 있어서, 요소를 새로 만들어 갈아 끼워요
+  document.querySelectorAll('link[rel~="icon"]').forEach((l) => l.remove());
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.href = href;
+  document.head.append(link);
+}
+
 export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
-  avatar: '', banner: '', kinds: sanitizeKinds(null),
+  avatar: '', banner: '', kinds: sanitizeKinds(null), boards: [], favicon: null,
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -67,6 +139,8 @@ export function sanitizeTheme(t) {
     avatar: typeof t.avatar === 'string' ? t.avatar : '',
     banner: typeof t.banner === 'string' ? t.banner : '',
     kinds: sanitizeKinds(t.kinds),
+    boards: sanitizeBoards(t.boards),
+    favicon: sanitizeFavicon(t.favicon),
   };
 }
 
@@ -100,5 +174,6 @@ export function applyTheme(raw) {
   s.setProperty('--font', FONTS[t.font].stack);
   document.documentElement.dataset.mode = p.dark ? 'dark' : 'light';
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', p.bg);
+  setFavicon(t.favicon);   // 글쓴이마다 자기 파비콘으로
   return t;
 }
