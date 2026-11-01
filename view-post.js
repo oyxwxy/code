@@ -105,7 +105,7 @@ function renderBody(content, kind = 'style') {
         h('div', { class: 'param' }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, txt(pr[k])))))));
   }
   if (txt(content.notes).trim()) {
-    wrap.append(h('section', { class: 'block' }, h('div', { class: 'block-head' }, h('h3', null, L.notes || '메모')),
+    wrap.append(h('section', { class: 'block memo' }, h('div', { class: 'block-head' }, h('h3', null, L.notes || '메모')),
       h('div', { class: 'block-body' }, h('div', { class: 'notes' }, txt(content.notes)))));
   }
   return wrap;

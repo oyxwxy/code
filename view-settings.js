@@ -6,15 +6,17 @@ import { compressImage, uploadImage, removeImages, makeIcon, saveBannerImage } f
 import { colorField, stepper, iconField } from './widgets.js';
 import { postCard, avatarEl } from './view-blog.js';
 import { backupTab } from './backup.js';
-import { MEMBER_INVITE_LIMIT } from './config.js';
 
-const TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
+const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
+// 초대 탭은 관리자에게만 보여요
+const tabsFor = (me) => ALL_TABS.filter(([k]) => k !== 'invite' || me?.isAdmin);
 
 export async function settings({ root, query }) {
   if (!state.me) { location.replace('#/login?next=' + encodeURIComponent('/settings')); return; }
   applyTheme(state.me.theme);
   document.title = '설정 · Drawer';
   root.classList.add('settings-wrap');
+  const TABS = tabsFor(state.me);
   let tab = TABS.some((t) => t[0] === query.get('tab')) ? query.get('tab') : 'profile';
   const content = h('div');
   const tabBar = h('div', { class: 'tabs' });
@@ -420,33 +422,29 @@ function designTab() {
 // ───────── 초대 ─────────
 async function inviteTab() {
   const me = state.me;
-  const isAdmin = !!me.isAdmin;
   const wrap = h('div', { class: 'tab-body' });
+  if (!me.isAdmin) return wrap;
   let invites = [], members = [];
   try { [invites, members] = await Promise.all([listInvites(), listInvitedMembers()]); }
   catch (e) { toast(friendly(e)); }
 
   const link = (code) => location.origin + location.pathname + '#/join/' + code;
   const maxIn = stepper({ value: 1, min: 1, max: 1000 });
-  const left = Math.max(0, MEMBER_INVITE_LIMIT - (me.inviteCount || 0));
 
   const make = h('button', { class: 'btn primary', onclick: async () => {
     make.disabled = true;
     try {
-      const code = await createInvite(isAdmin ? maxIn.value : 1);
+      const code = await createInvite(maxIn.value);
       await copyText(link(code), '초대 링크를 만들어 복사했어요');
       wrap.replaceWith(await inviteTab());
     } catch (e) { toast(friendly(e)); make.disabled = false; }
   } }, icon('plus', 16), '초대코드 만들기');
-  if (!isAdmin && left <= 0) make.disabled = true;
 
   wrap.append(
     h('section', { class: 'panel' },
-      h('h3', { class: 'panel-title' }, isAdmin ? '관리자 초대코드' : '친구 초대하기'),
-      h('p', { class: 'desc' }, isAdmin
-        ? '코드 하나로 여러 명이 가입할 수 있게 사용 횟수를 정할 수 있어요.'
-        : `초대코드는 1회용이고 최대 ${MEMBER_INVITE_LIMIT}개까지 만들 수 있어요. (남은 개수 ${left}개)`),
-      h('div', { class: 'row' }, isAdmin ? h('div', { class: 'inline' }, h('span', null, '사용 가능 횟수'), maxIn.el) : null, make)),
+      h('h3', { class: 'panel-title' }, '관리자 초대코드'),
+      h('p', { class: 'desc' }, '초대는 관리자만 할 수 있어요. 코드 하나로 여러 명이 가입할 수 있게 사용 횟수를 정할 수 있어요.'),
+      h('div', { class: 'row' }, h('div', { class: 'inline' }, h('span', null, '사용 가능 횟수'), maxIn.el), make)),
     h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '내가 만든 초대코드'),
       invites.length ? h('div', { class: 'list' }, invites.map((i) =>

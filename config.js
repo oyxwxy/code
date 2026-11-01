@@ -15,7 +15,10 @@ export const APP_NAME = 'Drawer';
 export const AUTH_DOMAIN = 'pbox.local';
 
 export const MAX_IMAGES = 12;          // 글 하나당 이미지 최대 장수
-export const MEMBER_INVITE_LIMIT = 3;  // 일반 회원이 만들 수 있는 초대코드 수 (규칙과 동일해야 해요)
+
+// 새 기능을 먼저 테스트할 계정. 관리자이거나 여기 적힌 아이디면 isBeta() 가 true 예요.
+// 새 기능은 `if (isBeta()) { … }` 로 감싸서 올리고, 문제없으면 감싼 걸 풀어 전체에 적용하세요.
+export const BETA_HANDLES = ['wxyz'];
 
 // 이미지 호스팅(ImgBB) API 키. 브라우저 코드에 들어가므로 공개된다는 점을 알고 쓰세요
 export const IMGBB_KEY = 'cd95c1a1e9387659cd79b2b33902dce1';

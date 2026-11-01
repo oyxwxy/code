@@ -19,12 +19,11 @@ service cloud.firestore {
     match /invites/{code} {
       allow get: if true;
       allow list: if request.auth != null && resource.data.owner == request.auth.uid;
-      allow create: if request.auth.uid == request.resource.data.owner
+      // 초대코드는 관리자만 만들 수 있어요
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.owner
         && request.resource.data.uses == 0
-        && (isAdmin() || (request.resource.data.max == 1
-            && getAfter(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.inviteCount
-               == get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.inviteCount + 1
-            && getAfter(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.inviteCount <= 3));
+        && isAdmin();
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses'])
         && request.resource.data.uses == resource.data.uses + 1
@@ -49,12 +48,12 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.uses
                == get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.uses + 1
             && request.resource.data.invitedBy
-               == get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.owner)
+               == get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.owner
+            && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.owner
+               == get(/databases/$(database)/documents/meta/admin).data.uid)
         );
       allow update: if request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['display', 'bio', 'theme', 'inviteCount'])
-        && (!('inviteCount' in request.resource.data.diff(resource.data).affectedKeys())
-            || request.resource.data.inviteCount == resource.data.inviteCount + 1);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['display', 'bio', 'theme']);
     }
 
     match /posts/{id} {

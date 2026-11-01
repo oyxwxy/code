@@ -4,7 +4,7 @@ import {
   sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, updatePassword,
   doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where, writeBatch,
 } from './fb.js';
-import { AUTH_DOMAIN, MEMBER_INVITE_LIMIT } from './config.js';
+import { AUTH_DOMAIN, BETA_HANDLES } from './config.js';
 import { rid, inviteCode, txt } from './util.js';
 import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE } from './theme.js';
 import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
@@ -95,6 +95,9 @@ export async function signUp({ handle, password, display, email, inviteCode: cod
     if (!s.exists()) throw new Error('초대코드가 올바르지 않아요');
     invite = s.data();
     if (invite.uses >= invite.max) throw new Error('이미 모두 사용된 초대코드예요');
+    // 관리자가 만든 코드만 인정해요 (예전에 회원이 만든 코드는 더 쓸 수 없어요)
+    const adm = await getDoc(doc(db, 'meta', 'admin'));
+    if (!adm.exists() || adm.data().uid !== invite.owner) throw new Error('더 이상 사용할 수 없는 초대코드예요. 관리자에게 새 코드를 받아 주세요');
   }
   if (!(await handleAvailable(handle))) throw new Error('이미 사용 중인 아이디예요');
 
@@ -364,21 +367,18 @@ export async function deletePost(post) {
 }
 
 // ───────── 초대 ─────────
+/** 초대코드는 관리자만 만들 수 있어요 (Firestore 규칙에서도 막아요) */
 export async function createInvite(max = 1) {
   const uid = state.user.uid;
   const fresh = await loadMe(uid);
-  const isAdmin = !!fresh?.isAdmin;
+  if (!fresh?.isAdmin) throw new Error('초대코드는 관리자만 만들 수 있어요');
   const code = inviteCode();
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'invites', code), { owner: uid, max: isAdmin ? Math.max(1, Math.min(1000, max | 0)) : 1, uses: 0, created: Date.now() });
-  if (!isAdmin) {
-    if ((fresh.inviteCount || 0) >= MEMBER_INVITE_LIMIT) throw new Error(`초대코드는 최대 ${MEMBER_INVITE_LIMIT}개까지 만들 수 있어요`);
-    batch.update(doc(db, 'profiles', uid), { inviteCount: (fresh.inviteCount || 0) + 1 });
-  }
-  await batch.commit();
-  await refreshMe();
+  await setDoc(doc(db, 'invites', code), { owner: uid, max: Math.max(1, Math.min(1000, max | 0)), uses: 0, created: Date.now() });
   return code;
 }
+
+/** 새 기능 테스트용: 관리자 또는 BETA_HANDLES 에 있는 아이디만 true */
+export const isBeta = () => !!state.me && (!!state.me.isAdmin || BETA_HANDLES.includes(state.me.handle));
 
 export async function listInvites() {
   const s = await getDocs(query(collection(db, 'invites'), where('owner', '==', state.user.uid)));
