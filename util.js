@@ -8,6 +8,18 @@ export function append(el, kids) {
   }
 }
 
+// 브라우저 기본 append/prepend/replaceChildren는 null을 글자 "null"로 바꿔 붙여요.
+// (예: 비어 있는 프롬프트 블록이 null을 돌려주면 화면에 null이 찍힘) 그래서 null · undefined · false는 건너뛰게 바꿔 둬요.
+for (const m of ['append', 'prepend', 'replaceChildren']) {
+  for (const proto of [Element.prototype, DocumentFragment.prototype]) {
+    const orig = proto[m];
+    if (!orig || orig.__safe) continue;
+    const safe = function (...nodes) { return orig.apply(this, nodes.filter((n) => n != null && n !== false)); };
+    safe.__safe = true;
+    proto[m] = safe;
+  }
+}
+
 /** h('div', {class:'x', onclick(){}}, child, child...) */
 export function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
@@ -58,6 +70,7 @@ const ICONS = {
   chevr: '<polyline points="9 18 15 12 9 6"/>',
   grip: '<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',
   eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
   chevd: '<polyline points="6 9 12 15 18 9"/>',
   folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',

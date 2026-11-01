@@ -50,7 +50,7 @@ NovelAI 프롬프트를 **공개 / 비밀번호 / 비공개**로 백업하고, �
 
 ## 파일을 고쳐서 다시 올릴 때 (캐시)
 
-브라우저가 예전 파일을 붙잡고 있으면 수정이 안 보여요. `index.html` 안의 `v=20261030g` 값(import map 전체 + `style.css` + `app.js`)을 **전부 새 값으로 바꿔서** 올리세요. 급할 땐 Ctrl+F5(강력 새로고침)도 돼요.
+브라우저가 예전 파일을 붙잡고 있으면 수정이 안 보여요. `index.html` 안의 `v=20261101a` 값(import map 전체 + `style.css` + `app.js`)을 **전부 새 값으로 바꿔서** 올리세요. 급할 땐 Ctrl+F5(강력 새로고침)도 돼요.
 
 ## 이전 버전에서 업데이트할 때
 
@@ -98,7 +98,8 @@ index.html      진입점            style.css       디자인
 app.js          라우터 · 상단바    config.js       Firebase·ImgBB 설정
 fb.js           Firebase 초기화    store.js        인증 · 데이터 계층
 kinds.js        글 종류 정의       widgets.js      색 선택기·달력·드롭다운
-gallery.js      이미지 갤러리       imgbb.js        ImgBB 업로드
+gallery.js      이미지 갤러리
+lightbox.js     이미지 크게 보기       imgbb.js        ImgBB 업로드
 images.js       이미지 압축·메타 제거  crypto.js    비밀번호 글 암호화
 nai.js          NovelAI/SD 메타데이터 해석         theme.js   테마 계산
 view-*.js       화면들             backup.js       백업 · 일괄 가져오기

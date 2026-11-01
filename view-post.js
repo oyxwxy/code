@@ -2,6 +2,7 @@ import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, t
 import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { imageGallery } from './gallery.js';
+import { openLightbox } from './lightbox.js';
 import { loadImage } from './images.js';
 import { PARAM_FIELDS } from './nai.js';
 import { avatarEl, visBadge, kindBadge } from './view-blog.js';
@@ -41,41 +42,28 @@ function promptBlock(label, text, { variant = '', extra = [] } = {}) {
     body);
 }
 
-function openLightbox(ids, start) {
-  let i = start, token = 0;
-  const img = h('img', { class: 'lb-img', alt: '' });
-  const cnt = h('div', { class: 'lb-count' });
-  const show = async (n) => {
-    i = (n + ids.length) % ids.length;
-    cnt.textContent = ids.length > 1 ? `${i + 1} / ${ids.length}` : '';
-    const my = ++token;
-    img.style.opacity = '.35';
-    const u = await loadImage(ids[i]);
-    if (my === token && u) { img.src = u; img.style.opacity = '1'; }
-  };
-  const close = () => { document.removeEventListener('keydown', onKey); box.remove(); };
-  const onKey = (e) => {
-    if (e.key === 'Escape') close();
-    else if (e.key === 'ArrowLeft') show(i - 1);
-    else if (e.key === 'ArrowRight') show(i + 1);
-  };
-  const box = h('div', { class: 'lightbox', onclick: (e) => { if (e.target === box || e.target.classList.contains('lb-stage')) close(); } },
-    h('div', { class: 'lb-stage' }, img),
-    h('button', { class: 'lb-btn lb-close', onclick: close, 'aria-label': '닫기' }, icon('x', 22)),
-    ids.length > 1 ? h('button', { class: 'lb-btn lb-prev', onclick: () => show(i - 1), 'aria-label': '이전' }, icon('chevl', 26)) : null,
-    ids.length > 1 ? h('button', { class: 'lb-btn lb-next', onclick: () => show(i + 1), 'aria-label': '다음' }, icon('chevr', 26)) : null,
-    cnt);
-  document.addEventListener('keydown', onKey);
-  document.body.append(box);
-  show(start);
-}
-
 /** 스포일러 방지: 내용을 흐리게 가리고 눌러야 보이게 해요 */
 function spoilerWrap(node) {
   const wrap = h('div', { class: 'spoiler-wrap' });
-  const cover = h('button', { class: 'spoiler-cover', type: 'button', onclick: () => { wrap.classList.add('open'); cover.remove(); } },
+  const body = h('div', { class: 'spoiler-body', 'aria-hidden': 'true' }, node);
+  const reveal = () => {
+    if (wrap.classList.contains('open')) return;
+    // 높이 제한을 한 번에 풀면 화면이 툭 튀어서, 지금 높이 → 실제 높이로 천천히 늘려요
+    body.style.maxHeight = body.clientHeight + 'px';
+    void body.offsetHeight;
+    wrap.classList.add('open');
+    body.removeAttribute('aria-hidden');
+    body.style.maxHeight = Math.max(body.scrollHeight, body.clientHeight) + 'px';
+    cover.classList.add('leaving');
+    const done = () => { body.style.maxHeight = 'none'; cover.remove(); };
+    let fired = false;
+    const once = () => { if (!fired) { fired = true; done(); } };
+    body.addEventListener('transitionend', (e) => { if (e.propertyName === 'max-height') once(); });
+    setTimeout(once, 1100);   // transitionend가 안 오는 경우 대비
+  };
+  const cover = h('button', { class: 'spoiler-cover', type: 'button', onclick: reveal },
     icon('eye-off', 24), h('strong', null, '스포일러가 있어요'), h('small', null, '눌러서 보기'));
-  wrap.append(h('div', { class: 'spoiler-body', 'aria-hidden': 'true' }, node), cover);
+  wrap.append(body, cover);
   return wrap;
 }
 

@@ -65,7 +65,7 @@ export function postCard(p, isOwner, canSort = false, boardLabel = '') {
     isOwner ? h('span', { class: 'card-check', 'aria-hidden': 'true' }, icon('check', 14)) : null,
     box,
     h('div', { class: 'card-body' },
-      h('div', { class: 'card-meta' }, kindBadge(p),
+      h('div', { class: 'card-meta' },
         boardLabel ? h('span', { class: 'kind board-badge' }, icon('folder', 12), boardLabel) : null,
         badge,
         sp ? h('span', { class: 'vis vis-spoiler' }, icon('eye-off', 13), '스포일러') : null,
@@ -120,14 +120,13 @@ export async function blog({ params, query, root }) {
       h('div', { class: 'head-text' },
         h('h1', { class: 'blog-name' }, txt(prof.display) || prof.handle),
         bioText ? h('p', { class: 'blog-bio' }, bioText) : null,
-        h('div', { class: 'blog-stats' }, `글 ${posts.length}개`),
         isOwner ? h('div', { class: 'head-actions' },
           h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), '새 글'),
           h('a', { class: 'btn sm', href: '#/settings' }, icon('settings', 15), '꾸미기·설정')) : null)));
 
   // ── 도구줄 ──
   const qBoard = query?.get('board');
-  let q = '', tag = null, visFilter = 'all', kindFilter = 'all', shown = PAGE;
+  let q = '', tag = null, visFilter = 'all', shown = PAGE;
   let boardFilter = qBoard === NONE || boardIds.has(qBoard) ? qBoard : 'all';
   const tagCount = new Map();
   posts.forEach((p) => (p.tags || []).map(txt).filter(Boolean).forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1)));
@@ -135,10 +134,9 @@ export async function blog({ params, query, root }) {
 
   const list = h('div');
   const more = h('div', { class: 'more' });
-  const tagBox = h('div', { class: 'pills' });
+  const tagBox = h('div', { class: 'side-tags' });
   const visBox = h('div', { class: 'pills' });
-  const kindBox = h('div', { class: 'pills' });
-  const boardBox = h('div', { class: 'pills board-pills' });
+  const boardBox = h('div', { class: 'side-list' });
 
   // ── 게시판으로 옮기기 (고르기 모드) ──
   let picking = false, moveTo = '';
@@ -185,28 +183,19 @@ export async function blog({ params, query, root }) {
   }
 
   function paintPills() {
-    const kc = { all: posts.length };
-    posts.forEach((p) => { const k = kindOf(p); kc[k] = (kc[k] || 0) + 1; });
-    const kinds = Object.keys(KINDS).filter((k) => isOwner || kindShown(k));
-    kindBox.replaceChildren(...[['all', '전체', null], ...kinds.map((k) => [k, kindLabel(k), KINDS[k].icon])].map(([k, label, ic]) =>
-      h('button', { class: 'pill' + (kindFilter === k ? ' on' : '') + (k !== 'all' && !kindShown(k) ? ' dim' : ''), title: k !== 'all' && !kindShown(k) ? '다른 사람에게는 숨겨진 종류예요' : null,
-        onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, `${label} ${kc[k] || 0}`)));
-    tagBox.replaceChildren(...(topTags.length ? [
-      h('button', { class: 'pill' + (tag ? '' : ' on'), onclick: () => { tag = null; shown = PAGE; paintPills(); paint(); } }, '전체'),
-      ...topTags.map((t) => h('button', { class: 'pill' + (tag === t ? ' on' : ''), onclick: () => { tag = tag === t ? null : t; shown = PAGE; paintPills(); paint(); } }, '#' + t)),
-    ] : []));
+    tagBox.replaceChildren(...topTags.map((t) =>
+      h('button', { class: 'pill' + (tag === t ? ' on' : ''), onclick: () => { tag = tag === t ? null : t; shown = PAGE; paintPills(); paint(); } }, '#' + t)));
     if (isOwner) {
-      const opts = [['all', '전체', posts.length], ['public', '공개', counts.public], ['locked', '비밀번호', counts.locked], ['private', '비공개', counts.private]];
-      visBox.replaceChildren(...opts.map(([k, label, n]) =>
-        h('button', { class: 'pill' + (visFilter === k ? ' on' : ''), onclick: () => { visFilter = k; shown = PAGE; paintPills(); paint(); } }, `${label} ${n}`)));
+      const opts = [['all', '전체'], ['public', '공개'], ['locked', '비밀번호'], ['private', '비공개']];
+      visBox.replaceChildren(...opts.map(([k, label]) =>
+        h('button', { class: 'pill' + (visFilter === k ? ' on' : ''), onclick: () => { visFilter = k; shown = PAGE; paintPills(); paint(); } }, label)));
     }
     // 게시판: 다른 사람에게는 글이 있는 게시판만 보여요
-    const bc = { all: posts.length, [NONE]: 0 };
-    posts.forEach((p) => { const b = boardOf(p) || NONE; bc[b] = (bc[b] || 0) + 1; });
-    const entries = [['all', '전체'], ...boards.filter((b) => isOwner || bc[b.id]).map((b) => [b.id, b.name]), ...(bc[NONE] ? [[NONE, '미분류']] : [])];
-    boardBox.replaceChildren(...(boards.length ? entries.map(([k, label]) =>
-      h('button', { class: 'pill' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; paintPills(); paint(); } },
-        k === 'all' ? null : icon('folder', 14), `${label} ${bc[k] || 0}`)) : []));
+    const has = new Set(posts.map((p) => boardOf(p) || NONE));
+    const entries = [['all', '전체'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name]), ...(has.has(NONE) ? [[NONE, '미분류']] : [])];
+    boardBox.replaceChildren(...entries.map(([k, label]) =>
+      h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; paintPills(); paint(); } },
+        icon(k === 'all' ? 'grid' : 'folder', 15), h('span', null, label))));
   }
 
   // 화면에 보이는 글들끼리 자리를 바꾸고, 전체 순서에 반영해 저장해요
@@ -229,7 +218,6 @@ export async function blog({ params, query, root }) {
     const ql = q.trim().toLowerCase();
     const rows = posts.filter((p) =>
       (visFilter === 'all' || p.vis === visFilter) &&
-      (kindFilter === 'all' || kindOf(p) === kindFilter) &&
       (boardFilter === 'all' || (boardFilter === NONE ? !boardOf(p) : boardOf(p) === boardFilter)) &&
       (!tag || (p.tags || []).includes(tag)) &&
       (!ql || `${txt(p.title)} ${txt(p.excerpt)} ${(p.tags || []).map(txt).join(' ')}`.toLowerCase().includes(ql)));
@@ -274,13 +262,14 @@ export async function blog({ params, query, root }) {
         h('button', { class: 'btn ghost sm', onclick: sortByDate }, '작성일 최신순으로 정리')))] : []));
   }
 
-  root.replaceChildren(head,
+  const hasSide = boards.length > 0 || topTags.length > 0;
+  const side = hasSide ? h('aside', { class: 'blog-side' },
+    boards.length ? h('div', { class: 'side-sec' }, h('h4', null, '게시판'), boardBox) : null,
+    topTags.length ? h('div', { class: 'side-sec' }, h('h4', null, '태그'), tagBox) : null) : null;
+  const main = h('div', { class: 'blog-main' },
     h('div', { class: 'toolbar' }, search, isOwner ? visBox : null),
-    boards.length ? h('div', { class: 'board-filter' }, boardBox) : null,
-    posts.length ? h('div', { class: 'kind-filter' }, kindBox) : null,
-    topTags.length ? tagBox : null,
-    toolsHost,
-    list, more, pickBar);
+    toolsHost, list, more);
+  root.replaceChildren(head, h('div', { class: 'blog-body' + (hasSide ? ' has-side' : '') }, side, main), pickBar);
   paintTools();
   paintPills();
   paint();
