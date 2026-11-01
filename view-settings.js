@@ -1,9 +1,9 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, neighborsOn, ddayOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays } from './theme.js';
+import { state, neighborsOn, ddayOn, bannerSlideOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
-import { colorField, stepper, iconField, datePicker } from './widgets.js';
+import { colorField, stepper, iconField, datePicker, selectField } from './widgets.js';
 import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { openCropper } from './crop.js';
@@ -449,6 +449,46 @@ function designTab() {
       } catch (e) { toast(friendly(e)); }
     });
 
+    // 대문 배너 슬라이드: 추가 사진 (관리자 테스트 기능) — 대표 대문 배너 뒤로 이어져요
+    const slideFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
+    slideFile.addEventListener('change', async () => {
+      const f = slideFile.files[0];
+      slideFile.value = '';
+      if (!f) return;
+      if (T.bannerMore.length >= MAX_BANNER_MORE) { toast(`슬라이드 사진은 대표 사진 외에 ${MAX_BANNER_MORE}장까지예요`); return; }
+      try {
+        const canvas = await openCropper(f, { ratio: 6, outW: 1800, title: '슬라이드 사진 자르기', hint: '대문 배너와 같은 비율(6 : 1)이에요. 끌어서 위치를, 슬라이더·마우스 휠로 크기를 맞춰요.' });
+        if (!canvas) return;
+        const id = await saveCroppedCanvas(canvas, state.user.uid, 'bn');
+        T = { ...T, bannerMore: [...T.bannerMore, id] };
+        await updateProfile({ theme: T });
+        dirty = false;
+        toast('슬라이드 사진을 추가했어요');
+        build();
+      } catch (e) { toast(friendly(e)); }
+    });
+    const slideThumb = (id, i) => {
+      const el = h('div', { class: 'bn-thumb' },
+        h('span', { class: 'bn-no' }, String(i + 2)),
+        h('button', { class: 'bn-x', type: 'button', title: '이 사진 빼기', 'aria-label': '이 사진 빼기', onclick: async () => {
+          if (!(await confirmDialog('이 슬라이드 사진을 뺄까요?', { ok: '빼기', danger: true }))) return;
+          T = { ...T, bannerMore: T.bannerMore.filter((x) => x !== id) };
+          try { await updateProfile({ theme: T }); removeImages([id]); dirty = false; build(); } catch (e) { toast(friendly(e)); }
+        } }, icon('x', 12)));
+      loadImage(id).then((u) => { if (u) el.style.backgroundImage = `url("${u}")`; });
+      return el;
+    };
+    const slidePanel = () => {
+      const secSel = selectField({ options: BANNER_SECS.map((n) => [String(n), `${n}초`]), value: String(T.bannerSec), label: '넘어가는 간격', onChange: (v) => set({ bannerSec: +v }, false) });
+      return h('div', { class: 'bn-slide' },
+        h('h4', null, '슬라이드 (자동으로 넘어가요)'),
+        h('p', { class: 'desc' }, '대문 배너 사진이 1번이고, 여기에 추가한 사진이 이어서 자동으로 넘어가요. 마우스를 올리면 멈춰요. (지금은 관리자에게만 보이는 테스트 기능이에요)'),
+        T.bannerMore.length ? h('div', { class: 'bn-thumbs' }, T.bannerMore.map(slideThumb)) : null,
+        h('div', { class: 'row' },
+          h('button', { class: 'btn sm', type: 'button', disabled: T.bannerMore.length >= MAX_BANNER_MORE, onclick: () => slideFile.click() }, icon('plus', 14), `슬라이드 사진 추가 (${T.bannerMore.length}/${MAX_BANNER_MORE})`),
+          h('div', { class: 'bn-sec' }, h('span', null, '간격'), secSel.el), slideFile));
+    };
+
     // 배너: 블로그 태그 아래에 걸리는 작은 이미지 (4:1)
     const nbFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
     nbFile.addEventListener('change', async () => {
@@ -513,7 +553,8 @@ function designTab() {
             T = { ...T, banner: '' };
             try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
           } }, '대문 배너 지우기') : null, bannerFile) : null,
-        T.header === 'banner' ? h('p', { class: 'desc' }, '대문 배너는 블로그 맨 위에 걸리는 큰 이미지예요. 태그 아래에 걸리는 작은 "배너"와는 달라요.') : null),
+        T.header === 'banner' ? h('p', { class: 'desc' }, '대문 배너는 블로그 맨 위에 걸리는 큰 이미지예요. 태그 아래에 걸리는 작은 "배너"와는 달라요.') : null,
+        T.header === 'banner' && bannerSlideOn() ? slidePanel() : null),
       neighborsOn() ? nbPanel() : null,
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '글 안의 버튼'),
@@ -525,7 +566,7 @@ function designTab() {
         h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
+          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, bannerMore: T.bannerMore, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
         } }, '기본값으로'),
         saveBtn),
       h('h3', { class: 'preview-title' }, '미리보기'),

@@ -1,5 +1,5 @@
 import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog, txt } from './util.js';
-import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
+import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
@@ -78,6 +78,41 @@ export function postCard(p, isOwner, canSort = false, boardLabel = null) {
       tags.length ? h('div', { class: 'tags' }, tags.slice(0, 4).map((t) => h('span', { class: 'tag' }, '#' + t))) : null));
 }
 
+/**
+ * 대문 배너 슬라이드: 사진이 서서히 바뀌며 자동으로 넘어가요.
+ * 마우스를 올리거나 탭이 가려지면 멈추고, '동작 줄이기' 설정이면 자동으로 넘기지 않아요 (점을 눌러서 볼 수 있어요).
+ */
+function bannerSlides(banner, refs, sec = 5) {
+  const slides = refs.map(() => h('div', { class: 'banner-slide' }));
+  const go = (i) => {
+    idx = (i + refs.length) % refs.length;
+    slides.forEach((el, k) => el.classList.toggle('on', k === idx));
+    [...dots.children].forEach((d, k) => { d.classList.toggle('on', k === idx); d.setAttribute('aria-current', k === idx ? 'true' : 'false'); });
+  };
+  const dots = h('div', { class: 'banner-dots' }, refs.map((_, i) =>
+    h('button', { class: 'banner-dot', type: 'button', 'aria-label': `${i + 1}번째 사진 보기`, onclick: () => { go(i); lastTick = Date.now(); } })));
+  banner.classList.add('slides');
+  banner.append(...slides, dots);
+  let idx = 0, paused = false, lastTick = Date.now();
+  go(0);
+  refs.forEach((ref, i) => loadImage(ref).then((u) => {
+    if (!u) return;
+    slides[i].style.backgroundImage = `url("${u}")`;
+    slides[i].classList.add('ready');
+    if (i === 0) banner.classList.add('has-img');
+  }));
+  banner.addEventListener('mouseenter', () => { paused = true; });
+  banner.addEventListener('mouseleave', () => { paused = false; lastTick = Date.now(); });
+  banner.addEventListener('focusin', () => { paused = true; });
+  banner.addEventListener('focusout', () => { paused = false; lastTick = Date.now(); });
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const timer = setInterval(() => {
+    if (!banner.isConnected) { clearInterval(timer); return; }   // 다른 화면으로 가면 멈춰요
+    if (paused || document.hidden) { lastTick = Date.now(); return; }
+    if (Date.now() - lastTick >= sec * 1000 - 100) { lastTick = Date.now(); go(idx + 1); }
+  }, 500);
+}
+
 const PAGE = 24;
 const NONE = '_none';   // '미분류' 필터 값
 
@@ -110,7 +145,10 @@ export async function blog({ params, query, root }) {
   // ── 헤더 ──
   const banner = theme.header === 'banner'
     ? h('div', { class: 'banner' }) : null;
-  if (banner && theme.banner) {
+  // 대문 배너: 사진이 여러 장이면(관리자 테스트 기능) 자동으로 넘어가요. 아니면 지금처럼 한 장만
+  const slideRefs = [theme.banner, ...(bannerSlideOn() ? theme.bannerMore : [])].filter(Boolean);
+  if (banner && slideRefs.length > 1) bannerSlides(banner, slideRefs, theme.bannerSec);
+  else if (banner && theme.banner) {
     loadImage(theme.banner).then((u) => { if (u) { banner.style.backgroundImage = `url("${u}")`; banner.classList.add('has-img'); } });
   }
   const counts = { public: 0, locked: 0, private: 0 };
