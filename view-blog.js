@@ -59,7 +59,6 @@ export function postCard(p, isOwner, canSort = false, boardLabel = null) {
   const sp = !!p.spoiler && p.vis === 'public';
   const box = h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip' }, icon('image', 12), p.imgCount) : null);
   if (img) fitThumb(img, box, th);
-  const excerpt = txt(p.excerpt);
   const tags = (p.tags || []).map(txt).filter(Boolean);
   return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : '') + (sp ? ' spoiler' : ''), href: '#/p/' + p.id, draggable: 'false', 'data-id': p.id },
     canSort ? h('span', { class: 'grip card-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)) : null,
@@ -74,7 +73,6 @@ export function postCard(p, isOwner, canSort = false, boardLabel = null) {
         h('span', null, fmtDate(p.created))),
       h('h3', { class: 'card-title' }, txt(p.title) || '제목 없음'),
       sp ? h('p', { class: 'card-ex muted' }, '스포일러 방지 중이에요. 열어서 확인하세요')
-        : excerpt ? h('p', { class: 'card-ex' }, excerpt)
         : (p.vis === 'locked' ? h('p', { class: 'card-ex muted' }, '비밀번호가 필요한 글이에요') : null),
       tags.length ? h('div', { class: 'tags' }, tags.slice(0, 4).map((t) => h('span', { class: 'tag' }, '#' + t))) : null));
 }
@@ -232,7 +230,7 @@ export async function blog({ params, query, root }) {
       (kindFilter === 'all' || kindOf(p) === kindFilter) &&
       (boardFilter === 'all' || (boardFilter === NONE ? !boardOf(p) : boardOf(p) === boardFilter)) &&
       (!tag || (p.tags || []).includes(tag)) &&
-      (!ql || `${txt(p.title)} ${txt(p.excerpt)} ${(p.tags || []).map(txt).join(' ')}`.toLowerCase().includes(ql)));
+      (!ql || `${txt(p.title)} ${(p.tags || []).map(txt).join(' ')}`.toLowerCase().includes(ql)));
     list.replaceChildren();
     more.replaceChildren();
     if (!rows.length) {

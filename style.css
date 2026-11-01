@@ -240,8 +240,7 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 .pv { font-family: var(--mono); font-size: 13.5px; overflow-wrap: anywhere; }
 .notes { white-space: pre-wrap; overflow-wrap: anywhere; }
 /* 메모 칸: 메시지 앱 같은 말풍선 (색은 꾸미기 색을 따라가요) */
-.block.memo .block-head h3 { color: var(--muted); }
-.block.memo .block-body { padding: 16px 14px 16px 18px; }
+.memo-chat { padding: 4px 28px; }
 .chat { display: flex; flex-direction: column; gap: 3px; padding: 0 10px; }
 .bubble { --bub: color-mix(in srgb, var(--text) 9%, var(--surface)); position: relative; max-width: 78%; padding: 8px 14px; border-radius: 18px; background: var(--bub); color: var(--text);
   font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -251,7 +250,7 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 .bubble.tail { margin-bottom: 2px; }
 .bubble.tail::before, .bubble.tail::after { content: ''; position: absolute; bottom: 0; height: 16px; }
 .bubble.tail::before { width: 20px; background: var(--bub); }
-.bubble.tail::after { width: 26px; background: var(--surface); }
+.bubble.tail::after { width: 26px; background: var(--bg); }   /* 꼬리 바깥 가리개: 페이지 배경색 */
 .bubble.me.tail::before { right: -7px; border-bottom-left-radius: 16px 14px; }
 .bubble.me.tail::after { right: -26px; border-bottom-left-radius: 10px; }
 .bubble.them.tail::before { left: -7px; border-bottom-right-radius: 16px 14px; }

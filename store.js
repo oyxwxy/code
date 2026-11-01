@@ -278,11 +278,6 @@ export async function unlockContent(post, enc, password) {
   return out;
 }
 
-function makeExcerpt(content) {
-  const src = (content.notes || '').trim() || (content.prompt || '').trim();
-  return src.replace(/\s+/g, ' ').slice(0, 140);
-}
-
 /**
  * 글 저장 (새 글/수정 공용)
  * images: [{ src?, data? }] — src(이미 올라간 주소)가 없는 것만 ImgBB에 올려요
@@ -323,7 +318,7 @@ export async function savePost({
     owner: uid, handle: state.me.handle, kind, board: BOARD_ID_RE.test(board || '') ? board : '',
     title: (title || '').trim() || '제목 없음', vis,
     unlisted: !!unlisted && vis !== 'private', spoiler: !!spoiler && vis === 'public', tags,
-    excerpt: vis === 'locked' || (spoiler && vis === 'public') ? '' : makeExcerpt(content),
+    excerpt: '',   // 목록 카드에는 프롬프트·메모 내용을 보여주지 않아요
     thumb, imgCount: urls.length, created: created || prev?.created || now, updated: now,
   };
   if (typeof prev?.order === 'number') post.order = prev.order;   // 직접 정한 순서 유지

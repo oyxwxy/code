@@ -108,9 +108,9 @@ function renderBody(content, kind = 'style') {
     ? content.memo.map((m) => ({ side: m?.side === 'me' ? 'me' : 'them', text: txt(m?.text).trim() })).filter((m) => m.text)
     : txt(content.notes).trim() ? [{ side: 'them', text: txt(content.notes).trim() }] : [];
   if (memo.length) {
-    wrap.append(h('section', { class: 'block memo' }, h('div', { class: 'block-head' }, h('h3', null, L.notes || '메모')),
-      h('div', { class: 'block-body' }, h('div', { class: 'chat' }, memo.map((m, i) =>
-        h('div', { class: `bubble ${m.side}` + (memo[i + 1]?.side !== m.side ? ' tail' : '') + (i && memo[i - 1].side !== m.side ? ' first' : '') }, m.text))))));
+    // 메모: 틀 없이 말풍선만 보여요
+    wrap.append(h('div', { class: 'chat memo-chat', 'aria-label': L.notes || '메모' }, memo.map((m, i) =>
+      h('div', { class: `bubble ${m.side}` + (memo[i + 1]?.side !== m.side ? ' tail' : '') + (i && memo[i - 1].side !== m.side ? ' first' : '') }, m.text))));
   }
   return wrap;
 }
