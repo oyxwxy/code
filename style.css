@@ -847,3 +847,35 @@ a.board-badge:hover { border-color: var(--accent); }
 .dd-row-top, .dd-row-bot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dd-row-top .input { flex: 1; min-width: 0; }
 .dd-row-top .dd-emoji { flex: none; width: 56px; text-align: center; padding-inline: 0; }
+
+
+/* ───────── 이미지 자르기 편집기 ───────── */
+.crop-wrap { display: flex; flex-direction: column; gap: 12px; }
+.crop-stage { position: relative; width: 100%; overflow: hidden; border-radius: var(--r-sm); background: #fff; border: 1px solid var(--border); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+.crop-stage.grabbing { cursor: grabbing; }
+.crop-stage:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); }
+.crop-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.crop-grid { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 2px rgb(255 255 255 / .85), inset 0 0 0 3px rgb(0 0 0 / .25);
+  background: linear-gradient(to right, transparent calc(33.33% - .5px), rgb(255 255 255 / .55) calc(33.33% - .5px) calc(33.33% + .5px), transparent calc(33.33% + .5px) calc(66.66% - .5px), rgb(255 255 255 / .55) calc(66.66% - .5px) calc(66.66% + .5px), transparent calc(66.66% + .5px)),
+    linear-gradient(to bottom, transparent calc(33.33% - .5px), rgb(255 255 255 / .55) calc(33.33% - .5px) calc(33.33% + .5px), transparent calc(33.33% + .5px) calc(66.66% - .5px), rgb(255 255 255 / .55) calc(66.66% - .5px) calc(66.66% + .5px), transparent calc(66.66% + .5px)); }
+.crop-bar { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+.crop-zoom { flex: 1; accent-color: var(--accent); }
+
+/* 글 이미지 자르기 (영역 지정) */
+.rc-wrap { display: flex; flex-direction: column; gap: 10px; }
+.rc-presets { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 16px; background: var(--accent-soft); }
+.rc-presets .side-opt { padding: 4px 11px; }
+.rc-center { display: flex; justify-content: center; }
+.rc-stage { position: relative; clip-path: inset(-14px); border-radius: 6px; background: #fff; touch-action: none; user-select: none; -webkit-user-select: none; flex: none; }
+.rc-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rc-box { position: absolute; cursor: move; outline: none; box-shadow: 0 0 0 9999px rgb(0 0 0 / .5); border: 2px solid #fff; box-sizing: border-box; touch-action: none; }
+.rc-grid { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to right, transparent 33%, rgb(255 255 255 / .55) 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, rgb(255 255 255 / .55) 66% calc(66% + 1px), transparent calc(66% + 1px)),
+    linear-gradient(to bottom, transparent 33%, rgb(255 255 255 / .55) 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, rgb(255 255 255 / .55) 66% calc(66% + 1px), transparent calc(66% + 1px)); }
+.rc-h { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; display: grid; place-items: center; touch-action: none; }
+.rc-h::after { content: ''; width: 10px; height: 10px; background: #fff; border: 2px solid var(--accent); border-radius: 3px; box-sizing: border-box; }
+.rc-nw { left: 0; top: 0; cursor: nwse-resize; } .rc-n { left: 50%; top: 0; cursor: ns-resize; } .rc-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.rc-e { left: 100%; top: 50%; cursor: ew-resize; } .rc-se { left: 100%; top: 100%; cursor: nwse-resize; } .rc-s { left: 50%; top: 100%; cursor: ns-resize; }
+.rc-sw { left: 0; top: 100%; cursor: nesw-resize; } .rc-w { left: 0; top: 50%; cursor: ew-resize; }
+.rc-box.locked .rc-n, .rc-box.locked .rc-e, .rc-box.locked .rc-s, .rc-box.locked .rc-w { display: none; }
+.rc-info { text-align: center; }

@@ -2,10 +2,11 @@ import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, moda
 import { state, neighborsOn, ddayOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
 import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
-import { compressImage, uploadImage, removeImages, makeIcon, saveBannerImage, saveNeighborBanner, loadImage } from './images.js';
+import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
 import { colorField, stepper, iconField, datePicker } from './widgets.js';
 import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
+import { openCropper } from './crop.js';
 
 const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 // 초대 탭은 관리자에게만 보여요
@@ -435,7 +436,9 @@ function designTab() {
       if (!f) return;
       try {
         // 배너만 Firebase에 직접 저장해요 (나머지 이미지는 ImgBB)
-        const id = await saveBannerImage(f, state.user.uid);
+        const canvas = await openCropper(f, { ratio: 6, outW: 1800, title: '대문 배너 자르기', hint: '블로그 맨 위에 걸리는 큰 이미지예요. 끌어서 위치를, 슬라이더·마우스 휠로 크기를 맞춰요. 작은 화면에서는 양옆이 조금 잘려 보일 수 있어요.' });
+        if (!canvas) return;
+        const id = await saveCroppedCanvas(canvas, state.user.uid, 'bn');
         const old = state.me.theme.banner;
         T = { ...T, banner: id };
         await updateProfile({ theme: T });
@@ -453,7 +456,9 @@ function designTab() {
       nbFile.value = '';
       if (!f) return;
       try {
-        const id = await saveNeighborBanner(f, state.user.uid);
+        const canvas = await openCropper(f, { ratio: 4, outW: 400, title: '배너 자르기', hint: '블로그 태그 아래에 걸리는 작은 배너(가로 4 : 세로 1)예요. 끌어서 위치를, 슬라이더·마우스 휠로 크기를 맞춰요.' });
+        if (!canvas) return;
+        const id = await saveCroppedCanvas(canvas, state.user.uid, 'nb');
         const old = state.me.theme.nbBanner;
         T = { ...T, nbBanner: id };
         await updateProfile({ theme: T });

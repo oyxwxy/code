@@ -1,3 +1,4 @@
+import { openImageCropper } from './crop.js';
 import { h, icon, toast, modal, loader, emptyState, autosize, askText, sortable, rid, txt } from './util.js';
 import { state, getPost, loadContent, unlockContent, savePost, saveBoards, friendly } from './store.js';
 import { applyTheme, sanitizeBoards, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
@@ -244,11 +245,26 @@ export async function editor({ params, query, root }) {
         h('span', { class: 'grip img-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 14)),
         i === 0 ? h('span', { class: 'cover-tag' }, '대표') : null,
         h('div', { class: 'img-tools' },
+          h('button', { type: 'button', title: '자르기 (선택)', onclick: () => cropImg(im) }, icon('crop', 14)),
           i !== 0 ? h('button', { type: 'button', title: '대표 이미지로', onclick: () => { imgs.unshift(imgs.splice(i, 1)[0]); paintImgs(); } }, icon('star', 14)) : null,
           h('button', { type: 'button', title: '삭제', onclick: () => { imgs.splice(i, 1); paintImgs(); } }, icon('x', 14))));
     }));
   };
   sortable(imgGrid, { item: '.img-item', handle: '.img-grip', onSort: (els) => { imgs = els.map((el) => imgs[Number(el.dataset.i)]); paintImgs(); } });
+  // 선택 기능: 이미 올린 이미지를 필요할 때만 잘라요 (자르면 새 이미지로 다시 올라가요)
+  async function cropImg(im) {
+    let blob;
+    try { blob = await (await fetch(im.data || im.src)).blob(); }
+    catch { toast('이 이미지는 브라우저에서 자를 수 없어요. 원본 파일을 다시 올려서 잘라 주세요'); return; }
+    const canvas = await openImageCropper(blob);
+    if (!canvas) return;
+    try {
+      const out = await new Promise((ok, no) => canvas.toBlob((b) => (b ? ok(b) : no(new Error('이미지를 만들지 못했어요'))), 'image/png'));
+      im.data = await compressImage(out);
+      delete im.src;
+      paintImgs();
+    } catch (err) { toast(friendly(err)); }
+  }
   async function addFiles(files, { forceMeta = false } = {}) {
     files = [...files].filter((f) => f.type.startsWith('image/'));
     if (!files.length) return;
