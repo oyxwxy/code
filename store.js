@@ -284,7 +284,7 @@ export async function unlockContent(post, enc, password) {
  * lock: 수정 시 기존 잠금 키 { keyRaw, salt } — password 비우면 이 키로 다시 암호화
  */
 export async function savePost({
-  id, prev = null, kind = 'style', board = '', title, vis, unlisted = false, spoiler = false, tags = [], content, images = [],
+  id, prev = null, kind = 'style', board = '', title, vis, unlisted = false, spoiler = false, thumbFill = false, tags = [], content, images = [],
   password = '', lock = null, origImages = [], created, onProgress,
 }) {
   const uid = state.user.uid;
@@ -319,7 +319,7 @@ export async function savePost({
   const post = {
     owner: uid, handle: state.me.handle, kind, board: BOARD_ID_RE.test(board || '') ? board : '',
     title: (title || '').trim() || '제목 없음', vis,
-    unlisted: !!unlisted && vis !== 'private', spoiler: !!spoiler && vis === 'public', tags,
+    unlisted: !!unlisted && vis !== 'private', spoiler: !!spoiler && vis === 'public', thumbFill: !!thumbFill, tags,
     excerpt: '',   // 목록 카드에는 프롬프트·메모 내용을 보여주지 않아요
     thumb, thumbSp: !!images[0]?.spoiler && vis !== 'locked', imgCount: urls.length, created: created || prev?.created || now, updated: now,
   };

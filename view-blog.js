@@ -59,7 +59,7 @@ export function postCard(p, isOwner, canSort = false, boardLabel = null) {
   const hid = isOwner && !kindShown(kindOf(p));
   const sp = !!p.spoiler && p.vis === 'public';
   const box = h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip' }, icon('image', 12), p.imgCount) : null);
-  if (img) fitThumb(img, box, th);
+  if (img && !p.thumbFill) fitThumb(img, box, th);   // '썸네일 꽉 채우기'를 켠 글은 여백 없이 꽉 채워요
   const tags = (p.tags || []).map(txt).filter(Boolean);
   return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : '') + (sp ? ' spoiler' : '') + (p.thumbSp ? ' thumb-sp' : ''), href: '#/p/' + p.id, draggable: 'false', 'data-id': p.id },
     canSort ? h('span', { class: 'grip card-grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)) : null,
@@ -135,7 +135,9 @@ export async function blog({ params, query, root }) {
   let kindFilter = 'all';
   const tagCount = new Map();
   posts.forEach((p) => (p.tags || []).map(txt).filter(Boolean).forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1)));
-  const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24).map((x) => x[0]);
+  const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]);
+  const TAG_LIMIT = 10;   // 사이드에 처음 보여줄 태그 수 (나머지는 '더보기')
+  let tagsOpen = false;
 
   const list = h('div');
   const more = h('div', { class: 'more' });
@@ -189,8 +191,18 @@ export async function blog({ params, query, root }) {
   }
 
   function paintPills() {
-    tagBox.replaceChildren(...topTags.map((t) =>
-      h('button', { class: 'pill' + (tag === t ? ' on' : ''), onclick: () => { tag = tag === t ? null : t; shown = PAGE; paintPills(); paint(); } }, '#' + t)));
+    // 태그가 많으면 처음엔 몇 개만 보여주고 '더보기'로 펼쳐요 (골라 둔 태그는 접혀 있어도 계속 보여요)
+    const foldable = topTags.length > TAG_LIMIT;
+    let vis = topTags;
+    if (foldable && !tagsOpen) {
+      vis = topTags.slice(0, TAG_LIMIT);
+      if (tag && !vis.includes(tag)) vis = [...vis, tag];
+    }
+    tagBox.replaceChildren(...vis.map((t) =>
+      h('button', { class: 'pill' + (tag === t ? ' on' : ''), onclick: () => { tag = tag === t ? null : t; shown = PAGE; paintPills(); paint(); } }, '#' + t)),
+      ...(foldable ? [h('button', { class: 'pill tag-more', type: 'button', 'aria-expanded': String(tagsOpen),
+        onclick: () => { tagsOpen = !tagsOpen; paintPills(); } },
+        tagsOpen ? '접기' : `더보기 +${topTags.length - Math.min(TAG_LIMIT, topTags.length)}`)] : []));
     if (isOwner) {
       const opts = [['all', '전체'], ['public', '공개'], ['locked', '비밀번호'], ['private', '비공개']];
       visBox.replaceChildren(...opts.map(([k, label]) =>
@@ -203,11 +215,13 @@ export async function blog({ params, query, root }) {
         onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, label)));
     // 게시판: 다른 사람에게는 글이 있는 게시판만 보여요. '미분류'는 설정에서 켜고 끌 수 있어요
     const has = new Set(posts.map((p) => boardOf(p) || NONE));
+    const boardN = new Map();   // 게시판별 글 개수 ('전체'는 posts.length)
+    posts.forEach((p) => { const k = boardOf(p) || NONE; boardN.set(k, (boardN.get(k) || 0) + 1); });
     const entries = [['all', '전체', 'grid'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
       ...(showUncat && (isOwner || has.has(NONE)) ? [[NONE, '미분류', 'file']] : [])];
     boardBox.replaceChildren(...entries.map(([k, label, ic]) =>
       h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; paintPills(); paint(); } },
-        icon(ic, 15), h('span', null, label))));
+        icon(ic, 15), h('span', null, label), h('em', { class: 'side-n', 'aria-label': `글 ${k === 'all' ? posts.length : (boardN.get(k) || 0)}개` }, k === 'all' ? posts.length : (boardN.get(k) || 0)))));
   }
 
   // 화면에 보이는 글들끼리 자리를 바꾸고, 전체 순서에 반영해 저장해요

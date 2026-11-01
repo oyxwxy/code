@@ -722,7 +722,9 @@ a.board-badge:hover { border-color: var(--accent); }
 .side-sec h4 { margin: 0 0 8px; padding-left: 10px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
 .side-list { display: flex; flex-direction: column; gap: 2px; }
 .side-item { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--muted); font-size: 14px; font-weight: 500; text-align: left; transition: background .15s, color .15s; }
-.side-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-n { flex: none; margin-left: auto; font-style: normal; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; opacity: .65; }
+.side-item.on .side-n { opacity: .85; }
 .side-item:hover { background: var(--accent-soft); color: var(--text); }
 .side-item.on { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .side-tags { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 2px; }
@@ -734,6 +736,8 @@ a.board-badge:hover { border-color: var(--accent); }
   .side-item { width: auto; flex: none; border: 1px solid var(--border); border-radius: 999px; padding: 6px 13px; }
   .side-tags { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .side-tags .pill { flex: none; }
+  .side-item span { flex: none; }
+  .side-n { margin-left: 2px; }
 }
 
 /* ═════════ 글 위쪽 줄 · 도구줄 ═════════ */
@@ -886,6 +890,7 @@ a.board-badge:hover { border-color: var(--accent); }
 .tag-suggest-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .pill.sm { height: 26px; padding: 0 10px; font-size: 12.5px; }
 .pill.sm.more { border-style: dashed; }
+.pill.tag-more { border-style: dashed; background: none; }
 
 /* 이미지별 스포일러 */
 .gfig { position: relative; }

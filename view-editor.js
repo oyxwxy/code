@@ -173,6 +173,7 @@ export async function editor({ params, query, root }) {
   const pwIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password' });
   const unlistedCb = h('input', { type: 'checkbox', checked: !!prev?.unlisted });
   const spoilerCb = h('input', { type: 'checkbox', checked: !!prev?.spoiler });
+  const fillCb = h('input', { type: 'checkbox', checked: !!prev?.thumbFill });
   const visOpts = [
     ['public', 'globe', '공개', '링크를 아는 누구나'],
     ['locked', 'lock', '비밀번호', '비밀번호를 아는 사람만'],
@@ -385,7 +386,7 @@ export async function editor({ params, query, root }) {
     label.textContent = ' 저장 중…';
     try {
       const id = await savePost({
-        id: editId, prev, kind, board, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, tags, content: body, created,
+        id: editId, prev, kind, board, title: titleIn.value, vis, unlisted: unlistedCb.checked, spoiler: spoilerCb.checked, thumbFill: fillCb.checked, tags, content: body, created,
         images: imgs.filter((i) => i.src || i.data), password: pwIn.value, lock, origImages,
         onProgress: (i, n) => { label.textContent = ` 이미지 올리는 중 (${i + 1}/${n})…`; },
       });
@@ -424,7 +425,8 @@ export async function editor({ params, query, root }) {
     h('small', { class: 'hint-line' }, '글을 분류하는 폴더예요. 블로그에서 게시판별로 모아 볼 수 있어요.'));
   const datePanel = panel('작성일', dateIn.el, h('small', { class: 'hint-line' }, '글에 표시되는 날짜예요. 원하는 날짜로 바꿀 수 있어요. 목록 순서는 블로그에서 카드를 끌어서 정해요.'));
   const imgPanel = panel('이미지', drop, fileIn, imgGrid,
-    h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`));
+    h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`),
+    h('label', { class: 'check' }, fillCb, h('span', null, '목록 썸네일 꽉 채우기 ', h('small', null, '(가로로 긴 그림의 위아래 여백을 없애고 칸을 가득 채워요. 가장자리는 잘릴 수 있어요)'))));
   const tagPanel = panel('태그', tagBox, suggestBox);
   const paramPanel = panel('생성 설정', paramGrid,
     h('small', { class: 'hint-line' }, 'Effort는 V5 Full 전용이에요. Medium은 14 steps·Euler Ancestral로 고정돼요.'));
