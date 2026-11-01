@@ -362,7 +362,7 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 .bar-label { margin-top: 6px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ───────── 모달 · 토스트 ───────── */
-.modal-back { position: fixed; inset: 0; z-index: 90; background: rgb(10 10 14 / .45); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 20px; opacity: 0; transition: opacity .18s; }
+.modal-back { position: fixed; inset: 0; z-index: 90; background: rgb(10 10 14 / .45); backdrop-filter: blur(3px); display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 20px; opacity: 0; transition: opacity .18s; }
 .modal-back.in { opacity: 1; }
 .modal { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) * 1.2); padding: 22px; box-shadow: 0 30px 80px -20px rgb(0 0 0 / .5); transform: translateY(10px) scale(.98); transition: transform .2s; }
 .modal-back.in .modal { transform: none; }
@@ -830,20 +830,32 @@ a.board-badge:hover { border-color: var(--accent); }
 .dd-pill svg { flex: none; fill: currentColor; }
 .dd-pill-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dd-wrap { min-width: min(380px, 80vw); }
-.dd-head { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .08em; margin-bottom: 12px; }
-.dd-head i { flex: 1; height: 2px; border-radius: 2px; background: var(--border); }
-.dd-head b { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 10px; font-size: 12px; }
-.dd-list { display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow-y: auto; padding: 2px; }
-.dd-card { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-radius: 24px; border: 2px solid var(--dd-edge);
-  background: linear-gradient(135deg, var(--dd-bg), color-mix(in srgb, var(--dd-bg) 30%, #fff)); }
-.dd-ic { flex: none; width: 64px; height: 64px; display: grid; place-items: center; font-size: 30px; border-radius: 20px; background: color-mix(in srgb, var(--dd-bg) 70%, #fff);
-  border: 3px solid #fff; box-shadow: 0 5px 0 var(--dd-edge); margin-bottom: 5px; }
-.dd-info { min-width: 0; }
-.dd-name { font-size: 15px; font-weight: 700; color: #4b5b73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dd-big { font-size: 38px; font-weight: 800; line-height: 1.15; color: #34455e; letter-spacing: -.01em; }
-.dd-meta { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #7b8aa0; }
-.dd-tag { display: inline-flex; align-items: center; gap: 4px; font-style: normal; font-weight: 700; font-size: 13px; color: #34455e; background: #fff; border-radius: 999px; padding: 2px 10px; }
-.dd-tag svg { fill: #e0679a; stroke: #e0679a; }
+.dd-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 15px; font-weight: 800; letter-spacing: .03em; color: var(--text); }
+.dd-head svg { flex: none; fill: #e0679a; stroke: #e0679a; }
+.dd-head b { margin-left: auto; min-width: 24px; padding: 1px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; text-align: center; }
+.dd-list { display: flex; flex-direction: column; gap: 12px; max-height: 68vh; overflow-y: auto; padding: 3px 3px 8px; scrollbar-width: thin; }
+.dd-card { position: relative; display: flex; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 22px; overflow: hidden;
+  background: linear-gradient(135deg, var(--dd-bg), color-mix(in srgb, var(--dd-bg) 35%, #fff));
+  border: 1px solid color-mix(in srgb, var(--dd-edge) 55%, transparent);
+  box-shadow: 0 8px 18px -12px var(--dd-edge);
+  animation: dd-in .42s cubic-bezier(.2, .8, .3, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+.dd-card::after { content: ''; position: absolute; right: -26px; top: -30px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, rgb(255 255 255 / .7), rgb(255 255 255 / 0) 70%); pointer-events: none; }
+.dd-card.today { border-color: var(--dd-edge); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dd-edge) 45%, transparent), 0 10px 22px -12px var(--dd-edge); }
+.dd-ic { flex: none; width: 58px; height: 58px; display: grid; place-items: center; font-size: 28px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dd-edge) 35%, transparent), 0 6px 14px -6px var(--dd-edge); }
+.dd-info { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.dd-top { display: flex; align-items: center; gap: 8px; }
+.dd-name { flex: 1; min-width: 0; font-size: 14.5px; font-weight: 700; color: #4b5b73; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-tag { flex: none; display: inline-flex; align-items: center; gap: 4px; font-style: normal; font-weight: 700; font-size: 11.5px; line-height: 1; color: var(--dd-ink); background: rgb(255 255 255 / .75); border-radius: 999px; padding: 4px 9px; }
+.dd-tag svg { fill: currentColor; stroke: currentColor; }
+.dd-big { display: flex; align-items: baseline; gap: 2px; margin: 3px 0 4px; line-height: 1.1; color: var(--dd-ink); font-variant-numeric: tabular-nums; }
+.dd-d { font-size: 20px; font-weight: 800; opacity: .55; }
+.dd-n { font-size: 40px; font-weight: 800; letter-spacing: -.02em; }
+.dd-n.day { font-size: 34px; }
+.dd-date { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: #7b8aa0; }
+@keyframes dd-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .dd-card { animation: none; } }
+@media (max-width: 420px) { .dd-card { gap: 12px; padding: 14px; } .dd-ic { width: 50px; height: 50px; font-size: 24px; } .dd-n { font-size: 34px; } }
 .dd-edit { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
 .dd-row { border: 1px dashed var(--border); border-radius: var(--r-sm); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 .dd-row-top, .dd-row-bot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -923,11 +935,13 @@ a.board-badge:hover { border-color: var(--accent); }
 .banner-slide { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity .9s ease; }
 .banner-slide.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .banner-slide { transition: none; } }
-/* 점은 아래쪽 프로필 영역(겹치는 48px) 위로 띄워서 눌리게 해요 */
-.banner-dots { position: absolute; left: 0; right: 0; bottom: 58px; z-index: 2; display: flex; justify-content: center; gap: 7px; pointer-events: none; }
-.banner-dot { pointer-events: auto; width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: rgb(255 255 255 / .6); box-shadow: 0 0 0 1px rgb(0 0 0 / .18); transition: all .2s; }
-.banner-dot.on { width: 22px; background: #fff; }
-@media (max-width: 640px) { .banner-dots { bottom: 54px; } }
+/* 점은 평소엔 투명하고, 대문 배너(머리말)에 마우스를 올리면 나타나요 (터치 화면은 은은하게 항상 보여요) */
+.banner-dots { position: absolute; left: 0; right: 0; bottom: 10px; z-index: 2; display: flex; justify-content: center; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
+.head-banner:hover .banner-dots, .banner-dots:has(.banner-dot:focus-visible) { opacity: 1; }
+.banner-dot { position: relative; pointer-events: auto; width: 16px; height: 16px; padding: 0; border: 0; background: none; }   /* 누르기 쉽게 칸은 크게, 점은 작게 */
+.banner-dot::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; transform: translate(-50%, -50%); border-radius: 999px; background: rgb(255 255 255 / .6); box-shadow: 0 0 3px rgb(0 0 0 / .25); transition: width .2s, background .2s; }
+.banner-dot.on::after { width: 16px; background: #fff; }
+@media (hover: none) { .banner-dots { opacity: .7; } }
 
 /* 설정: 슬라이드 사진 목록 */
 .bn-slide { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }

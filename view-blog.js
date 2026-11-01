@@ -101,8 +101,12 @@ function bannerSlides(banner, refs, sec = 5) {
     slides[i].classList.add('ready');
     if (i === 0) banner.classList.add('has-img');
   }));
-  banner.addEventListener('mouseenter', () => { paused = true; });
-  banner.addEventListener('mouseleave', () => { paused = false; lastTick = Date.now(); });
+  // 점이 나타나는 범위와 같게 (머리말 전체). 아직 화면에 붙기 전이라 한 박자 뒤에 찾아요
+  requestAnimationFrame(() => {
+    const zone = banner.closest('.blog-head') || banner;
+    zone.addEventListener('mouseenter', () => { paused = true; });
+    zone.addEventListener('mouseleave', () => { paused = false; lastTick = Date.now(); });
+  });
   banner.addEventListener('focusin', () => { paused = true; });
   banner.addEventListener('focusout', () => { paused = false; lastTick = Date.now(); });
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;

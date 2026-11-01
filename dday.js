@@ -55,9 +55,10 @@ export function nearest(list, today = todayStart()) {
   return e ? { text: ddayText(e, today), name: e.name, label: '' } : null;
 }
 
+// [카드 배경, 테두리·강조, 글자색(숫자)]
 const TINTS = [
-  ['#ece8fb', '#b9aef0'], ['#fde3df', '#f4a9a0'], ['#f6e3f7', '#d9a8e0'],
-  ['#fde4ec', '#f3a9c1'], ['#e4f5df', '#a6d79a'], ['#e1f0fb', '#9bc7ea'], ['#fdf1d9', '#ecc979'],
+  ['#ece8fb', '#b9aef0', '#5b4bc0'], ['#fde3df', '#f4a9a0', '#c2463a'], ['#f6e3f7', '#d9a8e0', '#9a3aab'],
+  ['#fde4ec', '#f3a9c1', '#c23a72'], ['#e4f5df', '#a6d79a', '#3f8a31'], ['#e1f0fb', '#9bc7ea', '#2f74b3'], ['#fdf1d9', '#ecc979', '#a87a10'],
 ];
 
 /** 이름 줄 오른쪽에 붙는 알약: 가장 가까운 기념일. 누르면 전체 목록 */
@@ -69,19 +70,34 @@ export function ddayPill(list) {
     icon('heart', 14), h('span', { class: 'dd-pill-txt' }, txtLine));
 }
 
+/** 'D+1200' → ['D+', '1200'] (D-DAY 는 그대로) */
+const splitD = (t) => { const m = /^(D[+-])(\d+)$/.exec(t || ''); return m ? [m[1], m[2]] : ['', t || '']; };
+
 function openDdays(list) {
   const today = todayStart();
   const rows = [...list].sort((a, b) => (a.date < b.date ? -1 : 1));
   const body = h('div', { class: 'dd-wrap' },
-    h('div', { class: 'dd-head' }, h('span', null, 'D-DAY'), h('i'), h('b', null, String(rows.length))),
+    h('div', { class: 'dd-head' }, icon('heart', 16), h('span', null, 'D-DAY'), h('b', null, String(rows.length))),
     h('div', { class: 'dd-list' }, rows.map((e, i) => {
-      const [bg, edge] = TINTS[i % TINTS.length];
-      return h('div', { class: 'dd-card', style: { '--dd-bg': bg, '--dd-edge': edge } },
+      const [bg, edge, ink] = TINTS[i % TINTS.length];
+      const text = ddayText(e, today);
+      const [d, n] = splitD(text);
+      const card = h('div', { class: 'dd-card' + (text === 'D-DAY' ? ' today' : '') },
         h('div', { class: 'dd-ic' }, txt(e.emoji) || '💗'),
         h('div', { class: 'dd-info' },
-          h('div', { class: 'dd-name' }, txt(e.name)),
-          h('div', { class: 'dd-big' }, ddayText(e, today)),
-          h('div', { class: 'dd-meta' }, h('span', null, ymdDots(e.date)), h('em', { class: 'dd-tag' }, e.kind === 'couple' ? [icon('heart', 12), '커플'] : 'D-DAY'))));
+          h('div', { class: 'dd-top' },
+            h('div', { class: 'dd-name' }, txt(e.name)),
+            h('em', { class: 'dd-tag' }, e.kind === 'couple' ? [icon('heart', 11), '커플'] : 'D-DAY')),
+          h('div', { class: 'dd-big', 'aria-label': text },
+            d ? h('span', { class: 'dd-d' }, d) : null,
+            h('span', { class: 'dd-n' + (d ? '' : ' day') }, n)),
+          h('div', { class: 'dd-date' }, icon('calendar', 12), ymdDots(e.date))));
+      // style 객체로는 CSS 변수가 적용되지 않아서 직접 지정해요
+      card.style.setProperty('--dd-bg', bg);
+      card.style.setProperty('--dd-edge', edge);
+      card.style.setProperty('--dd-ink', ink);
+      card.style.setProperty('--i', String(i));
+      return card;
     })));
   modal({ body, wide: false });
 }
