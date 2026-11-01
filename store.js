@@ -2,11 +2,11 @@
 import {
   auth, db, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut,
   sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, updatePassword,
-  doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where, writeBatch,
+  doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, writeBatch,
 } from './fb.js';
-import { AUTH_DOMAIN, BETA_HANDLES } from './config.js';
+import { AUTH_DOMAIN, BETA_HANDLES, NEIGHBORS_FOR_ALL } from './config.js';
 import { rid, inviteCode, txt } from './util.js';
-import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE } from './theme.js';
+import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE, MAX_NEIGHBORS } from './theme.js';
 import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
 import { makeThumb, uploadImage, removeImages, safeUrl, isUrl } from './images.js';
 
@@ -383,6 +383,57 @@ export async function listInvites() {
 export async function listInvitedMembers() {
   const s = await getDocs(query(collection(db, 'profiles'), where('invitedBy', '==', state.user.uid)));
   return s.docs.map((d) => ({ uid: d.id, ...d.data() }));
+}
+
+// ───────── 이웃 배너 ─────────
+/** 이웃 배너 기능을 쓸 수 있는 사람인지 (보는 사람 기준) */
+export const neighborsOn = () => !!state.me && (NEIGHBORS_FOR_ALL || isBeta());
+
+export const myNeighbors = () => sanitizeTheme(state.me?.theme).neighbors;
+export const isNeighbor = (uid) => myNeighbors().includes(uid);
+
+/** 상대 배너를 내 이웃 목록에 넣고, 상대에게 알림을 남겨요 */
+export async function takeNeighbor(owner) {
+  const me = state.user.uid;
+  if (!owner?.uid || owner.uid === me) return;
+  const cur = myNeighbors();
+  if (cur.includes(owner.uid)) return;
+  if (cur.length >= MAX_NEIGHBORS) throw new Error(`이웃은 최대 ${MAX_NEIGHBORS}명까지 가져갈 수 있어요`);
+  const b = writeBatch(db);
+  b.update(doc(db, 'profiles', me), clean({ theme: { ...sanitizeTheme(state.me.theme), neighbors: [...cur, owner.uid] } }));
+  b.set(doc(db, 'notifs', owner.uid, 'items', me), { at: Date.now(), read: false });
+  await b.commit();
+  await refreshMe();
+}
+
+/** 이웃에서 빼요. 상대에게 갔던 알림도 같이 지워요 */
+export async function dropNeighbor(uid) {
+  const me = state.user.uid;
+  const b = writeBatch(db);
+  b.update(doc(db, 'profiles', me), clean({ theme: { ...sanitizeTheme(state.me.theme), neighbors: myNeighbors().filter((x) => x !== uid) } }));
+  b.delete(doc(db, 'notifs', uid, 'items', me));
+  await b.commit();
+  await refreshMe();
+}
+
+/** 내 배너를 가져간 사람들 (최신순) */
+export async function listNotifs() {
+  const s = await getDocs(collection(db, 'notifs', state.user.uid, 'items'));
+  const rows = s.docs.map((d) => ({ from: d.id, ...d.data() })).sort((a, b) => (b.at || 0) - (a.at || 0));
+  const profs = await Promise.all(rows.map((r) => getProfile(r.from).catch(() => null)));
+  return rows.map((r, i) => ({ ...r, prof: profs[i] }));
+}
+
+export async function markNotifsRead(rows) {
+  const unread = rows.filter((r) => !r.read);
+  if (!unread.length) return;
+  const b = writeBatch(db);
+  unread.forEach((r) => b.update(doc(db, 'notifs', state.user.uid, 'items', r.from), { read: true }));
+  await b.commit();
+}
+
+export async function deleteNotif(from) {
+  await deleteDoc(doc(db, 'notifs', state.user.uid, 'items', from));
 }
 
 // ───────── 비밀번호 찾기 · 계정 보안 ─────────

@@ -1,5 +1,5 @@
 import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog, txt } from './util.js';
-import { state, getProfileByHandle, listPosts, savePostOrder, movePosts, friendly } from './store.js';
+import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
@@ -273,10 +273,14 @@ export async function blog({ params, query, root }) {
         h('button', { class: 'btn ghost sm', onclick: sortByDate, title: '카드의 ⋮⋮ 손잡이를 끌어서 순서를 직접 바꿀 수도 있어요' }, '작성일 최신순으로 정리')) : null)] : []));
   }
 
-  const hasSide = boards.length > 0 || topTags.length > 0;
+  // ── 이웃 배너: 태그 아래에 이 블로그의 배너, 그 밑으로 이 블로그의 이웃들 ──
+  const nbZone = neighborsOn() ? neighborZone(prof, theme, isOwner) : null;
+
+  const hasSide = boards.length > 0 || topTags.length > 0 || !!nbZone;
   const side = hasSide ? h('aside', { class: 'blog-side' },
     boards.length ? h('div', { class: 'side-sec' }, h('h4', null, '게시판'), boardBox) : null,
-    topTags.length ? h('div', { class: 'side-sec' }, h('h4', null, '태그'), tagBox) : null) : null;
+    topTags.length ? h('div', { class: 'side-sec' }, h('h4', null, '태그'), tagBox) : null,
+    nbZone) : null;
   const main = h('div', { class: 'blog-main' },
     h('div', { class: 'toolbar' }, search, kindBox),
     toolsHost, list, more);
@@ -284,4 +288,59 @@ export async function blog({ params, query, root }) {
   paintTools();
   paintPills();
   paint();
+}
+
+// ───────── 이웃 배너 ─────────
+/** 배너 한 장. 이미지만 보이고, 마우스를 올리면 블로그 이름과 핸들이 나와요 */
+export function bannerEl(p, { href = null, onclick = null, cls = '' } = {}) {
+  const name = txt(p?.display) || txt(p?.handle);
+  const ref = sanitizeTheme(p?.theme).nbBanner;
+  const el = h(href ? 'a' : 'button', { class: 'nb-banner ' + cls + (ref ? '' : ' no-img'), ...(href ? { href } : { type: 'button' }), 'aria-label': `${name} @${txt(p?.handle)}`, onclick },
+    ref ? null : h('span', { class: 'nb-fallback' }, name),
+    h('span', { class: 'nb-hover' }, h('strong', null, name), h('small', null, '@' + txt(p?.handle))));
+  if (ref) loadImage(ref).then((u) => { if (u) el.style.backgroundImage = `url("${u}")`; });
+  return el;
+}
+
+function neighborZone(prof, theme, isOwner) {
+  const hasMine = !!theme.nbBanner;
+  const nbs = h('div', { class: 'nb-list' });
+  const zone = h('div', { class: 'side-sec nb-zone' }, h('h4', null, '이웃'));
+  const paintNeighbors = async () => {
+    const mine = isOwner ? state.me.theme.neighbors : theme.neighbors;
+    const profs = (await Promise.all(mine.map((u) => getProfile(u).catch(() => null)))).filter(Boolean);
+    nbs.replaceChildren(...profs.map((p) => {
+      const wrap = h('div', { class: 'nb-item' }, bannerEl(p, { href: '#/u/' + p.handle }));
+      if (isOwner) wrap.append(h('button', { class: 'nb-x', type: 'button', title: '이웃에서 빼기', 'aria-label': '이웃에서 빼기', onclick: async () => {
+        if (!(await confirmDialog(`${txt(p.display) || p.handle} 님의 배너를 이웃에서 뺄까요?`, { ok: '빼기', danger: true }))) return;
+        try { await dropNeighbor(p.uid); toast('이웃에서 뺐어요'); paintNeighbors(); } catch (e) { toast(friendly(e)); }
+      } }, icon('x', 12)));
+      return wrap;
+    }));
+    zone.hidden = !hasMine && !profs.length && !isOwner;
+  };
+
+  let mineEl = null;
+  if (hasMine) {
+    if (isOwner) mineEl = bannerEl(prof, { cls: 'mine', onclick: null });
+    else {
+      const paintTaken = () => mineEl.classList.toggle('taken', !!state.me && isNeighbor(prof.uid));
+      mineEl = bannerEl(prof, { cls: 'mine takeable', onclick: async () => {
+        if (!state.me) { toast('로그인하면 배너를 가져갈 수 있어요'); return; }
+        try {
+          if (isNeighbor(prof.uid)) {
+            if (!(await confirmDialog('이미 내 이웃 배너로 가져온 블로그예요. 이웃에서 뺄까요?', { ok: '빼기', danger: true }))) return;
+            await dropNeighbor(prof.uid); toast('이웃에서 뺐어요');
+          } else { await takeNeighbor(prof); toast('배너를 내 이웃 목록으로 가져갔어요'); }
+          paintTaken();
+        } catch (e) { toast(friendly(e)); }
+      } });
+      mineEl.title = '눌러서 내 이웃 배너로 가져가기';
+      paintTaken();
+    }
+  }
+  zone.append(h('div', { class: 'nb-mine' }, mineEl,
+    isOwner && !hasMine ? h('a', { class: 'nb-empty', href: '#/settings?tab=design' }, '이웃 배너를 만들어 보세요') : null), nbs);
+  paintNeighbors();
+  return zone;
 }

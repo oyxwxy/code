@@ -1,10 +1,10 @@
-import { h, icon, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
+import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
+import { state, neighborsOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
 import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
-import { compressImage, uploadImage, removeImages, makeIcon, saveBannerImage } from './images.js';
+import { compressImage, uploadImage, removeImages, makeIcon, saveBannerImage, saveNeighborBanner, loadImage } from './images.js';
 import { colorField, stepper, iconField } from './widgets.js';
-import { postCard, avatarEl } from './view-blog.js';
+import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 
 const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
@@ -30,9 +30,50 @@ export async function settings({ root, query }) {
   }
   root.append(
     h('div', { class: 'ed-top' }, h('a', { class: 'back', href: '#/u/' + state.me.handle }, icon('back', 16), '내 블로그'), h('h2', null, '설정')),
-    tabBar, content);
+    h('div', { class: 'tabs-row' }, tabBar, neighborsOn() ? bellButton() : null), content);
   paintTabs();
   await show();
+}
+
+// ───────── 알림 (누가 내 이웃 배너를 가져갔는지) ─────────
+function bellButton() {
+  const badge = h('span', { class: 'bell-badge', hidden: true });
+  const btn = h('button', { class: 'bell-btn', type: 'button', title: '알림', 'aria-label': '알림' }, icon('bell', 18), badge);
+  let rows = [];
+  const refresh = async () => {
+    try {
+      rows = await listNotifs();
+      const n = rows.filter((r) => !r.read).length;
+      badge.textContent = n > 9 ? '9+' : String(n);
+      badge.hidden = n === 0;
+    } catch { /* 알림을 못 읽어도 설정은 그대로 써요 */ }
+  };
+  btn.addEventListener('click', async () => {
+    await refresh();
+    const body = h('div', { class: 'notif-list' });
+    const unreadIds = new Set(rows.filter((r) => !r.read).map((r) => r.from));
+    const paint = () => {
+      body.replaceChildren(...(rows.length ? rows.map((r) => {
+        const p = r.prof;
+        const name = txt(p?.display) || txt(p?.handle) || '알 수 없는 사용자';
+        return h('div', { class: 'notif-row' + (unreadIds.has(r.from) ? ' new' : '') },
+          p ? avatarEl(p, 'sm') : h('div', { class: 'avatar sm' }, '?'),
+          h('div', { class: 'notif-text' },
+            p ? h('a', { href: '#/u/' + p.handle, onclick: () => document.querySelector('.modal-back')?.remove() }, h('strong', null, name), ' ', h('span', { class: 'muted' }, '@' + p.handle))
+              : h('strong', null, name),
+            h('span', null, ' 님이 내 배너를 가져갔어요'),
+            h('small', { class: 'muted' }, fmtDate(r.at))),
+          h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '알림 지우기', onclick: async () => {
+            try { await deleteNotif(r.from); rows = rows.filter((x) => x.from !== r.from); paint(); } catch (e) { toast(friendly(e)); }
+          } }, icon('x', 14)));
+      }) : [h('p', { class: 'desc' }, '아직 내 배너를 가져간 사람이 없어요.')]));
+    };
+    paint();
+    modal({ title: '알림', body, onClose: refresh });
+    markNotifsRead(rows).then(() => { badge.hidden = true; }).catch(() => {});
+  });
+  refresh();
+  return btn;
 }
 
 // ───────── 프로필 ─────────
@@ -360,10 +401,39 @@ function designTab() {
         await updateProfile({ theme: T });
         if (old && old !== id) removeImages([old]);
         dirty = false;
-        toast('배너를 바꿨어요');
+        toast('대문 배너를 바꿨어요');
         build();
       } catch (e) { toast(friendly(e)); }
     });
+
+    // 이웃 배너: 다른 블로그의 이웃 목록에 걸리는 작은 이미지 (4:1)
+    const nbFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
+    nbFile.addEventListener('change', async () => {
+      const f = nbFile.files[0];
+      nbFile.value = '';
+      if (!f) return;
+      try {
+        const id = await saveNeighborBanner(f, state.user.uid);
+        const old = state.me.theme.nbBanner;
+        T = { ...T, nbBanner: id };
+        await updateProfile({ theme: T });
+        if (old && old !== id) removeImages([old]);
+        dirty = false;
+        toast('이웃 배너를 바꿨어요');
+        build();
+      } catch (e) { toast(friendly(e)); }
+    });
+    const nbPanel = () => h('section', { class: 'panel' },
+      h('h3', { class: 'panel-title' }, '이웃 배너'),
+      h('p', { class: 'desc' }, '다른 블로그의 이웃 목록에 걸리는 작은 이미지예요 (가로 4 : 세로 1, 가운데를 잘라 맞춰요). 이 배너를 누르면 상대가 바로 자기 이웃으로 가져갈 수 있고, 마우스를 올리면 블로그 이름과 핸들이 보여요.'),
+      T.nbBanner ? h('div', { class: 'nb-preview' }, bannerEl({ ...state.me, theme: T }, { cls: 'mine' })) : null,
+      h('div', { class: 'row' },
+        h('button', { class: 'btn sm', onclick: () => nbFile.click() }, icon('image', 14), T.nbBanner ? '이웃 배너 바꾸기' : '이웃 배너 이미지 선택'),
+        T.nbBanner ? h('button', { class: 'btn ghost sm', onclick: async () => {
+          const old = T.nbBanner;
+          T = { ...T, nbBanner: '' };
+          try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
+        } }, '이웃 배너 지우기') : null, nbFile));
 
     host.replaceChildren(
       h('section', { class: 'panel' },
@@ -392,12 +462,14 @@ function designTab() {
         h('div', { class: 'opt-grid cols-3' }, Object.entries(HEADERS).map(([k, name]) =>
           h('button', { class: 'opt center' + (T.header === k ? ' on' : ''), onclick: () => set({ header: k }) }, h('small', null, name)))),
         T.header === 'banner' ? h('div', { class: 'row' },
-          h('button', { class: 'btn sm', onclick: () => bannerFile.click() }, icon('image', 14), T.banner ? '배너 바꾸기' : '배너 이미지 선택'),
+          h('button', { class: 'btn sm', onclick: () => bannerFile.click() }, icon('image', 14), T.banner ? '대문 배너 바꾸기' : '대문 배너 이미지 선택'),
           T.banner ? h('button', { class: 'btn ghost sm', onclick: async () => {
             const old = T.banner;
             T = { ...T, banner: '' };
             try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
-          } }, '배너 지우기') : null, bannerFile) : null),
+          } }, '대문 배너 지우기') : null, bannerFile) : null,
+        T.header === 'banner' ? h('p', { class: 'desc' }, '대문 배너는 블로그 맨 위에 걸리는 큰 이미지예요. 이웃 목록에 걸리는 작은 "이웃 배너"와는 달라요.') : null),
+      neighborsOn() ? nbPanel() : null,
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '글 안의 버튼'),
         h('p', { class: 'desc' }, '복사 버튼 같은 글 속 버튼의 아이콘과 이름을 바꿀 수 있어요. 이름을 비우면 기본 이름으로 돌아가요. 내 글을 보는 사람에게도 이렇게 보여요.'),
@@ -408,7 +480,7 @@ function designTab() {
         h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
+          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
         } }, '기본값으로'),
         saveBtn),
       h('h3', { class: 'preview-title' }, '미리보기'),

@@ -774,3 +774,41 @@ a.board-badge:hover { border-color: var(--accent); }
 .pt-edit { opacity: .55; width: 26px; height: 26px; padding: 0; }
 .pt:hover .pt-edit, .pt-edit:focus-visible { opacity: 1; }
 @media (hover: none) { .pt-edit { opacity: 1; } }
+
+
+/* ───────── 이웃 배너 ───────── */
+.nb-zone { display: flex; flex-direction: column; gap: 8px; }
+.nb-zone[hidden] { display: none; }
+.nb-mine { display: flex; flex-direction: column; gap: 6px; }
+.nb-list { display: flex; flex-direction: column; gap: 6px; }
+.nb-item { position: relative; }
+.nb-banner { position: relative; display: block; width: 100%; max-width: 200px; aspect-ratio: 4 / 1; padding: 0; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;
+  background: var(--accent-soft) center / cover no-repeat; color: var(--text); cursor: pointer; text-decoration: none; }
+.nb-banner.no-img { display: grid; place-items: center; }
+.nb-banner:not(.takeable):not(a) { cursor: default; }
+.nb-fallback { font-size: 12.5px; font-weight: 600; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.nb-hover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; padding: 0 8px; text-align: center;
+  background: rgb(0 0 0 / .58); color: #fff; opacity: 0; transition: opacity .15s; }
+.nb-hover strong { font-size: 12.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb-hover small { font-size: 11px; opacity: .85; }
+.nb-banner:hover .nb-hover, .nb-banner:focus-visible .nb-hover { opacity: 1; }
+.nb-banner.taken { outline: 2px solid var(--accent); outline-offset: 1px; }
+.nb-x { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; display: none; place-items: center; padding: 0; border: 0; border-radius: 999px; background: rgb(0 0 0 / .65); color: #fff; cursor: pointer; }
+.nb-item:hover .nb-x { display: grid; }
+.nb-empty { font-size: 12.5px; color: var(--muted); padding-left: 2px; }
+.nb-preview { margin-top: 12px; }
+
+/* 설정 탭 줄 + 알림 버튼(맨 오른쪽) */
+.tabs-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; }
+.tabs-row .tabs { margin-bottom: 0; }
+.bell-btn { position: relative; margin-left: auto; flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.bell-btn:hover { color: var(--accent); }
+.bell-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.bell-badge[hidden] { display: none; }
+.notif-list { display: flex; flex-direction: column; gap: 4px; min-width: min(360px, 76vw); }
+.notif-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: var(--r-sm); }
+.notif-row.new { background: var(--accent-soft); }
+.notif-text { flex: 1; min-width: 0; font-size: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 2px; }
+.notif-text a { color: inherit; text-decoration: none; }
+.notif-text small { flex-basis: 100%; }
+@media (max-width: 760px) { .nb-banner { max-width: 220px; } .nb-zone .nb-list { flex-direction: row; flex-wrap: wrap; } .nb-list .nb-item { width: 220px; max-width: 100%; } }

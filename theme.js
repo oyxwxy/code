@@ -31,7 +31,8 @@ export const LAYOUTS = {
 };
 
 export const RADII = { sharp: '4px', soft: '14px', round: '26px' };
-export const HEADERS = { center: '가운데', left: '왼쪽', banner: '배너' };
+export const HEADERS = { center: '가운데', left: '왼쪽', banner: '대문 배너' };
+export const MAX_NEIGHBORS = 30;
 
 /** 글 종류별 { show: 다른 사람에게 보이기, name: 바꾼 이름('' = 기본 이름) } */
 export function sanitizeKinds(k) {
@@ -149,7 +150,7 @@ export function setFavicon(f) {
 export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
-  avatar: '', banner: '', kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
+  avatar: '', banner: '', nbBanner: '', neighbors: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -170,6 +171,8 @@ export function sanitizeTheme(t) {
     header: HEADERS[t.header] ? t.header : d.header,
     avatar: typeof t.avatar === 'string' ? t.avatar : '',
     banner: typeof t.banner === 'string' ? t.banner : '',
+    nbBanner: typeof t.nbBanner === 'string' ? t.nbBanner : '',
+    neighbors: Array.isArray(t.neighbors) ? [...new Set(t.neighbors.filter((x) => typeof x === 'string' && x))].slice(0, MAX_NEIGHBORS) : [],
     kinds: sanitizeKinds(t.kinds),
     boards: sanitizeBoards(t.boards),
     uncat: t.uncat !== false,

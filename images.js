@@ -106,3 +106,25 @@ export async function saveBannerImage(file, uid) {
   cache.set(id, Promise.resolve(data));
   return id;
 }
+
+/** 이웃 배너: 가운데를 4:1 로 잘라 400×100 으로 다시 그려요 (메타데이터 없음). 반환값은 loadImage() 가 읽는 ID */
+export async function saveNeighborBanner(file, uid) {
+  const W = 400, H = 100;
+  const bmp = await createImageBitmap(file);
+  const r = W / H;
+  let sw = bmp.width, sh = bmp.width / r;
+  if (sh > bmp.height) { sh = bmp.height; sw = bmp.height * r; }
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(bmp, (bmp.width - sw) / 2, (bmp.height - sh) / 2, sw, sh, 0, 0, W, H);
+  bmp.close?.();
+  const data = c.toDataURL(format(), 0.88);
+  const id = 'nb' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  await setDoc(doc(db, 'images', id), { owner: uid, d: data, t: Date.now() });
+  cache.set(id, Promise.resolve(data));
+  return id;
+}

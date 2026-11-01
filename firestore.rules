@@ -76,6 +76,23 @@ service cloud.firestore {
       allow delete: if request.auth.uid == resource.data.owner;
     }
 
+    // 이웃 배너 알림: 누가 내 배너를 가져갔는지 (문서 ID = 가져간 사람의 uid)
+    match /notifs/{owner}/items/{from} {
+      allow read: if request.auth != null && request.auth.uid == owner;
+      allow create: if request.auth != null && request.auth.uid == from && from != owner
+        && request.resource.data.keys().hasOnly(['at', 'read'])
+        && request.resource.data.read == false
+        && request.resource.data.at is number;
+      allow update: if request.auth != null && (
+        (request.auth.uid == from && from != owner
+          && request.resource.data.keys().hasOnly(['at', 'read'])
+          && request.resource.data.read == false
+          && request.resource.data.at is number)
+        || (request.auth.uid == owner
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])));
+      allow delete: if request.auth != null && (request.auth.uid == owner || request.auth.uid == from);
+    }
+
     match /users/{uid}/private/{d} {
       allow read, write: if request.auth.uid == uid;
     }
