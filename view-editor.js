@@ -281,6 +281,11 @@ export async function editor({ params, query, root }) {
     if (vis === 'locked' && !pwIn.value && !lock) { toast('비밀번호를 입력해 주세요'); pwIn.focus(); return; }
     if (tagInput.value.trim()) { addTagsFrom(tagInput.value); tagInput.value = ''; }
     const body = { prompt: promptIn.value.replace(/\s+$/, ''), notes: notesIn.value.trim() };
+    const labels = {};
+    if (promptTitle.value) labels.prompt = promptTitle.value;
+    if (notesTitle.value) labels.notes = notesTitle.value;
+    if (kind === 'style' && negTitle.value) labels.negative = negTitle.value;
+    if (Object.keys(labels).length) body.labels = labels;
     if (kind === 'style') {
       body.negative = negIn.value.replace(/\s+$/, '');
       body.params = {};
@@ -322,13 +327,16 @@ export async function editor({ params, query, root }) {
   const kindBox = h('div', { class: 'kind-seg' });
   const mainBox = h('div', { class: 'ed-main' });
   const sideBox = h('aside', { class: 'ed-side' });
-  const promptTitle = h('h3', { class: 'panel-title' });
-  const promptPanel = h('section', { class: 'panel' }, promptTitle, promptIn);
-  const negPanel = panel('네거티브 프롬프트', negIn);
+  // 칸 이름은 글마다 바꿀 수 있어요 (비워 두면 기본 이름)
+  const promptTitle = titleEditor('프롬프트', content?.labels?.prompt);
+  const promptPanel = h('section', { class: 'panel' }, promptTitle.el, promptIn);
+  const negTitle = titleEditor('네거티브 프롬프트', content?.labels?.negative);
+  const negPanel = h('section', { class: 'panel' }, negTitle.el, negIn);
   const variantPanel = panel('변형 (사복 · 교복 등)', varBox,
     h('button', { class: 'btn sm', type: 'button', onclick: () => addVariant().name.focus() }, icon('plus', 14), '변형 추가'),
     h('small', { class: 'hint-line' }, '보기 화면에서 변형마다 따로 복사할 수 있고, 기본 프롬프트와 함께 복사하는 버튼도 있어요.'));
-  const notesPanel = panel('메모', notesIn);
+  const notesTitle = titleEditor('메모', content?.labels?.notes);
+  const notesPanel = h('section', { class: 'panel' }, notesTitle.el, notesIn);
   const visPanel = panel('공개 설정', segBox, visExtra);
   const boardPanel = panel('게시판', boardSel.el,
     h('div', { class: 'row tight' }, h('button', { class: 'btn sm', type: 'button', onclick: addBoard }, icon('plus', 14), '새 게시판')),
@@ -352,7 +360,7 @@ export async function editor({ params, query, root }) {
     kindBox.replaceChildren(...Object.entries(KINDS).map(([k, v]) =>
       h('button', { type: 'button', class: 'kind-opt' + (kind === k ? ' on' : ''), onclick: () => { kind = k; paintKind(); } },
         icon(v.icon, 18), h('strong', null, kindLabel(k)), h('small', null, v.desc))));
-    promptTitle.textContent = TITLES[kind];
+    promptTitle.setDefault(TITLES[kind]);
     promptIn.placeholder = PHS[kind];
     titleIn.placeholder = TPH[kind];
     mainBox.replaceChildren(titleIn, promptPanel,
@@ -374,4 +382,31 @@ export async function editor({ params, query, root }) {
       h('div', { class: 'sticky-bar' },
         h('a', { class: 'btn ghost', href: editId ? '#/p/' + editId : '#/u/' + state.me.handle }, '취소'), saveBtn)));
   if (!editId) titleIn.focus();
+}
+
+
+/** 패널 제목 + 연필 버튼: 누르면 이 칸의 이름을 직접 입력해서 바꿀 수 있어요 (비우면 기본 이름) */
+function titleEditor(defaultText, initial) {
+  let def = defaultText, custom = txt(initial).trim();
+  const text = h('span', { class: 'pt-text' });
+  const input = h('input', { class: 'input pt-input', maxlength: '30', hidden: true, 'aria-label': '칸 이름' });
+  const btn = h('button', { type: 'button', class: 'btn ghost sm icon pt-edit', 'aria-label': '이 칸의 이름 바꾸기', title: '이 칸의 이름 바꾸기' }, icon('edit', 13));
+  const paint = () => { text.textContent = custom || def; text.hidden = false; input.hidden = true; btn.hidden = false; };
+  const finish = (ok) => { if (ok) custom = input.value.trim() === def ? '' : input.value.trim(); paint(); };
+  btn.addEventListener('click', () => {
+    input.value = custom || def; input.placeholder = def;
+    text.hidden = true; btn.hidden = true; input.hidden = false;
+    input.focus(); input.select();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+  });
+  input.addEventListener('blur', () => { if (!input.hidden) finish(true); });
+  paint();
+  return {
+    el: h('h3', { class: 'panel-title pt' }, text, input, btn),
+    get value() { return custom; },
+    setDefault(d) { def = d; if (input.hidden) paint(); },
+  };
 }

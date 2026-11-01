@@ -72,25 +72,27 @@ function spoilerWrap(node) {
 
 function renderBody(content, kind = 'style') {
   const wrap = h('div', { class: 'post-body' });
+  // 글쓴이가 칸마다 바꾼 이름 (비어 있으면 기본 이름)
+  const L = { prompt: txt(content.labels?.prompt).trim(), negative: txt(content.labels?.negative).trim(), notes: txt(content.labels?.notes).trim() };
   const ids = content.images || [];
   if (ids.length) wrap.append(imageGallery(ids, { onOpen: (idx) => openLightbox(ids, idx) }));
   if (kind === 'character') {
-    wrap.append(promptBlock('캐릭터 프롬프트', content.prompt, { variant: 'char' }));
+    wrap.append(promptBlock(L.prompt || '캐릭터 프롬프트', content.prompt, { variant: 'pos' }));
     (content.variants || []).forEach((v) => {
       const both = [txt(content.prompt), txt(v.prompt)].filter((x) => x.trim()).join(', ');
       wrap.append(promptBlock(txt(v.name) || '변형', v.prompt, {
-        variant: 'char',
+        variant: 'pos',
         extra: [h('button', { class: 'btn sm', onclick: () => copyText(both, '기본 + 변형을 함께 복사했어요') }, ...btnKids('withBase'))],
       }));
     });
   } else {
-    wrap.append(promptBlock(kind === 'style' ? '그림체 프롬프트' : '프롬프트', content.prompt));
+    wrap.append(promptBlock(L.prompt || (kind === 'style' ? '그림체 프롬프트' : '프롬프트'), content.prompt, { variant: 'pos' }));
   }
   (content.chars || []).forEach((c, i) => {
-    wrap.append(promptBlock(`캐릭터 ${i + 1}`, c.prompt, { variant: 'char' }));
+    wrap.append(promptBlock(`캐릭터 ${i + 1}`, c.prompt, { variant: 'pos' }));
     wrap.append(promptBlock(`캐릭터 ${i + 1} · UC`, c.uc, { variant: 'neg' }));
   });
-  wrap.append(promptBlock('네거티브 프롬프트', content.negative, { variant: 'neg' }));
+  wrap.append(promptBlock(L.negative || '네거티브 프롬프트', content.negative, { variant: 'neg' }));
 
   const pr = content.params || {};
   const filled = PARAM_FIELDS.filter(([k]) => txt(pr[k]).trim() !== '');
@@ -103,7 +105,7 @@ function renderBody(content, kind = 'style') {
         h('div', { class: 'param' }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, txt(pr[k])))))));
   }
   if (txt(content.notes).trim()) {
-    wrap.append(h('section', { class: 'block' }, h('div', { class: 'block-head' }, h('h3', null, '메모')),
+    wrap.append(h('section', { class: 'block' }, h('div', { class: 'block-head' }, h('h3', null, L.notes || '메모')),
       h('div', { class: 'block-body' }, h('div', { class: 'notes' }, txt(content.notes)))));
   }
   return wrap;
