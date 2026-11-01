@@ -77,17 +77,81 @@ function spoilerWrap(node) {
   return wrap;
 }
 
+
+/** 이미지 불러와서 가로/세로 크기 알아내기 */
+function probe(id) {
+  return loadImage(id).then((u) => new Promise((res) => {
+    if (!u) return res({ id, url: null });
+    const im = new Image();
+    im.onload = () => res({ id, url: u, w: im.naturalWidth, h: im.naturalHeight });
+    im.onerror = () => res({ id, url: null });
+    im.src = u;
+  }));
+}
+
+/**
+ * 이미지 보기 방식 통일:
+ *  - 세로로 긴 그림은 2장씩, 한 장만 있으면 그 한 장만(가운데)
+ *  - 가로로 긴(또는 정사각) 그림은 잘리지 않게 한 장씩 전체
+ *  - 화면이 2개 이상이면 옆으로 넘기는 버튼 · 점 · 스와이프
+ */
+export function imageSlider(ids) {
+  const root = h('div', { class: 'slider' }, h('div', { class: 'sl-skel' }));
+  Promise.all(ids.map(probe)).then((items) => {
+    items.forEach((it, i) => { it.i = i; it.portrait = !!it.url && it.h > it.w * 1.08; });
+    // 화면(슬라이드) 묶기: 연달아 나온 세로 그림은 2장씩, 가로 그림은 1장씩
+    const slides = [];
+    for (let k = 0; k < items.length;) {
+      const a = items[k], b = items[k + 1];
+      if (a.portrait && b && b.portrait) { slides.push([a, b]); k += 2; }
+      else { slides.push([a]); k += 1; }
+    }
+    const mkShot = (it) => {
+      const fig = h('button', { class: 'shot', type: 'button', onclick: () => openLightbox(ids, it.i), 'aria-label': `이미지 ${it.i + 1} 크게 보기` });
+      if (it.url) fig.append(h('img', { src: it.url, alt: '', decoding: 'async' }));
+      else fig.classList.add('missing');
+      return fig;
+    };
+    const slideEls = slides.map((g) => h('div', { class: 'slide ' + (g.length === 2 ? 'pair' : g[0].portrait ? 'one-p' : 'land') }, g.map(mkShot)));
+    const view = h('div', { class: 'sl-view', tabindex: slides.length > 1 ? '0' : null, role: 'group', 'aria-label': '이미지' }, h('div', { class: 'sl-track' }, slideEls));
+    root.replaceChildren(view);
+    let cur = 0;
+    const fit = () => { const el = slideEls[cur]; if (el) view.style.height = el.offsetHeight + 'px'; };
+    const go = (n) => { n = Math.max(0, Math.min(slides.length - 1, n)); view.scrollTo({ left: n * view.clientWidth, behavior: 'smooth' }); };
+    if (slides.length > 1) {
+      const prev = h('button', { class: 'sl-btn sl-prev', type: 'button', 'aria-label': '이전 이미지', onclick: () => go(cur - 1) }, icon('chevl', 20));
+      const next = h('button', { class: 'sl-btn sl-next', type: 'button', 'aria-label': '다음 이미지', onclick: () => go(cur + 1) }, icon('chevr', 20));
+      const dots = h('div', { class: 'sl-dots' }, slides.map((_, n) => h('button', { class: 'sl-dot', type: 'button', 'aria-label': `${n + 1}번째 화면`, onclick: () => go(n) })));
+      const paint = () => {
+        prev.disabled = cur === 0; next.disabled = cur === slides.length - 1;
+        [...dots.children].forEach((d, n) => d.classList.toggle('on', n === cur));
+        fit();
+      };
+      let raf = 0;
+      view.addEventListener('scroll', () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => { const n = Math.round(view.scrollLeft / (view.clientWidth || 1)); if (n !== cur) { cur = n; paint(); } });
+      }, { passive: true });
+      view.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1); }
+      });
+      root.append(prev, next, dots);
+      paint();
+    }
+    // 이미지가 다 그려지거나 창 크기가 바뀌면 높이를 다시 맞춰요
+    if ('ResizeObserver' in window) { const ro = new ResizeObserver(() => fit()); slideEls.forEach((el) => ro.observe(el)); }
+    slideEls.forEach((el) => el.querySelectorAll('img').forEach((im) => { if (!im.complete) im.addEventListener('load', fit, { once: true }); }));
+    addEventListener('resize', () => { if (root.isConnected) { view.scrollTo({ left: cur * view.clientWidth }); fit(); } });
+    requestAnimationFrame(fit);
+  });
+  return root;
+}
+
 function renderBody(content, kind = 'style') {
   const wrap = h('div', { class: 'post-body' });
   const ids = content.images || [];
-  if (ids.length) {
-    wrap.append(h('div', { class: 'gallery g' + Math.min(ids.length, 4) }, ids.map((id, idx) => {
-      const im = h('img', { alt: '', class: 'fade' });
-      const fig = h('button', { class: 'fig', onclick: () => openLightbox(ids, idx), 'aria-label': '이미지 크게 보기' }, im);
-      loadImage(id).then((u) => { if (u) { im.src = u; im.classList.add('in'); } else fig.classList.add('missing'); });
-      return fig;
-    })));
-  }
+  if (ids.length) wrap.append(imageSlider(ids));
   if (kind === 'character') {
     wrap.append(promptBlock('캐릭터 프롬프트', content.prompt, { variant: 'char' }));
     (content.variants || []).forEach((v) => {
@@ -149,8 +213,7 @@ export async function post({ params, root }) {
     h('h1', { class: 'post-title' }, p.title),
     h('div', { class: 'post-meta' },
       author ? h('a', { class: 'by', href: '#/u/' + author.handle }, avatarEl(author, 'xs'), h('span', null, author.display || author.handle)) : null,
-      h('span', null, fmtDate(p.created)),
-      p.updated && p.updated - p.created > 60000 ? h('span', { class: 'muted' }, `· 수정 ${fmtDate(p.updated)}`) : null),
+      h('span', null, fmtDate(p.created))),
     p.tags?.length ? h('div', { class: 'tags' }, p.tags.map((t) => h('a', { class: 'tag', href: '#/u/' + (author?.handle || p.handle) }, '#' + t))) : null,
     h('div', { class: 'post-actions' },
       h('button', { class: 'btn sm', onclick: share }, icon('link', 15), '링크 복사'),

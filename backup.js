@@ -3,6 +3,7 @@ import { h, icon, toast, copyText, downloadBlob, confirmDialog } from './util.js
 import { state, listPosts, loadContent, savePost, friendly } from './store.js';
 import { loadImage, compressImage, isUrl } from './images.js';
 import { readImageMeta } from './nai.js';
+import { selectField } from './pickers.js';
 import { KINDS, kindOf, kindLabel } from './kinds.js';
 
 const FORMAT = 'promptbox-backup';
@@ -123,9 +124,8 @@ export function backupTab() {
 
   // ── 이미지 일괄 가져오기 ──
   const bulkIn = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true });
-  const bulkKind = h('select', { class: 'select' }, Object.keys(KINDS).map((k) => h('option', { value: k }, kindLabel(k))));
-  const bulkVis = h('select', { class: 'select' },
-    h('option', { value: 'private' }, '비공개'), h('option', { value: 'public' }, '공개'), h('option', { value: 'locked' }, '비밀번호'));
+  const bulkKind = selectField({ options: Object.keys(KINDS).map((k) => [k, kindLabel(k)]), value: 'style', label: '글 종류', block: true });
+  const bulkVis = selectField({ options: [['private', '비공개'], ['public', '공개'], ['locked', '비밀번호']], value: 'private', label: '공개 범위', block: true });
   const bulkPw = h('input', { class: 'input', type: 'password', placeholder: '비밀번호 (잠금일 때)', autocomplete: 'new-password' });
   const bulkTags = h('input', { class: 'input', placeholder: '태그 (쉼표로 구분, 선택)' });
   const bulkProg = progressBar();

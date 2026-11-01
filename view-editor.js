@@ -4,6 +4,7 @@ import { applyTheme } from './theme.js';
 import { compressImage, loadImage, isUrl } from './images.js';
 import { readImageMeta, parseGenText, PARAM_FIELDS } from './nai.js';
 import { MAX_IMAGES } from './config.js';
+import { dateField, selectField, comboField } from './pickers.js';
 import { KINDS, kindOf, kindLabel } from './kinds.js';
 
 const MODELS = ['NovelAI Diffusion V5 Full', 'NovelAI Diffusion V5 Curated', 'NovelAI Diffusion V4.5 Full', 'NovelAI Diffusion V4.5 Curated', 'NovelAI Diffusion V4 Full', 'NovelAI Diffusion V4 Curated', 'NovelAI Diffusion Anime V3', 'NovelAI Diffusion Furry V3'];
@@ -96,24 +97,17 @@ export async function editor({ params, query, root }) {
   const pf = {};
   const paramGrid = h('div', { class: 'param-grid' }, PARAM_FIELDS.map(([k, label]) => {
     if (k === 'effort') {
-      pf[k] = h('select', { class: 'select' },
-        h('option', { value: '' }, '선택 안 함'), h('option', { value: 'Medium' }, 'Medium'), h('option', { value: 'High' }, 'High'));
-      pf[k].value = normEffort(content?.params?.effort);
+      pf[k] = selectField({ options: [['', '선택 안 함'], ['Medium', 'Medium'], ['High', 'High']], value: normEffort(content?.params?.effort), label: 'Effort', block: true });
+    } else if (k === 'model' || k === 'sampler') {
+      pf[k] = comboField({ options: k === 'model' ? MODELS : SAMPLERS, placeholder: PLACEHOLDERS[k] || '', value: content?.params?.[k] ?? '' });
     } else {
-      const attrs = { class: 'input', placeholder: PLACEHOLDERS[k] || '', value: content?.params?.[k] ?? '' };
-      if (k === 'model') attrs.list = 'dl-model';
-      if (k === 'sampler') attrs.list = 'dl-sampler';
-      pf[k] = h('input', attrs);
+      pf[k] = h('input', { class: 'input', placeholder: PLACEHOLDERS[k] || '', value: content?.params?.[k] ?? '' });
     }
-    return h('label', { class: 'pf' + (k === 'extra' || k === 'model' ? ' wide' : '') }, h('span', null, label), pf[k]);
+    return h('div', { class: 'pf' + (k === 'extra' || k === 'model' ? ' wide' : '') }, h('span', null, label), pf[k]);
   }));
-  const datalists = [
-    h('datalist', { id: 'dl-model' }, MODELS.map((m) => h('option', { value: m }))),
-    h('datalist', { id: 'dl-sampler' }, SAMPLERS.map((m) => h('option', { value: m }))),
-  ];
 
   // 작성일 (직접 지정)
-  const dateIn = h('input', { class: 'input', type: 'date', value: ymd(prev?.created || Date.now()) });
+  const dateIn = dateField({ value: ymd(prev?.created || Date.now()), label: '작성일' });
 
   // 공개 설정
   const pwIn = h('input', { class: 'input', type: 'password', autocomplete: 'new-password' });
@@ -314,7 +308,7 @@ export async function editor({ params, query, root }) {
   const imgPanel = panel('이미지', drop, fileIn, imgGrid,
     h('small', { class: 'hint-line' }, `최대 ${MAX_IMAGES}장 · 첫 번째가 대표 이미지 · 끌어서 순서를 바꿔요`));
   const tagPanel = panel('태그', tagBox);
-  const paramPanel = panel('생성 설정', paramGrid, ...datalists,
+  const paramPanel = panel('생성 설정', paramGrid,
     h('small', { class: 'hint-line' }, 'Effort는 V5 Full 전용이에요. Medium은 14 steps·Euler Ancestral로 고정돼요.'));
   const importPanel = panel('가져오기',
     h('div', { class: 'btn-col' },

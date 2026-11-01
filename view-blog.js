@@ -71,6 +71,10 @@ export async function blog({ params, root }) {
   const allPosts = await listPosts(prof.uid);
   // 글쓴이가 숨긴 종류는 다른 사람에게 보이지 않아요 (본인은 그대로 다 보여요)
   const posts = isOwner ? allPosts : allPosts.filter((p) => kindShown(kindOf(p)));
+  // '방문자 시점': 내 블로그를 로그아웃한 사람이 보는 모습 그대로 확인해요 (비공개·링크 전용·숨긴 종류 제외)
+  let vm = false;
+  const mine = () => isOwner && !vm;
+  const cur = () => (mine() ? posts : posts.filter((p) => p.vis !== 'private' && !p.unlisted && kindShown(kindOf(p))));
   const bioText = (prof.bio || '').replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim();
 
   // ── 헤더 ──
@@ -81,6 +85,16 @@ export async function blog({ params, root }) {
   }
   const counts = { public: 0, locked: 0, private: 0 };
   posts.forEach((p) => { counts[p.vis] = (counts[p.vis] || 0) + 1; });
+  const stats = h('div', { class: 'blog-stats' }, `글 ${posts.length}개`);
+  const viewBtn = h('button', { class: 'btn sm view-as', type: 'button', 'aria-pressed': 'false', title: '로그아웃한 사람에게 보이는 모습으로 보기',
+    onclick: () => {
+      vm = !vm;
+      viewBtn.classList.toggle('on', vm); viewBtn.setAttribute('aria-pressed', String(vm));
+      viewBtn.lastChild.textContent = vm ? '내 시점으로' : '방문자 시점';
+      if (kindFilter !== 'all' && !kindShown(kindFilter)) kindFilter = 'all';
+      if (vm) visFilter = 'all';
+      shown = PAGE; paintPills(); paint();
+    } }, icon('eye', 15), h('span', null, '방문자 시점'));
   const head = h('header', { class: 'blog-head head-' + theme.header },
     banner,
     h('div', { class: 'head-in' },
@@ -88,10 +102,10 @@ export async function blog({ params, root }) {
       h('div', { class: 'head-text' },
         h('h1', { class: 'blog-name' }, prof.display || prof.handle),
         bioText ? h('p', { class: 'blog-bio' }, bioText) : null,
-        h('div', { class: 'blog-stats' }, `글 ${posts.length}개`),
+        stats,
         isOwner ? h('div', { class: 'head-actions' },
           h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), '새 글'),
-          h('a', { class: 'btn sm', href: '#/settings' }, icon('settings', 15), '꾸미기·설정')) : null)));
+          h('a', { class: 'btn sm', href: '#/settings' }, icon('settings', 15), '꾸미기·설정'), viewBtn) : null)));
 
   // ── 도구줄 ──
   let q = '', tag = null, visFilter = 'all', kindFilter = 'all', shown = PAGE;
@@ -106,9 +120,11 @@ export async function blog({ params, root }) {
   const kindBox = h('div', { class: 'pills' });
 
   function paintPills() {
-    const kc = { all: posts.length };
-    posts.forEach((p) => { const k = kindOf(p); kc[k] = (kc[k] || 0) + 1; });
-    const kinds = Object.keys(KINDS).filter((k) => isOwner || kindShown(k));
+    const base = cur();
+    stats.textContent = `글 ${base.length}개`;
+    const kc = { all: base.length };
+    base.forEach((p) => { const k = kindOf(p); kc[k] = (kc[k] || 0) + 1; });
+    const kinds = Object.keys(KINDS).filter((k) => mine() || kindShown(k));
     kindBox.replaceChildren(...[['all', '전체', null], ...kinds.map((k) => [k, kindLabel(k), KINDS[k].icon])].map(([k, label, ic]) =>
       h('button', { class: 'pill' + (kindFilter === k ? ' on' : '') + (k !== 'all' && !kindShown(k) ? ' dim' : ''), title: k !== 'all' && !kindShown(k) ? '다른 사람에게는 숨겨진 종류예요' : null,
         onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, `${label} ${kc[k] || 0}`)));
@@ -116,7 +132,9 @@ export async function blog({ params, root }) {
       h('button', { class: 'pill' + (tag ? '' : ' on'), onclick: () => { tag = null; shown = PAGE; paintPills(); paint(); } }, '전체'),
       ...topTags.map((t) => h('button', { class: 'pill' + (tag === t ? ' on' : ''), onclick: () => { tag = tag === t ? null : t; shown = PAGE; paintPills(); paint(); } }, '#' + t)),
     ] : []));
-    if (isOwner) {
+    visBox.hidden = !mine();
+    sortBar && (sortBar.hidden = !mine());
+    if (mine()) {
       const opts = [['all', '전체', posts.length], ['public', '공개', counts.public], ['locked', '비밀번호', counts.locked], ['private', '비공개', counts.private]];
       visBox.replaceChildren(...opts.map(([k, label, n]) =>
         h('button', { class: 'pill' + (visFilter === k ? ' on' : ''), onclick: () => { visFilter = k; shown = PAGE; paintPills(); paint(); } }, `${label} ${n}`)));
@@ -141,7 +159,7 @@ export async function blog({ params, root }) {
 
   function paint() {
     const ql = q.trim().toLowerCase();
-    const rows = posts.filter((p) =>
+    const rows = cur().filter((p) =>
       (visFilter === 'all' || p.vis === visFilter) &&
       (kindFilter === 'all' || kindOf(p) === kindFilter) &&
       (!tag || (p.tags || []).includes(tag)) &&
@@ -149,17 +167,21 @@ export async function blog({ params, root }) {
     list.replaceChildren();
     more.replaceChildren();
     if (!rows.length) {
-      list.append(posts.length
+      list.append(cur().length
         ? emptyState('조건에 맞는 글이 없어요', '검색어나 필터를 바꿔 보세요.')
-        : emptyState(isOwner ? '아직 글이 없어요' : '아직 공개된 글이 없어요',
-          isOwner ? '첫 프롬프트를 저장해 볼까요?' : '', isOwner ? h('a', { class: 'btn primary', href: '#/new' }, icon('plus', 15), '새 글 쓰기') : null));
+        : emptyState(mine() ? '아직 글이 없어요' : '아직 공개된 글이 없어요',
+          mine() ? '첫 프롬프트를 저장해 볼까요?' : '', mine() ? h('a', { class: 'btn primary', href: '#/new' }, icon('plus', 15), '새 글 쓰기') : null));
       return;
     }
-    const box = h('div', { class: 'posts layout-' + theme.layout }, rows.slice(0, shown).map((p) => postCard(p, isOwner, isOwner)));
-    if (isOwner) sortable(box, { item: '.card', handle: '.grip', onSort: (els) => reorder(els.map((e) => e.dataset.id)) });
+    const box = h('div', { class: 'posts layout-' + theme.layout }, rows.slice(0, shown).map((p) => postCard(p, mine(), mine())));
+    if (mine()) sortable(box, { item: '.card', handle: '.grip', onSort: (els) => reorder(els.map((e) => e.dataset.id)) });
     list.append(box);
     if (rows.length > shown) more.append(h('button', { class: 'btn', onclick: () => { shown += PAGE; paint(); } }, `더 보기 (${rows.length - shown})`));
   }
+
+  const sortBar = isOwner && posts.length > 1 ? h('div', { class: 'sort-bar' },
+    h('small', { class: 'hint-line' }, '카드의 ⋮⋮ 손잡이를 끌어서 순서를 바꿀 수 있어요'),
+    h('button', { class: 'btn ghost sm', onclick: sortByDate }, '작성일 최신순으로 정리')) : null;
 
   const search = h('div', { class: 'search' }, icon('search', 16),
     h('input', { placeholder: '제목·태그·내용 검색', oninput: (e) => { q = e.target.value; shown = PAGE; paint(); } }));
@@ -168,9 +190,7 @@ export async function blog({ params, root }) {
     h('div', { class: 'toolbar' }, search, isOwner ? visBox : null),
     posts.length ? h('div', { class: 'kind-filter' }, kindBox) : null,
     topTags.length ? tagBox : null,
-    isOwner && posts.length > 1 ? h('div', { class: 'sort-bar' },
-      h('small', { class: 'hint-line' }, '카드의 ⋮⋮ 손잡이를 끌어서 순서를 바꿀 수 있어요'),
-      h('button', { class: 'btn ghost sm', onclick: sortByDate }, '작성일 최신순으로 정리')) : null,
+    sortBar,
     list, more);
   paintPills();
   paint();

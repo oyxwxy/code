@@ -1,5 +1,6 @@
 import { h, icon, toast, copyText, loader, confirmDialog, askText } from './util.js';
 import { state, updateProfile, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
+import { colorField, numberField } from './pickers.js';
 import { applyTheme, sanitizeTheme, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages } from './images.js';
@@ -183,9 +184,8 @@ function designTab() {
         style: { background: p.bg, '--sw': p.accent },
         onclick: () => set({ preset: p.id, bg: p.bg, accent: p.accent }),
       }, h('i'), h('span', null, p.name))));
-    const bgIn = h('input', { type: 'color', value: T.bg, oninput: (e) => set({ preset: 'custom', bg: e.target.value }, false) });
-    const acIn = h('input', { type: 'color', value: T.accent, oninput: (e) => set({ preset: 'custom', accent: e.target.value }, false) });
-    [bgIn, acIn].forEach((i) => i.addEventListener('change', build));
+    const bgIn = colorField({ value: T.bg, label: '배경색', swatches: PRESETS.map((x) => x.bg), onInput: (c) => set({ preset: 'custom', bg: c }, false), onDone: () => build() });
+    const acIn = colorField({ value: T.accent, label: '포인트색', swatches: PRESETS.map((x) => x.accent), onInput: (c) => set({ preset: 'custom', accent: c }, false), onDone: () => build() });
 
     const bannerFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
     bannerFile.addEventListener('change', async () => {
@@ -210,8 +210,8 @@ function designTab() {
         h('h3', { class: 'panel-title' }, '색상'),
         sw,
         h('div', { class: 'color-row' },
-          h('label', null, h('span', null, '배경색'), bgIn),
-          h('label', null, h('span', null, '포인트색'), acIn),
+          h('div', { class: 'color-item' }, h('span', null, '배경색'), bgIn),
+          h('div', { class: 'color-item' }, h('span', null, '포인트색'), acIn),
           h('small', { class: 'hint-line' }, '배경이 어두우면 자동으로 다크 모드가 돼요'))),
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '글꼴'),
@@ -265,7 +265,7 @@ async function inviteTab() {
   catch (e) { toast(friendly(e)); }
 
   const link = (code) => location.origin + location.pathname + '#/join/' + code;
-  const maxIn = h('input', { class: 'input', type: 'number', min: '1', max: '1000', value: '1', style: { width: '110px' } });
+  const maxIn = numberField({ value: 1, min: 1, max: 1000, label: '사용 횟수' });
   const left = Math.max(0, MEMBER_INVITE_LIMIT - (me.inviteCount || 0));
 
   const make = h('button', { class: 'btn primary', onclick: async () => {
