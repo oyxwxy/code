@@ -200,8 +200,8 @@ export async function listPosts(ownerUid) {
 
 // ───────── 게시판 ─────────
 /** 게시판 목록(이름 · 순서)을 저장해요. 프로필의 theme 안에 들어가서 보안 규칙을 바꿀 필요가 없어요 */
-export async function saveBoards(boards) {
-  await updateProfile({ theme: { ...sanitizeTheme(state.me.theme), boards: sanitizeBoards(boards) } });
+export async function saveBoards(boards, extra = {}) {
+  await updateProfile({ theme: { ...sanitizeTheme(state.me.theme), boards: sanitizeBoards(boards), ...extra } });
 }
 
 /** 글 여러 개를 한 게시판으로 옮겨요 (board가 ''이면 미분류) */

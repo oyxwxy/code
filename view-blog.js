@@ -49,7 +49,8 @@ function fitThumb(img, box, src) {
   if (typeof ResizeObserver === 'function') new ResizeObserver(apply).observe(box);
 }
 
-export function postCard(p, isOwner, canSort = false, boardLabel = '') {
+export function postCard(p, isOwner, canSort = false, boardLabel = null) {
+  const bl = typeof boardLabel === 'string' ? (boardLabel ? { name: boardLabel, icon: 'folder' } : null) : boardLabel;
   const th = safeThumb(p.thumb);
   const img = th ? h('img', { src: th, alt: '', loading: 'lazy', decoding: 'async' }) : null;
   const thumb = img || h('div', { class: 'ph' }, icon(p.vis === 'locked' ? 'lock' : p.vis === 'private' ? 'eye-off' : 'image', 28));
@@ -65,8 +66,8 @@ export function postCard(p, isOwner, canSort = false, boardLabel = '') {
     isOwner ? h('span', { class: 'card-check', 'aria-hidden': 'true' }, icon('check', 14)) : null,
     box,
     h('div', { class: 'card-body' },
-      h('div', { class: 'card-meta' },
-        boardLabel ? h('span', { class: 'kind board-badge' }, icon('folder', 12), boardLabel) : null,
+      h('div', { class: 'card-meta' }, kindBadge(p),
+        bl ? h('span', { class: 'kind board-badge' }, icon(bl.icon, 12), bl.name) : null,
         badge,
         sp ? h('span', { class: 'vis vis-spoiler' }, icon('eye-off', 13), '스포일러') : null,
         hid ? h('span', { class: 'vis vis-private', title: '이 종류는 다른 사람에게 숨겨져 있어요' }, icon('eye-off', 13), '숨김') : null,
@@ -104,6 +105,8 @@ export async function blog({ params, query, root }) {
   const boardIds = new Set(boards.map((b) => b.id));
   const boardOf = (p) => (boardIds.has(p.board) ? p.board : '');   // 지워진 게시판의 글은 미분류
   const boardName = (id) => boards.find((b) => b.id === id)?.name || '';
+  const boardObj = (id) => boards.find((b) => b.id === id) || null;
+  const showUncat = theme.uncat;   // 미분류 게시판을 사이드에 보일지 (설정 → 게시판)
 
   // ── 헤더 ──
   const banner = theme.header === 'banner'
@@ -127,7 +130,8 @@ export async function blog({ params, query, root }) {
   // ── 도구줄 ──
   const qBoard = query?.get('board');
   let q = '', tag = null, visFilter = 'all', shown = PAGE;
-  let boardFilter = qBoard === NONE || boardIds.has(qBoard) ? qBoard : 'all';
+  let boardFilter = (qBoard === NONE && showUncat) || boardIds.has(qBoard) ? qBoard : 'all';
+  let kindFilter = 'all';
   const tagCount = new Map();
   posts.forEach((p) => (p.tags || []).map(txt).filter(Boolean).forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1)));
   const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24).map((x) => x[0]);
@@ -137,6 +141,7 @@ export async function blog({ params, query, root }) {
   const tagBox = h('div', { class: 'side-tags' });
   const visBox = h('div', { class: 'pills' });
   const boardBox = h('div', { class: 'side-list' });
+  const kindBox = h('div', { class: 'pills kind-pills' });
 
   // ── 게시판으로 옮기기 (고르기 모드) ──
   let picking = false, moveTo = '';
@@ -190,12 +195,18 @@ export async function blog({ params, query, root }) {
       visBox.replaceChildren(...opts.map(([k, label]) =>
         h('button', { class: 'pill' + (visFilter === k ? ' on' : ''), onclick: () => { visFilter = k; shown = PAGE; paintPills(); paint(); } }, label)));
     }
-    // 게시판: 다른 사람에게는 글이 있는 게시판만 보여요
+    // 글 종류 (검색줄 오른쪽)
+    const kinds = Object.keys(KINDS).filter((k) => isOwner || kindShown(k));
+    kindBox.replaceChildren(...[['all', '전체', null], ...kinds.map((k) => [k, kindLabel(k), KINDS[k].icon])].map(([k, label, ic]) =>
+      h('button', { class: 'pill' + (kindFilter === k ? ' on' : '') + (k !== 'all' && !kindShown(k) ? ' dim' : ''), title: k !== 'all' && !kindShown(k) ? '다른 사람에게는 숨겨진 종류예요' : null,
+        onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, label)));
+    // 게시판: 다른 사람에게는 글이 있는 게시판만 보여요. '미분류'는 설정에서 켜고 끌 수 있어요
     const has = new Set(posts.map((p) => boardOf(p) || NONE));
-    const entries = [['all', '전체'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name]), ...(has.has(NONE) ? [[NONE, '미분류']] : [])];
-    boardBox.replaceChildren(...entries.map(([k, label]) =>
+    const entries = [['all', '전체', 'grid'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
+      ...(showUncat && (isOwner || has.has(NONE)) ? [[NONE, '미분류', 'file']] : [])];
+    boardBox.replaceChildren(...entries.map(([k, label, ic]) =>
       h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; paintPills(); paint(); } },
-        icon(k === 'all' ? 'grid' : 'folder', 15), h('span', null, label))));
+        icon(ic, 15), h('span', null, label))));
   }
 
   // 화면에 보이는 글들끼리 자리를 바꾸고, 전체 순서에 반영해 저장해요
@@ -218,6 +229,7 @@ export async function blog({ params, query, root }) {
     const ql = q.trim().toLowerCase();
     const rows = posts.filter((p) =>
       (visFilter === 'all' || p.vis === visFilter) &&
+      (kindFilter === 'all' || kindOf(p) === kindFilter) &&
       (boardFilter === 'all' || (boardFilter === NONE ? !boardOf(p) : boardOf(p) === boardFilter)) &&
       (!tag || (p.tags || []).includes(tag)) &&
       (!ql || `${txt(p.title)} ${txt(p.excerpt)} ${(p.tags || []).map(txt).join(' ')}`.toLowerCase().includes(ql)));
@@ -231,7 +243,7 @@ export async function blog({ params, query, root }) {
       return;
     }
     const box = h('div', { class: 'posts layout-' + theme.layout + (picking ? ' picking' : '') },
-      rows.slice(0, shown).map((p) => postCard(p, isOwner, isOwner && !picking, boardName(boardOf(p)))));
+      rows.slice(0, shown).map((p) => postCard(p, isOwner, isOwner && !picking, boardObj(boardOf(p)))));
     if (isOwner) {
       sortable(box, { item: '.card', handle: '.grip', onSort: (els) => reorder(els.map((e) => e.dataset.id)) });
       // 고르기 모드에서는 카드를 누르면 열리지 않고 선택돼요
@@ -255,11 +267,12 @@ export async function blog({ params, query, root }) {
 
   const toolsHost = h('div');
   function paintTools() {
-    toolsHost.replaceChildren(...(isOwner && posts.length > 1 ? [h('div', { class: 'sort-bar' },
-      h('small', { class: 'hint-line' }, picking ? '옮길 글을 눌러 고르세요' : '카드의 ⋮⋮ 손잡이를 끌어서 순서를 바꿀 수 있어요'),
-      h('div', { class: 'sort-btns' },
-        h('button', { class: 'btn ghost sm', onclick: () => setPicking(!picking) }, icon('folder', 14), picking ? '고르기 끝내기' : '게시판으로 옮기기'),
-        h('button', { class: 'btn ghost sm', onclick: sortByDate }, '작성일 최신순으로 정리')))] : []));
+    const showSort = isOwner && posts.length > 1;
+    toolsHost.replaceChildren(...(isOwner ? [h('div', { class: 'sort-bar' },
+      visBox,
+      showSort ? h('div', { class: 'sort-btns' },
+        h('button', { class: 'btn ghost sm', onclick: () => setPicking(!picking), title: '여러 글을 골라 한 번에 게시판으로 옮겨요' }, icon('folder', 14), picking ? '고르기 끝내기' : '게시판으로 옮기기'),
+        h('button', { class: 'btn ghost sm', onclick: sortByDate, title: '카드의 ⋮⋮ 손잡이를 끌어서 순서를 직접 바꿀 수도 있어요' }, '작성일 최신순으로 정리')) : null)] : []));
   }
 
   const hasSide = boards.length > 0 || topTags.length > 0;
@@ -267,7 +280,7 @@ export async function blog({ params, query, root }) {
     boards.length ? h('div', { class: 'side-sec' }, h('h4', null, '게시판'), boardBox) : null,
     topTags.length ? h('div', { class: 'side-sec' }, h('h4', null, '태그'), tagBox) : null) : null;
   const main = h('div', { class: 'blog-main' },
-    h('div', { class: 'toolbar' }, search, isOwner ? visBox : null),
+    h('div', { class: 'toolbar' }, search, kindBox),
     toolsHost, list, more);
   root.replaceChildren(head, h('div', { class: 'blog-body' + (hasSide ? ' has-side' : '') }, side, main), pickBar);
   paintTools();

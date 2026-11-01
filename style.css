@@ -703,3 +703,36 @@ a.board-badge:hover { border-color: var(--accent); }
   .side-tags { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .side-tags .pill { flex: none; }
 }
+
+/* ═════════ 글 위쪽 줄 · 도구줄 ═════════ */
+.post-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.kind-pills { justify-content: flex-end; }
+.kind-pills .pill { display: inline-flex; align-items: center; gap: 5px; }
+.kind-pills .pill.dim { opacity: .6; }
+.sort-bar { margin: 0 0 12px; }
+@media (max-width: 640px) { .kind-pills { justify-content: flex-start; } }
+
+/* ═════════ 아이콘 고르기 · 버튼 꾸미기 ═════════ */
+.icf { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 40px; min-width: 56px; padding: 0 10px; justify-content: center; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--accent); transition: border-color .15s, box-shadow .15s; }
+.icf:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.icf:focus-visible, .icf[aria-expanded='true'] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+.icf > .icon:last-child { color: var(--muted); }
+.icf-face { display: inline-grid; place-items: center; min-width: 20px; }
+.icf-none { font-size: 12px; color: var(--muted); }
+.icg { display: grid; grid-template-columns: repeat(6, 40px); gap: 4px; padding: 8px; max-height: 300px; overflow: auto; }
+.icg-cell { width: 40px; height: 40px; border: 0; background: none; border-radius: 10px; color: var(--text); display: grid; place-items: center; font-size: 12px; transition: background .12s; }
+.icg-cell:hover { background: var(--accent-soft); color: var(--accent); }
+.icg-cell.on { background: var(--accent); color: var(--on-accent); }
+.icg-cell.none { color: var(--muted); }
+.bset-row .icf { height: 38px; }
+.bt-list { display: flex; flex-direction: column; }
+.bt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(110px, 160px) 120px; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+.bt-row:first-child { border-top: 0; }
+.bt-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bt-info small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.bt-prev { justify-self: start; pointer-events: none; }
+@media (max-width: 640px) {
+  .bt-row { grid-template-columns: auto minmax(0, 1fr); }
+  .bt-info { grid-column: 1 / -1; }
+  .bt-prev { grid-column: 1 / -1; }
+}

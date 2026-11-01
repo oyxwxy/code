@@ -1,14 +1,14 @@
 import { h, icon, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
 import { state, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
-import { compressImage, uploadImage, removeImages, makeIcon } from './images.js';
-import { colorField, stepper } from './widgets.js';
+import { compressImage, uploadImage, removeImages, makeIcon, saveBannerImage } from './images.js';
+import { colorField, stepper, iconField } from './widgets.js';
 import { postCard, avatarEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { MEMBER_INVITE_LIMIT } from './config.js';
 
-const TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '디자인'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
+const TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 
 export async function settings({ root, query }) {
   if (!state.me) { location.replace('#/login?next=' + encodeURIComponent('/settings')); return; }
@@ -195,10 +195,13 @@ function boardsTab() {
   const empty = h('p', { class: 'desc' }, '아직 게시판이 없어요. 아래에서 첫 게시판을 만들어 보세요.');
   const newIn = h('input', { class: 'input', maxlength: String(MAX_BOARD_NAME), placeholder: '새 게시판 이름 (예: 완성작, 연구 중)', 'aria-label': '새 게시판 이름' });
   let dirty = false;
+  let uncat = sanitizeTheme(state.me.theme).uncat;
+  const uncatTxt = h('span', { class: 'sw-txt' }, uncat ? '보임' : '숨김');
+  const uncatCb = h('input', { type: 'checkbox', checked: uncat, onchange: (e) => { uncat = e.target.checked; uncatTxt.textContent = uncat ? '보임' : '숨김'; touch(); } });
   const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
     saveBtn.disabled = true;
     try {
-      await saveBoards(boards);
+      await saveBoards(boards, { uncat });
       boards = sanitizeBoards(state.me.theme.boards).map((b) => ({ ...b }));
       dirty = false;
       paint();
@@ -215,7 +218,7 @@ function boardsTab() {
     listEl.replaceChildren(...boards.map((b) =>
       h('div', { class: 'bset-row', 'data-id': b.id },
         h('span', { class: 'grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16)),
-        h('span', { class: 'kset-ic' }, icon('folder', 18)),
+        iconField({ options: BOARD_ICONS, value: b.icon || 'folder', label: `${b.name} 아이콘`, onChange: (v) => { b.icon = v; touch(); } }).el,
         h('input', { class: 'input', maxlength: String(MAX_BOARD_NAME), value: b.name, 'aria-label': '게시판 이름', oninput: (e) => { b.name = e.target.value; touch(); } }),
         h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '게시판 삭제', onclick: async () => {
           if (!(await confirmDialog(`'${b.name}' 게시판을 지울까요? 이 게시판의 글은 지워지지 않고 '미분류'로 돌아가요.`, { ok: '삭제', danger: true }))) return;
@@ -232,7 +235,7 @@ function boardsTab() {
     const name = newIn.value.trim();
     if (!name) return;
     if (boards.length >= MAX_BOARDS) { toast(`게시판은 최대 ${MAX_BOARDS}개까지예요`); return; }
-    boards.push({ id: rid(8), name: name.slice(0, MAX_BOARD_NAME) });
+    boards.push({ id: rid(8), name: name.slice(0, MAX_BOARD_NAME), icon: 'folder' });
     newIn.value = '';
     touch();
     paint();
@@ -243,13 +246,17 @@ function boardsTab() {
   return h('div', { class: 'tab-body' },
     h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '게시판'),
-      h('p', { class: 'desc' }, '글을 분류하는 폴더예요. 글쓰기에서 게시판을 고르고, 블로그 위쪽 탭으로 게시판별로 모아 봐요. 이미 있는 글은 블로그에서 ‘게시판으로 옮기기’로 한꺼번에 옮길 수 있어요. 글이 없는 게시판은 다른 사람에게 보이지 않아요.'),
+      h('p', { class: 'desc' }, '글을 분류하는 폴더예요. 게시판마다 아이콘을 골라 꾸밀 수 있어요. 글쓰기에서 게시판을 고르고, 블로그 왼쪽 목록으로 게시판별로 모아 봐요. 이미 있는 글은 블로그에서 ‘게시판으로 옮기기’로 한꺼번에 옮길 수 있어요. 글이 없는 게시판은 다른 사람에게 보이지 않아요.'),
       empty, listEl,
       h('div', { class: 'row' }, newIn, h('button', { class: 'btn', onclick: add }, icon('plus', 15), '추가'))),
+    h('section', { class: 'panel' },
+      h('h3', { class: 'panel-title' }, '미분류 게시판'),
+      h('p', { class: 'desc' }, '게시판을 정하지 않은 글이 모이는 곳이에요. 끄면 블로그 왼쪽 목록에서 빠지고, 그 글들은 ‘전체’에서만 보여요.'),
+      h('label', { class: 'switch' }, uncatCb, h('span', { class: 'trk' }), uncatTxt)),
     h('div', { class: 'row between' }, note, saveBtn));
 }
 
-// ───────── 디자인 ─────────
+// ───────── 꾸미기 ─────────
 const SAMPLE = [
   { id: 's1', kind: 'style', title: '봄날의 교실', excerpt: 'masterpiece, 1girl, classroom, cherry blossoms, soft light', tags: ['풍경', '소녀'], vis: 'public', created: Date.now(), imgCount: 3 },
   { id: 's2', kind: 'scene', title: '네온 시티 야경', excerpt: 'cyberpunk city, rain, neon lights, reflection, night', tags: ['배경'], vis: 'locked', created: Date.now() - 86400000 * 3, imgCount: 1 },
@@ -272,10 +279,10 @@ function designTab() {
   let dirty = false;
   const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
     saveBtn.disabled = true;
-    try { T = sanitizeTheme(T); await updateProfile({ theme: T }); dirty = false; toast('디자인을 저장했어요'); }
+    try { T = sanitizeTheme(T); await updateProfile({ theme: T }); dirty = false; toast('꾸미기를 저장했어요'); }
     catch (e) { toast(friendly(e)); }
     finally { saveBtn.disabled = false; }
-  } }, icon('check', 16), '디자인 저장');
+  } }, icon('check', 16), '꾸미기 저장');
 
   const paintPreview = () => {
     preview.replaceChildren(h('div', { class: 'posts layout-' + T.layout }, SAMPLE.map((p) => postCard(p, true))));
@@ -309,6 +316,22 @@ function designTab() {
       h('label', { class: 'switch' }, cb, h('span', { class: 'trk' }), state));
   };
 
+  // 글 안의 버튼 이름·아이콘 (입력 중에는 다시 그리지 않아서 포커스가 유지돼요)
+  const setBtn = (k, patch) => {
+    T = { ...T, buttons: { ...T.buttons, [k]: { ...T.buttons[k], ...patch } } };
+    dirty = true;
+    applyTheme(T);
+  };
+  const btnRow = (k, d) => {
+    const prev = h('span', { class: 'btn sm bt-prev' });
+    const paintPrev = () => { const c = T.buttons[k]; prev.replaceChildren(c.icon ? icon(c.icon, 14) : null, c.label || d.name); };
+    const ic = iconField({ options: BUTTON_ICONS, value: T.buttons[k].icon, label: `${d.name} 아이콘`, onChange: (v) => { setBtn(k, { icon: v }); paintPrev(); } });
+    const name = h('input', { class: 'input', maxlength: String(MAX_BUTTON_LABEL), placeholder: d.name, value: T.buttons[k].label, 'aria-label': `${d.name} 이름`,
+      oninput: (e) => { setBtn(k, { label: e.target.value }); paintPrev(); } });
+    paintPrev();
+    return h('div', { class: 'bt-row' }, h('div', { class: 'bt-info' }, h('strong', null, d.name), h('small', null, d.where)), ic.el, name, prev);
+  };
+
   function build() {
     const sw = h('div', { class: 'swatches' }, PRESETS.map((p) =>
       h('button', {
@@ -328,8 +351,8 @@ function designTab() {
       bannerFile.value = '';
       if (!f) return;
       try {
-        const url = await compressImage(f, { maxEdge: 1600 });
-        const id = await uploadImage(url, 'profile');
+        // 배너만 Firebase에 직접 저장해요 (나머지 이미지는 ImgBB)
+        const id = await saveBannerImage(f, state.user.uid);
         const old = state.me.theme.banner;
         T = { ...T, banner: id };
         await updateProfile({ theme: T });
@@ -374,12 +397,16 @@ function designTab() {
             try { await updateProfile({ theme: T }); removeImages([old]); build(); } catch (e) { toast(friendly(e)); }
           } }, '배너 지우기') : null, bannerFile) : null),
       h('section', { class: 'panel' },
+        h('h3', { class: 'panel-title' }, '글 안의 버튼'),
+        h('p', { class: 'desc' }, '복사 버튼 같은 글 속 버튼의 아이콘과 이름을 바꿀 수 있어요. 이름을 비우면 기본 이름으로 돌아가요. 내 글을 보는 사람에게도 이렇게 보여요.'),
+        h('div', { class: 'bt-list' }, Object.entries(BUTTONS).map(([k, d]) => btnRow(k, d)))),
+      h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '글 종류 이름 · 공개'),
         h('p', { class: 'desc' }, '이름을 바꾸고, 다른 사람에게 보여줄지 정해요. 숨긴 종류는 다른 사람의 블로그 목록과 필터에서 빠지고, 내 블로그에서는 그대로 보여요. 이름을 비우면 기본 이름으로 돌아가요.'),
         h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('디자인을 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, kinds: T.kinds, boards: T.boards, favicon: T.favicon });
+          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
         } }, '기본값으로'),
         saveBtn),
       h('h3', { class: 'preview-title' }, '미리보기'),

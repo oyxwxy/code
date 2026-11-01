@@ -428,3 +428,31 @@ export function stepper({ value = 1, min = 1, max = 99, step = 1, onChange } = {
     set value(v) { set(Number(v), false); },
   };
 }
+
+// ───────── 아이콘 고르기 ─────────
+/**
+ * 아이콘 목록에서 하나 고르는 버튼. options에 ''가 있으면 '없음' 칸이 생겨요.
+ */
+export function iconField({ options = [], value = '', onChange, label = '아이콘 고르기' } = {}) {
+  let val = value;
+  const face = h('span', { class: 'icf-face' });
+  const btn = h('button', { type: 'button', class: 'icf', 'aria-label': label, 'aria-haspopup': 'dialog', 'aria-expanded': 'false' }, face, icon('chevd', 14));
+  const paint = () => {
+    face.replaceChildren(val ? icon(val, 18) : h('span', { class: 'icf-none' }, '없음'));
+    face.classList.toggle('none', !val);
+  };
+  paint();
+  const panel = (p) => {
+    const cells = options.map((name) => h('button', {
+      type: 'button', class: 'icg-cell' + (name === val ? ' on' : '') + (name ? '' : ' none'), title: name ? name : '아이콘 없음', 'aria-label': name || '아이콘 없음',
+      onclick: () => { val = name; paint(); onChange?.(val); p.close(); btn.focus(); },
+    }, name ? icon(name, 20) : '없음'));
+    return h('div', { class: 'icg' }, cells);
+  };
+  btn.addEventListener('click', () => togglePopover(btn, panel, { label }));
+  return {
+    el: btn,
+    get value() { return val; },
+    set value(v) { val = v; paint(); },
+  };
+}

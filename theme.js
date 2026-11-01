@@ -45,10 +45,13 @@ export function sanitizeKinds(k) {
 
 // ───────── 게시판 (글 분류) ─────────
 export const MAX_BOARDS = 20;
+/** 게시판에 붙일 수 있는 아이콘 (util.js의 아이콘 이름) */
+export const BOARD_ICONS = ['folder', 'star', 'heart', 'sparkle', 'palette', 'image', 'user', 'book', 'bookmark', 'tag', 'hash', 'pin',
+  'zap', 'smile', 'moon', 'sun', 'music', 'camera', 'coffee', 'gift', 'crown', 'leaf', 'flame', 'box', 'file', 'globe', 'lock', 'grid'];
 export const MAX_BOARD_NAME = 20;
 export const BOARD_ID_RE = /^[a-z0-9]{4,16}$/;
 
-/** 게시판 목록 [{ id, name }] 을 안전한 값으로 정리 (순서는 그대로 유지) */
+/** 게시판 목록 [{ id, name, icon }] 을 안전한 값으로 정리 (순서는 그대로 유지) */
 export function sanitizeBoards(b) {
   const out = [], seen = new Set();
   if (Array.isArray(b)) {
@@ -57,11 +60,40 @@ export function sanitizeBoards(b) {
       const name = typeof x?.name === 'string' ? x.name.trim().slice(0, MAX_BOARD_NAME) : '';
       if (!id || !name || seen.has(id)) continue;
       seen.add(id);
-      out.push({ id, name });
+      out.push({ id, name, icon: BOARD_ICONS.includes(x.icon) ? x.icon : 'folder' });
       if (out.length >= MAX_BOARDS) break;
     }
   }
   return out;
+}
+
+// ───────── 글 안의 버튼 (이름 · 아이콘 바꾸기) ─────────
+/** 글 속 버튼마다 기본 이름·아이콘. 아이콘 ''은 '아이콘 없음' */
+export const BUTTONS = {
+  link:     { name: '링크 복사',   icon: 'link',  where: '글 위쪽, 돌아가기 줄 오른쪽' },
+  copy:     { name: '복사',        icon: 'copy',  where: '프롬프트 · 설정 블록의 복사 버튼' },
+  tags:     { name: '태그로 보기', icon: '',      where: '프롬프트를 태그 조각으로 보기' },
+  raw:      { name: '원문 보기',   icon: '',      where: '태그 보기에서 원문으로 돌아가기' },
+  withBase: { name: '기본과 함께', icon: 'copy',  where: '캐릭터 변형을 기본 프롬프트와 함께 복사' },
+};
+export const BUTTON_ICONS = ['', 'copy', 'clipboard', 'link', 'share', 'download', 'star', 'heart', 'sparkle', 'zap', 'check', 'bookmark', 'tag', 'hash', 'smile', 'flame', 'gift', 'file'];
+export const MAX_BUTTON_LABEL = 12;
+
+export function sanitizeButtons(b) {
+  const out = {};
+  for (const [k, d] of Object.entries(BUTTONS)) {
+    const x = b && typeof b === 'object' ? b[k] : null;
+    const label = typeof x?.label === 'string' ? x.label.trim().slice(0, MAX_BUTTON_LABEL) : '';
+    out[k] = { label, icon: BUTTON_ICONS.includes(x?.icon) ? x.icon : d.icon };
+  }
+  return out;
+}
+
+let btnPrefs = sanitizeButtons(null);
+/** 글 화면에서 쓸 버튼 이름·아이콘 (이름을 비워 두면 기본 이름) */
+export function getButton(key) {
+  const p = btnPrefs[key] || { label: '', icon: BUTTONS[key].icon };
+  return { label: p.label || BUTTONS[key].name, icon: p.icon };
 }
 
 // ───────── 파비콘 (사람마다 따로) ─────────
@@ -117,7 +149,7 @@ export function setFavicon(f) {
 export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
-  avatar: '', banner: '', kinds: sanitizeKinds(null), boards: [], favicon: null,
+  avatar: '', banner: '', kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -140,7 +172,9 @@ export function sanitizeTheme(t) {
     banner: typeof t.banner === 'string' ? t.banner : '',
     kinds: sanitizeKinds(t.kinds),
     boards: sanitizeBoards(t.boards),
+    uncat: t.uncat !== false,
     favicon: sanitizeFavicon(t.favicon),
+    buttons: sanitizeButtons(t.buttons),
   };
 }
 
@@ -175,5 +209,6 @@ export function applyTheme(raw) {
   document.documentElement.dataset.mode = p.dark ? 'dark' : 'light';
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', p.bg);
   setFavicon(t.favicon);   // 글쓴이마다 자기 파비콘으로
+  btnPrefs = t.buttons;    // 글쓴이가 정한 버튼 이름·아이콘
   return t;
 }

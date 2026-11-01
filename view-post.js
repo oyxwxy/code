@@ -1,6 +1,6 @@
 import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
 import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly } from './store.js';
-import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
+import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME } from './theme.js';
 import { imageGallery } from './gallery.js';
 import { openLightbox } from './lightbox.js';
 import { loadImage } from './images.js';
@@ -23,6 +23,9 @@ export function splitTokens(text) {
   return out;
 }
 
+/** 글쓴이가 꾸민 이름·아이콘으로 버튼 안쪽 내용을 만들어요 */
+const btnKids = (key) => { const b = getButton(key); return [b.icon ? icon(b.icon, 14) : null, b.label]; };
+
 function promptBlock(label, text, { variant = '', extra = [] } = {}) {
   text = txt(text);
   if (!text.trim()) return null;
@@ -33,12 +36,12 @@ function promptBlock(label, text, { variant = '', extra = [] } = {}) {
     if (chips) body.append(h('div', { class: 'toks' }, splitTokens(text).map((t) => h('span', { class: 'tok' }, t))));
     else body.append(h('pre', { class: 'plain' }, text));
   };
-  const toggle = h('button', { class: 'btn ghost sm', onclick: () => { chips = !chips; toggle.textContent = chips ? '원문 보기' : '태그로 보기'; paint(); } }, '태그로 보기');
+  const toggle = h('button', { class: 'btn ghost sm', onclick: () => { chips = !chips; toggle.replaceChildren(...btnKids(chips ? 'raw' : 'tags')); paint(); } }, ...btnKids('tags'));
   paint();
   return h('section', { class: 'block ' + variant },
     h('div', { class: 'block-head' }, h('h3', null, label),
       h('div', { class: 'block-tools' }, toggle, ...extra,
-        h('button', { class: 'btn sm', onclick: () => copyText(text, `${label} 복사했어요`) }, icon('copy', 14), '복사'))),
+        h('button', { class: 'btn sm', onclick: () => copyText(text, `${label} 복사했어요`) }, ...btnKids('copy')))),
     body);
 }
 
@@ -77,7 +80,7 @@ function renderBody(content, kind = 'style') {
       const both = [txt(content.prompt), txt(v.prompt)].filter((x) => x.trim()).join(', ');
       wrap.append(promptBlock(txt(v.name) || '변형', v.prompt, {
         variant: 'char',
-        extra: [h('button', { class: 'btn sm', onclick: () => copyText(both, '기본 + 변형을 함께 복사했어요') }, icon('copy', 14), '기본과 함께')],
+        extra: [h('button', { class: 'btn sm', onclick: () => copyText(both, '기본 + 변형을 함께 복사했어요') }, ...btnKids('withBase'))],
       }));
     });
   } else {
@@ -95,7 +98,7 @@ function renderBody(content, kind = 'style') {
     const asText = filled.map(([k, label]) => `${label}: ${txt(pr[k])}`).join(', ');
     wrap.append(h('section', { class: 'block' },
       h('div', { class: 'block-head' }, h('h3', null, '생성 설정'),
-        h('div', { class: 'block-tools' }, h('button', { class: 'btn sm', onclick: () => copyText(asText, '설정을 복사했어요') }, icon('copy', 14), '복사'))),
+        h('div', { class: 'block-tools' }, h('button', { class: 'btn sm', onclick: () => copyText(asText, '설정을 복사했어요') }, ...btnKids('copy')))),
       h('div', { class: 'params' }, filled.map(([k, label]) =>
         h('div', { class: 'param' }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, txt(pr[k])))))));
   }
@@ -132,9 +135,11 @@ export async function post({ params, root }) {
 
   const tags = (p.tags || []).map(txt).filter(Boolean);
   const head = h('header', { class: 'post-head' },
-    h('a', { class: 'back', href: '#/u/' + handle }, icon('back', 16), authorName),
+    h('div', { class: 'post-top' },
+      h('a', { class: 'back', href: '#/u/' + handle }, icon('back', 16), authorName),
+      h('button', { class: 'btn sm', onclick: share }, ...btnKids('link'))),
     h('div', { class: 'post-vis' }, kindBadge(p),
-      board ? h('a', { class: 'kind board-badge', href: `#/u/${handle}?board=${board.id}`, title: '이 게시판의 글 보기' }, icon('folder', 12), board.name) : null,
+      board ? h('a', { class: 'kind board-badge', href: `#/u/${handle}?board=${board.id}`, title: '이 게시판의 글 보기' }, icon(board.icon, 12), board.name) : null,
       visBadge(p, true)),
     h('h1', { class: 'post-title' }, title),
     h('div', { class: 'post-meta' },
@@ -142,7 +147,6 @@ export async function post({ params, root }) {
       h('span', null, fmtDate(p.created))),
     tags.length ? h('div', { class: 'tags' }, tags.map((t) => h('a', { class: 'tag', href: '#/u/' + handle }, '#' + t))) : null,
     h('div', { class: 'post-actions' },
-      h('button', { class: 'btn sm', onclick: share }, icon('link', 15), '링크 복사'),
       isOwner ? h('a', { class: 'btn sm', href: '#/edit/' + p.id }, icon('edit', 15), '수정') : null,
       isOwner ? h('button', {
         class: 'btn sm danger-ghost',

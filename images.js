@@ -1,5 +1,5 @@
 // 이미지: ImgBB에 올리고 주소만 저장해요. (예전 Firestore 저장 방식의 글도 읽을 수 있어요)
-import { db, doc, getDoc, deleteDoc } from './fb.js';
+import { db, doc, getDoc, setDoc, deleteDoc } from './fb.js';
 import { isUrl, safeUrl } from './imgbb.js';
 
 export { uploadImage, isUrl, safeUrl } from './imgbb.js';
@@ -85,4 +85,24 @@ export async function makeIcon(file, size = 128) {
   ctx.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, size, size);
   bmp.close?.();
   return c.toDataURL('image/png');
+}
+
+/**
+ * 배너 이미지만 Firebase(Firestore)에 직접 저장해요. 나머지 이미지는 ImgBB예요.
+ * 한 문서가 1MB를 넘을 수 없어서, 크기가 넘으면 화질·크기를 줄여 가며 다시 인코딩해요.
+ * 반환값은 이미지 ID이고, loadImage()가 그대로 읽어 와요.
+ */
+export async function saveBannerImage(file, uid) {
+  let edge = 1600, q = 0.85, data = '';
+  for (let n = 0; n < 8; n++) {
+    data = await compressImage(file, { maxEdge: edge, quality: q });
+    if (data.length < 900000) break;
+    q = Math.max(0.5, q - 0.1);
+    edge = Math.round(edge * 0.85);
+  }
+  if (data.length >= 900000) throw new Error('배너 이미지가 너무 커요. 더 작은 이미지를 골라 주세요');
+  const id = 'bn' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  await setDoc(doc(db, 'images', id), { owner: uid, d: data, t: Date.now() });
+  cache.set(id, Promise.resolve(data));
+  return id;
 }
