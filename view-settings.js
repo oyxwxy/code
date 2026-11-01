@@ -465,8 +465,8 @@ function designTab() {
     });
     const nbPanel = () => h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '배너'),
-      h('p', { class: 'desc' }, '블로그 태그 아래에 걸리는 작은 이미지예요 (가로 4 : 세로 1, 가운데를 잘라 맞춰요). 이 배너를 누르면 상대가 바로 자기 배너 목록으로 가져갈 수 있고, 마우스를 올리면 블로그 이름과 핸들이 보여요.'),
-      T.nbBanner ? h('div', { class: 'nb-preview' }, bannerEl({ ...state.me, theme: T }, { cls: 'mine' })) : null,
+      h('p', { class: 'desc' }, '블로그 태그 아래에 걸리는 작은 이미지예요 (가로 4 : 세로 1, 가운데를 잘라 맞춰요). 이 배너를 누르면 상대가 바로 자기 배너 목록으로 가져갈 수 있고, 마우스를 올리면 블로그 이름과 핸들이 보여요. 이미지를 정하지 않아도 블로그 이름이 적힌 기본 배너가 걸려요.'),
+      h('div', { class: 'nb-preview' }, bannerEl({ ...state.me, theme: T }, { cls: 'mine' })),
       h('div', { class: 'row' },
         h('button', { class: 'btn sm', onclick: () => nbFile.click() }, icon('image', 14), T.nbBanner ? '배너 바꾸기' : '배너 이미지 선택'),
         T.nbBanner ? h('button', { class: 'btn ghost sm', onclick: async () => {

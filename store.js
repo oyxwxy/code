@@ -387,10 +387,10 @@ export async function listInvitedMembers() {
 
 // ───────── 이웃 배너 ─────────
 /** 이웃 배너 기능을 쓸 수 있는 사람인지 (보는 사람 기준) */
-export const neighborsOn = () => !!state.me && (NEIGHBORS_FOR_ALL || isBeta());
+export const neighborsOn = () => NEIGHBORS_FOR_ALL || isBeta();
 
 /** 디데이 기능을 쓸 수 있는 사람인지 (보는 사람 기준) */
-export const ddayOn = () => !!state.me && (DDAY_FOR_ALL || isBeta());
+export const ddayOn = () => DDAY_FOR_ALL || isBeta();
 
 export const myNeighbors = () => sanitizeTheme(state.me?.theme).neighbors;
 export const isNeighbor = (uid) => myNeighbors().includes(uid);

@@ -20,11 +20,11 @@ export const MAX_IMAGES = 12;          // 글 하나당 이미지 최대 장수
 // 새 기능은 `if (isBeta()) { … }` 로 감싸서 올리고, 문제없으면 감싼 걸 풀어 전체에 적용하세요.
 export const BETA_HANDLES = ['wxyz'];
 
-// 이웃 배너 기능: false 면 관리자·BETA_HANDLES 에게만 보여요. 전체에 열려면 true 로 바꾸세요.
-export const NEIGHBORS_FOR_ALL = false;
+// 배너 기능: true 면 전체 공개(로그인 안 한 방문자도 봐요). false 면 관리자·BETA_HANDLES 에게만 보여요.
+export const NEIGHBORS_FOR_ALL = true;
 
-// 디데이 기능: false 면 관리자·BETA_HANDLES 에게만 보여요. 전체에 열려면 true.
-export const DDAY_FOR_ALL = false;
+// 디데이 기능: true 면 전체 공개. false 면 관리자·BETA_HANDLES 에게만 보여요.
+export const DDAY_FOR_ALL = true;
 
 // 이미지 호스팅(ImgBB) API 키. 브라우저 코드에 들어가므로 공개된다는 점을 알고 쓰세요
 export const IMGBB_KEY = 'cd95c1a1e9387659cd79b2b33902dce1';

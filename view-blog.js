@@ -306,7 +306,6 @@ export function bannerEl(p, { href = null, onclick = null, cls = '' } = {}) {
 }
 
 function neighborZone(prof, theme, isOwner) {
-  const hasMine = !!theme.nbBanner;
   const nbs = h('div', { class: 'nb-list' });
   const zone = h('div', { class: 'side-sec nb-zone' }, h('h4', null, '배너'));
   const paintNeighbors = async () => {
@@ -320,11 +319,10 @@ function neighborZone(prof, theme, isOwner) {
       } }, icon('x', 12)));
       return wrap;
     }));
-    zone.hidden = !hasMine && !profs.length && !isOwner;
   };
 
   let mineEl = null;
-  if (hasMine) {
+  {   // 이미지를 정하지 않아도 이름이 적힌 기본 배너가 걸려요
     if (isOwner) mineEl = bannerEl(prof, { cls: 'mine', onclick: null });
     else {
       const paintTaken = () => mineEl.classList.toggle('taken', !!state.me && isNeighbor(prof.uid));
@@ -343,7 +341,7 @@ function neighborZone(prof, theme, isOwner) {
     }
   }
   zone.append(h('div', { class: 'nb-mine' }, mineEl,
-    isOwner && !hasMine ? h('a', { class: 'nb-empty', href: '#/settings?tab=design' }, '배너를 만들어 보세요') : null), nbs);
+    isOwner && !theme.nbBanner ? h('a', { class: 'nb-empty', href: '#/settings?tab=design' }, '배너 이미지를 정해 보세요') : null), nbs);
   paintNeighbors();
   return zone;
 }

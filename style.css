@@ -784,7 +784,7 @@ a.board-badge:hover { border-color: var(--accent); }
 .nb-item { position: relative; }
 .nb-banner { position: relative; display: block; width: 100%; max-width: 200px; aspect-ratio: 4 / 1; padding: 0; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;
   background: var(--accent-soft) center / cover no-repeat; color: var(--text); cursor: pointer; text-decoration: none; }
-.nb-banner.no-img { display: grid; place-items: center; }
+.nb-banner.no-img { display: grid; place-items: center; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 30%, var(--surface)), color-mix(in srgb, var(--accent) 8%, var(--surface))); }
 .nb-banner:not(.takeable):not(a) { cursor: default; }
 .nb-fallback { font-size: 12.5px; font-weight: 600; padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .nb-hover { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1px; padding: 0 8px; text-align: center;
@@ -815,8 +815,13 @@ a.board-badge:hover { border-color: var(--accent); }
 
 
 /* ───────── 디데이 ───────── */
-.name-row { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
-.head-center .name-row { justify-content: center; }
+.name-row { display: flex; align-items: center; gap: 8px 12px; width: 100%; }
+.name-row .blog-name { min-width: 0; overflow-wrap: anywhere; }
+.name-row .dd-pill { margin-left: auto; flex: none; }   /* 디데이는 이름 줄 맨 오른쪽 */
+.head-center .head-text { align-self: stretch; width: 100%; }
+.head-center .name-row { position: relative; justify-content: center; }
+.head-center .name-row .dd-pill { position: absolute; right: 0; top: 50%; transform: translateY(-50%); margin-left: 0; }
+@media (max-width: 760px) { .head-center .name-row { flex-direction: column; } .head-center .name-row .dd-pill { position: static; transform: none; } }
 .dd-pill { --dd: #e0679a; display: inline-flex; align-items: center; gap: 6px; max-width: min(260px, 100%); height: 32px; padding: 0 14px; border: 2px solid color-mix(in srgb, var(--dd) 35%, var(--surface)); border-radius: 999px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--dd) 8%, var(--surface)), color-mix(in srgb, #5aa7e8 14%, var(--surface))); color: var(--dd); font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .dd-pill:hover { filter: brightness(.97); }
