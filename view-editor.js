@@ -65,9 +65,39 @@ export async function editor({ params, query, root }) {
   };
   const promptIn = mkTa(content?.prompt, 6);
   const negIn = mkTa(content?.negative, 4);
-  const notesIn = mkTa(content?.notes, 3, '');
   negIn.placeholder = '네거티브 프롬프트(UC)';
-  notesIn.placeholder = '메모 (사용 팁, 마음에 든 점, 출처 등)';
+
+  // 메모: 말풍선 목록 (상대 / 나 를 골라서 대화처럼 적어요). 예전 글의 메모 글자는 말풍선 하나로 열려요
+  const MAX_BUBBLES = 40;
+  const memoBox = h('div', { class: 'memo-edit' });
+  const memoRows = [];
+  const addBubble = (side = 'them', text = '') => {
+    if (memoRows.length >= MAX_BUBBLES) { toast(`말풍선은 ${MAX_BUBBLES}개까지예요`); return null; }
+    const row = { side: side === 'me' ? 'me' : 'them' };
+    const ta = h('textarea', { class: 'textarea', rows: '2', maxlength: '2000', value: txt(text), placeholder: '메모 (사용 팁, 마음에 든 점, 출처 등)' });
+    autosize(ta);
+    const grip = h('span', { class: 'grip', title: '끌어서 순서 바꾸기', 'aria-label': '끌어서 순서 바꾸기' }, icon('grip', 16));
+    const seg = h('div', { class: 'side-seg', role: 'group', 'aria-label': '말풍선 쪽' });
+    const paint = () => {
+      el.dataset.side = row.side;
+      seg.replaceChildren(...[['them', '상대'], ['me', '나']].map(([k, label]) =>
+        h('button', { type: 'button', class: 'side-opt' + (row.side === k ? ' on' : ''), onclick: () => { row.side = k; paint(); } }, label)));
+    };
+    const del = h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '말풍선 삭제', onclick: () => { memoRows.splice(memoRows.indexOf(row), 1); el.remove(); } }, icon('x', 15));
+    const el = h('div', { class: 'memo-row' }, h('div', { class: 'memo-head' }, grip, seg, h('span', { class: 'sp' }), del), ta);
+    Object.assign(row, { el, ta });
+    memoRows.push(row);
+    memoBox.append(el);
+    paint();
+    return row;
+  };
+  const initMemo = Array.isArray(content?.memo) && content.memo.length ? content.memo
+    : txt(content?.notes).trim() ? [{ side: 'them', text: content.notes }] : [];
+  initMemo.slice(0, MAX_BUBBLES).forEach((m) => addBubble(m?.side, m?.text));
+  sortable(memoBox, {
+    item: '.memo-row', handle: '.grip',
+    onSort: (els) => { const next = els.map((el) => memoRows.find((r) => r.el === el)).filter(Boolean); memoRows.splice(0, memoRows.length, ...next); },
+  });
 
   // 캐릭터 변형 (사복, 교복 …)
   const varBox = h('div', { class: 'chars' });
@@ -280,7 +310,9 @@ export async function editor({ params, query, root }) {
     if (imgs.some((i) => i.pending)) { toast('이미지를 처리 중이에요. 잠시만요'); return; }
     if (vis === 'locked' && !pwIn.value && !lock) { toast('비밀번호를 입력해 주세요'); pwIn.focus(); return; }
     if (tagInput.value.trim()) { addTagsFrom(tagInput.value); tagInput.value = ''; }
-    const body = { prompt: promptIn.value.replace(/\s+$/, ''), notes: notesIn.value.trim() };
+    const memo = memoRows.map((r) => ({ side: r.side, text: r.ta.value.trim() })).filter((m) => m.text);
+    // notes 는 말풍선 글을 이어 붙인 글자예요 (목록 발췌·백업·예전 화면 호환용)
+    const body = { prompt: promptIn.value.replace(/\s+$/, ''), notes: memo.map((m) => m.text).join('\n'), memo };
     const labels = {};
     if (promptTitle.value) labels.prompt = promptTitle.value;
     if (notesTitle.value) labels.notes = notesTitle.value;
@@ -336,7 +368,11 @@ export async function editor({ params, query, root }) {
     h('button', { class: 'btn sm', type: 'button', onclick: () => addVariant().name.focus() }, icon('plus', 14), '변형 추가'),
     h('small', { class: 'hint-line' }, '보기 화면에서 변형마다 따로 복사할 수 있고, 기본 프롬프트와 함께 복사하는 버튼도 있어요.'));
   const notesTitle = titleEditor('메모', content?.labels?.notes);
-  const notesPanel = h('section', { class: 'panel' }, notesTitle.el, notesIn);
+  const notesPanel = h('section', { class: 'panel' }, notesTitle.el, memoBox,
+    h('div', { class: 'row tight' },
+      h('button', { class: 'btn sm', type: 'button', onclick: () => addBubble('them')?.ta.focus() }, icon('plus', 14), '상대 말풍선'),
+      h('button', { class: 'btn sm', type: 'button', onclick: () => addBubble('me')?.ta.focus() }, icon('plus', 14), '내 말풍선')),
+    h('small', { class: 'hint-line' }, '메시지처럼 말풍선으로 보여요. 상대/나를 눌러 쪽을 바꾸고, ⋮⋮ 를 끌어 순서를 바꿔요.'));
   const visPanel = panel('공개 설정', segBox, visExtra);
   const boardPanel = panel('게시판', boardSel.el,
     h('div', { class: 'row tight' }, h('button', { class: 'btn sm', type: 'button', onclick: addBoard }, icon('plus', 14), '새 게시판')),

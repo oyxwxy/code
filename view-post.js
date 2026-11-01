@@ -104,9 +104,13 @@ function renderBody(content, kind = 'style') {
       h('div', { class: 'params' }, filled.map(([k, label]) =>
         h('div', { class: 'param' }, h('span', { class: 'pl' }, label), h('span', { class: 'pv' }, txt(pr[k])))))));
   }
-  if (txt(content.notes).trim()) {
+  const memo = Array.isArray(content.memo) && content.memo.length
+    ? content.memo.map((m) => ({ side: m?.side === 'me' ? 'me' : 'them', text: txt(m?.text).trim() })).filter((m) => m.text)
+    : txt(content.notes).trim() ? [{ side: 'them', text: txt(content.notes).trim() }] : [];
+  if (memo.length) {
     wrap.append(h('section', { class: 'block memo' }, h('div', { class: 'block-head' }, h('h3', null, L.notes || '메모')),
-      h('div', { class: 'block-body' }, h('div', { class: 'notes' }, txt(content.notes)))));
+      h('div', { class: 'block-body' }, h('div', { class: 'chat' }, memo.map((m, i) =>
+        h('div', { class: `bubble ${m.side}` + (memo[i + 1]?.side !== m.side ? ' tail' : '') + (i && memo[i - 1].side !== m.side ? ' first' : '') }, m.text))))));
   }
   return wrap;
 }
