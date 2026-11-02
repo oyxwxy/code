@@ -155,6 +155,8 @@ export async function editor({ params, query, root }) {
   // 게시판 (글 분류)
   let boards = sanitizeBoards(state.me.theme.boards);
   let board = boards.some((b) => b.id === prev?.board) ? prev.board : '';
+  // 새 글: 게시판을 보다가 글쓰기를 눌렀으면(#/new?board=…) 그 게시판을 미리 골라 둬요
+  if (!prev) { const qb = query?.get('board'); if (qb && boards.some((b) => b.id === qb)) board = qb; }
   const boardOpts = () => [['', '미분류'], ...boards.map((b) => [b.id, b.name])];
   const boardSel = selectField({ options: boardOpts(), value: board, label: '게시판', onChange: (v) => { board = v; } });
   async function addBoard() {

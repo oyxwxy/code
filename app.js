@@ -30,7 +30,10 @@ function renderHeader() {
   const nav = h('nav', { class: 'nav' });
   if (me) {
     nav.append(
-      h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), h('span', { class: 'hide-sm' }, '글쓰기')),
+      h('a', { class: 'btn primary sm', href: '#/new', onclick: (e) => {
+        // 내 블로그에서 게시판을 보고 있으면 그 게시판으로 미리 골라 줘요
+        if (state.writeBoard) { e.preventDefault(); location.hash = '#/new?board=' + encodeURIComponent(state.writeBoard); }
+      } }, icon('plus', 15), h('span', { class: 'hide-sm' }, '글쓰기')),
       h('a', { class: 'nav-avatar', href: '#/settings', title: '설정' }, avatarEl(me, 'sm')));
   } else {
     nav.append(
@@ -46,6 +49,7 @@ async function route() {
   const path = qi >= 0 ? raw.slice(0, qi) : raw;
   const query = new URLSearchParams(qi >= 0 ? raw.slice(qi + 1) : '');
   const token = ++navToken;
+  state.writeBoard = '';   // 화면이 바뀌면 '보고 있는 게시판'은 비워요 (블로그 화면이 다시 채워요)
   const root = h('div', { class: 'view' });
   viewEl.replaceChildren(root);
   window.scrollTo(0, 0);

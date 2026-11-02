@@ -149,6 +149,7 @@ export async function blog({ params, query, root }) {
   const boardIds = new Set(boards.map((b) => b.id));
   const boardOf = (p) => (boardIds.has(p.board) ? p.board : '');   // 지워진 게시판의 글은 미분류
   const boardName = (id) => boards.find((b) => b.id === id)?.name || '';
+  const newBtn = h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), '새 글');
   const boardObj = (id) => boards.find((b) => b.id === id) || null;
   const showUncat = theme.uncat;   // 미분류 게시판을 사이드에 보일지 (설정 → 게시판)
 
@@ -173,7 +174,7 @@ export async function blog({ params, query, root }) {
           ddayOn() && theme.ddays.length ? ddayPill(theme.ddays) : null),
         bioText ? h('p', { class: 'blog-bio' }, bioText) : null,
         isOwner ? h('div', { class: 'head-actions' },
-          h('a', { class: 'btn primary sm', href: '#/new' }, icon('plus', 15), '새 글'),
+          newBtn,
           h('a', { class: 'btn sm', href: '#/settings' }, icon('settings', 15), '꾸미기·설정')) : null)));
 
   // ── 도구줄 ──
@@ -181,6 +182,14 @@ export async function blog({ params, query, root }) {
   let q = '', tag = null, visFilter = 'all', shown = PAGE;
   let boardFilter = (qBoard === NONE && showUncat) || boardIds.has(qBoard) ? qBoard : 'all';
   let kindFilter = 'all';
+  // 내 블로그에서 특정 게시판을 보고 있으면, 글쓰기를 눌렀을 때 그 게시판이 미리 골라져요
+  const writeBoard = () => (isOwner && boardFilter !== 'all' && boardFilter !== NONE && boardIds.has(boardFilter) ? boardFilter : '');
+  const writeHref = () => '#/new' + (writeBoard() ? '?board=' + encodeURIComponent(writeBoard()) : '');
+  const syncWrite = () => {
+    state.writeBoard = writeBoard();
+    newBtn.setAttribute('href', writeHref());
+    if (writeBoard()) newBtn.setAttribute('title', `'${boardName(writeBoard())}' 게시판에 글쓰기`); else newBtn.removeAttribute('title');
+  };
   const tagCount = new Map();
   posts.forEach((p) => (p.tags || []).map(txt).filter(Boolean).forEach((t) => tagCount.set(t, (tagCount.get(t) || 0) + 1)));
   const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).map((x) => x[0]);
@@ -239,6 +248,7 @@ export async function blog({ params, query, root }) {
   }
 
   function paintPills() {
+    syncWrite();
     // 태그가 많으면 처음엔 몇 개만 보여주고 '더보기'로 펼쳐요 (골라 둔 태그는 접혀 있어도 계속 보여요)
     const foldable = topTags.length > TAG_LIMIT;
     let vis = topTags;
@@ -300,7 +310,7 @@ export async function blog({ params, query, root }) {
       list.append(posts.length
         ? emptyState('조건에 맞는 글이 없어요', '검색어나 필터를 바꿔 보세요.')
         : emptyState(isOwner ? '아직 글이 없어요' : '아직 공개된 글이 없어요',
-          isOwner ? '첫 프롬프트를 저장해 볼까요?' : '', isOwner ? h('a', { class: 'btn primary', href: '#/new' }, icon('plus', 15), '새 글 쓰기') : null));
+          isOwner ? '첫 프롬프트를 저장해 볼까요?' : '', isOwner ? h('a', { class: 'btn primary', href: writeHref() }, icon('plus', 15), '새 글 쓰기') : null));
       return;
     }
     const box = h('div', { class: 'posts layout-' + theme.layout + (picking ? ' picking' : '') },

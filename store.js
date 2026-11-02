@@ -11,7 +11,8 @@ import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
 import { makeThumb, uploadImage, removeImages, safeUrl, isUrl } from './images.js';
 
 export const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
-export const state = { user: null, me: null, ready: false };
+// writeBoard: 내 블로그에서 특정 게시판을 보고 있을 때 그 게시판 id (글쓰기를 누르면 그 게시판이 미리 선택돼요)
+export const state = { user: null, me: null, ready: false, writeBoard: '' };
 
 const clean = (o) => JSON.parse(JSON.stringify(o));
 const toEmail = (handle) => `${handle}@${AUTH_DOMAIN}`;
