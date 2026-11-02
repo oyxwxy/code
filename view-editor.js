@@ -325,11 +325,29 @@ export async function editor({ params, query, root }) {
   fileIn.addEventListener('change', () => { addFiles(fileIn.files); fileIn.value = ''; });
   const drop = h('div', { class: 'dropzone', tabindex: '0', onclick: () => fileIn.click() },
     icon('upload', 22), h('strong', null, '이미지를 끌어다 놓거나 눌러서 선택'),
+    h('small', null, 'Ctrl+V (맥은 ⌘V)로 복사한 이미지를 붙여넣어도 돼요'),
     h('small', null, 'NovelAI 이미지면 프롬프트·설정을 자동으로 읽어와요'));
   drop.addEventListener('dragover', (e) => { if (e.dataTransfer?.types?.includes('Files')) { e.preventDefault(); drop.classList.add('over'); } });
   drop.addEventListener('dragleave', () => drop.classList.remove('over'));
   drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); addFiles(e.dataTransfer.files); });
   paintImgs();
+
+  // 복사한 이미지(스크린샷, 웹에서 '이미지 복사', 탐색기에서 복사한 파일)를 글쓰기 화면 어디서든 Ctrl+V 로 넣어요.
+  // 글자만 복사했을 땐 건드리지 않아서 평소처럼 붙여넣어져요.
+  const onPaste = (e) => {
+    if (!imgGrid.isConnected) { document.removeEventListener('paste', onPaste); return; }   // 다른 화면으로 가면 정리
+    if (document.querySelector('.modal-back')) return;                                        // 팝업(자르기 등)이 열려 있으면 그쪽에 맡겨요
+    const cd = e.clipboardData;
+    if (!cd) return;
+    let files = [...(cd.items || [])].filter((it) => it.kind === 'file' && it.type.startsWith('image/')).map((it) => it.getAsFile()).filter(Boolean);
+    if (!files.length) files = [...(cd.files || [])].filter((f) => f.type.startsWith('image/'));
+    if (!files.length) return;
+    e.preventDefault();
+    if (imgs.length >= MAX_IMAGES) { toast(`이미지는 최대 ${MAX_IMAGES}장까지 넣을 수 있어요`); return; }
+    toast(files.length > 1 ? `이미지 ${files.length}장을 붙여넣었어요` : '이미지를 붙여넣었어요');
+    addFiles(files);
+  };
+  document.addEventListener('paste', onPaste);
 
   const metaFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
   metaFile.addEventListener('change', () => { addFiles(metaFile.files, { forceMeta: true }); metaFile.value = ''; });
