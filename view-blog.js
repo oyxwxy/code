@@ -58,7 +58,7 @@ export function postCard(p, isOwner, canSort = false, boardLabel = null) {
   const badge = visBadge(p, isOwner);
   const hid = isOwner && !kindShown(kindOf(p));
   const sp = !!p.spoiler && p.vis === 'public';
-  const box = h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip' }, icon('image', 12), p.imgCount) : null);
+  const box = h('div', { class: 'card-thumb' }, thumb, p.imgCount > 1 ? h('span', { class: 'count-chip', title: `이미지 ${p.imgCount}장` }, icon('stack', 13), p.imgCount) : null);
   if (img && !p.thumbFill) fitThumb(img, box, th);   // '썸네일 꽉 채우기'를 켠 글은 여백 없이 꽉 채워요
   const tags = (p.tags || []).map(txt).filter(Boolean);
   return h('a', { class: 'card' + (th ? '' : ' no-thumb') + (hid ? ' kind-hidden' : '') + (sp ? ' spoiler' : '') + (p.thumbSp ? ' thumb-sp' : ''), href: '#/p/' + p.id, draggable: 'false', 'data-id': p.id },

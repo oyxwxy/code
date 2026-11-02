@@ -87,7 +87,7 @@ export function imageGallery(refs, { onOpen, spoilers = new Set(), revealed = ne
       else if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
     });
 
-    root.replaceChildren(h('div', { class: 'gal-stage' }, track, prev, next, count), dots);
+    root.replaceChildren(h('div', { class: 'gal-stage' }, track, prev, next), h('div', { class: 'gal-foot' }, h('span'), dots, count));
     sync();
   })();
 
