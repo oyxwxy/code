@@ -185,6 +185,13 @@ export async function blog({ params, query, root }) {
   // 내 블로그에서 특정 게시판을 보고 있으면, 글쓰기를 눌렀을 때 그 게시판이 미리 골라져요
   const writeBoard = () => (isOwner && boardFilter !== 'all' && boardFilter !== NONE && boardIds.has(boardFilter) ? boardFilter : '');
   const writeHref = () => '#/new' + (writeBoard() ? '?board=' + encodeURIComponent(writeBoard()) : '');
+  // 보고 있는 게시판을 주소에 남겨요 → 글을 보다가 뒤로 가면 그 게시판으로 돌아와요
+  const blogHash = () => '#/u/' + handle + (boardFilter !== 'all' ? '?board=' + encodeURIComponent(boardFilter) : '');
+  const rememberBoard = () => {
+    state.lastBlog = { handle, hash: blogHash() };
+    if (location.hash !== blogHash()) history.replaceState(history.state, '', blogHash());
+  };
+  state.lastBlog = { handle, hash: blogHash() };
   const syncWrite = () => {
     state.writeBoard = writeBoard();
     newBtn.setAttribute('href', writeHref());
@@ -276,7 +283,7 @@ export async function blog({ params, query, root }) {
     const entries = [['all', '전체', 'grid'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
       ...(showUncat && (isOwner || has.has(NONE)) ? [[NONE, '미분류', 'file']] : [])];
     boardBox.replaceChildren(...entries.map(([k, label, ic]) =>
-      h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; paintPills(); paint(); } },
+      h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; rememberBoard(); paintPills(); paint(); } },
         icon(ic, 15), h('span', null, label))));
   }
 

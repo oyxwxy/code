@@ -148,7 +148,7 @@ export async function post({ params, root }) {
   const tags = (p.tags || []).map(txt).filter(Boolean);
   const head = h('header', { class: 'post-head' },
     h('div', { class: 'post-top' },
-      h('a', { class: 'back', href: '#/u/' + handle }, icon('back', 16), authorName),
+      h('a', { class: 'back', href: state.lastBlog?.handle === handle ? state.lastBlog.hash : '#/u/' + handle }, icon('back', 16), authorName),
       h('button', { class: 'btn sm', onclick: share }, ...btnKids('link'))),
     h('div', { class: 'post-vis' }, kindBadge(p),
       board ? h('a', { class: 'kind board-badge', href: `#/u/${handle}?board=${board.id}`, title: '이 게시판의 글 보기' }, icon(board.icon, 12), board.name) : null,
