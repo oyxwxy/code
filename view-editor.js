@@ -104,8 +104,11 @@ export async function editor({ params, query, root }) {
   // 캐릭터 변형 (사복, 교복 …)
   const varBox = h('div', { class: 'chars' });
   const varRows = [];
+  // 변형은 캐릭터(의상 등)와 배포 프롬(상황·꾸밈 등) 글에서 쓸 수 있어요
+  const hasVariants = (k) => k === 'character' || k === 'scene';
+  const VAR_PH = { character: '변형 이름 (예: 사복, 교복, 수영복)', scene: '변형 이름 (예: 낮, 밤, 비 오는 날)' };
   const addVariant = (v = {}) => {
-    const name = h('input', { class: 'input', placeholder: '변형 이름 (예: 사복, 교복, 수영복)', maxlength: '40', value: txt(v.name) });
+    const name = h('input', { class: 'input', placeholder: VAR_PH[kind] || VAR_PH.character, maxlength: '40', value: txt(v.name) });
     const p = mkTa(v.prompt, 3);
     p.placeholder = '이 변형에만 쓰는 프롬프트';
     const sp = h('input', { type: 'checkbox', checked: !!v.spoiler });
@@ -387,7 +390,7 @@ export async function editor({ params, query, root }) {
       body.params = {};
       for (const [k] of PARAM_FIELDS) { const v = txt(pf[k].value).trim(); if (v) body.params[k] = v; }
     }
-    if (kind === 'character') {
+    if (hasVariants(kind)) {
       body.variants = varRows
         .map((r, i) => ({ name: r.name.value.trim() || `변형 ${i + 1}`, prompt: r.p.value.replace(/\s+$/, ''), ...(r.sp.checked ? { spoiler: true } : {}) }))
         .filter((v) => v.prompt);
@@ -428,7 +431,8 @@ export async function editor({ params, query, root }) {
   const promptPanel = h('section', { class: 'panel' }, promptTitle.el, promptIn);
   const negTitle = titleEditor('네거티브 프롬프트', content?.labels?.negative);
   const negPanel = h('section', { class: 'panel' }, negTitle.el, negIn);
-  const variantPanel = panel('변형 (사복 · 교복 등)', varBox,
+  const VAR_TITLE = { character: '변형 (사복 · 교복 등)', scene: '변형 (상황 · 꾸밈 등)' };
+  const variantPanel = panel(VAR_TITLE.character, varBox,
     h('button', { class: 'btn sm', type: 'button', onclick: () => addVariant().name.focus() }, icon('plus', 14), '변형 추가'),
     h('small', { class: 'hint-line' }, '보기 화면에서 변형마다 따로 복사할 수 있고, 기본 프롬프트와 함께 복사하는 버튼도 있어요.'));
   const notesTitle = titleEditor('메모', content?.labels?.notes);
@@ -462,11 +466,15 @@ export async function editor({ params, query, root }) {
       h('button', { type: 'button', class: 'kind-opt' + (kind === k ? ' on' : ''), onclick: () => { kind = k; paintKind(); } },
         icon(v.icon, 18), h('strong', null, kindLabel(k)), h('small', null, v.desc))));
     promptTitle.setDefault(TITLES[kind]);
+    if (hasVariants(kind)) {   // 변형 칸의 제목·예시를 글 종류에 맞춰요
+      variantPanel.querySelector('.panel-title').textContent = VAR_TITLE[kind];
+      varRows.forEach((r) => { r.name.placeholder = VAR_PH[kind]; });
+    }
     promptIn.placeholder = PHS[kind];
     titleIn.placeholder = TPH[kind];
     mainBox.replaceChildren(titleIn, promptPanel,
       ...(kind === 'style' ? [negPanel] : []),
-      ...(kind === 'character' ? [variantPanel] : []),
+      ...(hasVariants(kind) ? [variantPanel] : []),
       notesPanel);
     sideBox.replaceChildren(boardPanel, visPanel, datePanel, imgPanel, tagPanel, ...(kind === 'style' ? [paramPanel] : []), importPanel);
   };

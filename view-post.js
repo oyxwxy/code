@@ -81,8 +81,8 @@ function renderBody(content, kind = 'style') {
     const gal = imageGallery(ids, { spoilers, revealed, onOpen: (idx) => openLightbox(ids, idx, { spoilers, revealed, onReveal: (i) => gal.reveal?.(i) }) });
     wrap.append(gal);
   }
-  if (kind === 'character') {
-    wrap.append(promptBlock(L.prompt || '캐릭터 프롬프트', content.prompt, { variant: 'pos' }));
+  if (kind === 'character' || kind === 'scene') {   // 캐릭터·배포 프롬: 기본 프롬프트 + 변형
+    wrap.append(promptBlock(L.prompt || (kind === 'character' ? '캐릭터 프롬프트' : '프롬프트'), content.prompt, { variant: 'pos' }));
     (content.variants || []).forEach((v) => {
       const both = [txt(content.prompt), txt(v.prompt)].filter((x) => x.trim()).join(', ');
       const blk = promptBlock(txt(v.name) || '변형', v.prompt, {
