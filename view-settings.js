@@ -1,9 +1,10 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, neighborsOn, ddayOn, bannerSlideOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword } from './store.js';
+import { state, neighborsOn, ddayOn, bannerSlideOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
 import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
 import { colorField, stepper, iconField, datePicker, selectField } from './widgets.js';
+import { TINTS as DD_TINTS } from './dday.js';
 import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { openCropper } from './crop.js';
@@ -42,7 +43,7 @@ function ddayPanel() {
   const box = h('div', { class: 'dd-edit' });
   const add = (e = {}) => {
     if (rows.length >= MAX_DDAYS) { toast(`디데이는 ${MAX_DDAYS}개까지예요`); return null; }
-    const r = { id: e.id || rid(), kind: e.kind === 'dday' ? 'dday' : 'couple' };
+    const r = { id: e.id || rid(), kind: e.kind === 'dday' ? 'dday' : 'couple', color: e.color || '' };
     const emoji = h('input', { class: 'input dd-emoji', maxlength: '4', value: txt(e.emoji) || '💗', 'aria-label': '아이콘(이모지)' });
     const name = h('input', { class: 'input', maxlength: '20', placeholder: '이름 (예: 우리 기념일)', value: txt(e.name) });
     const date = datePicker({ value: txt(e.date), label: '날짜 선택' });
@@ -50,10 +51,23 @@ function ddayPanel() {
     const paintSeg = () => seg.replaceChildren(...[['couple', '커플'], ['dday', '디데이']].map(([k, label]) =>
       h('button', { type: 'button', class: 'side-opt' + (r.kind === k ? ' on' : ''), onclick: () => { r.kind = k; paintSeg(); } }, label)));
     paintSeg();
+    // 카드 색: 자동(순서대로 파스텔) · 기본 색 7가지 · 직접 고르기
+    const swBox = h('div', { class: 'dd-colors', role: 'group', 'aria-label': '카드 색' });
+    const custom = colorField({ value: r.color || DD_TINTS[0][1], label: '카드 색 직접 고르기', onInput: (hex) => { r.color = hex; paintSw(); } });
+    const paintSw = () => {
+      const on = (r.color || '').toLowerCase();
+      swBox.replaceChildren(
+        h('button', { type: 'button', class: 'dd-sw auto' + (on ? '' : ' on'), title: '자동', 'aria-label': '자동 (순서대로 색이 정해져요)', 'aria-pressed': String(!on), onclick: () => { r.color = ''; paintSw(); } }, '자동'),
+        ...DD_TINTS.map(([bg, edge]) => h('button', { type: 'button', class: 'dd-sw' + (on === edge.toLowerCase() ? ' on' : ''), title: edge, 'aria-label': `색 ${edge}`, 'aria-pressed': String(on === edge.toLowerCase()),
+          style: { background: `linear-gradient(135deg, ${bg}, ${edge})` }, onclick: () => { r.color = edge; paintSw(); } })),
+        h('span', { class: 'dd-sw-custom' }, custom.el));
+    };
+    paintSw();
     const el = h('div', { class: 'dd-row' },
       h('div', { class: 'dd-row-top' }, emoji, name,
         h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '삭제', onclick: () => { rows.splice(rows.indexOf(r), 1); el.remove(); } }, icon('x', 15))),
-      h('div', { class: 'dd-row-bot' }, seg, date.el));
+      h('div', { class: 'dd-row-bot' }, seg, date.el),
+      swBox);
     Object.assign(r, { el, emoji, name, date });
     rows.push(r);
     box.append(el);
@@ -61,7 +75,7 @@ function ddayPanel() {
   };
   sanitizeDdays(state.me.theme.ddays).forEach(add);
   const save = h('button', { class: 'btn primary', type: 'button', onclick: async () => {
-    const list = sanitizeDdays(rows.map((r) => ({ id: r.id, name: r.name.value, date: r.date.value, kind: r.kind, emoji: r.emoji.value })));
+    const list = sanitizeDdays(rows.map((r) => ({ id: r.id, name: r.name.value, date: r.date.value, kind: r.kind, emoji: r.emoji.value, color: r.color })));
     if (list.length < rows.filter((r) => r.name.value.trim() || r.date.value).length) { toast('이름과 날짜를 모두 채워 주세요'); return; }
     save.disabled = true;
     try { await updateProfile({ theme: { ...sanitizeTheme(state.me.theme), ddays: list } }); toast('디데이를 저장했어요'); }
@@ -70,7 +84,7 @@ function ddayPanel() {
   } }, icon('check', 16), '디데이 저장');
   return h('section', { class: 'panel' },
     h('h3', { class: 'panel-title' }, '디데이'),
-    h('p', { class: 'desc' }, '블로그 이름 오른쪽에 가장 가까운 기념일이 나오고, 누르면 전체 목록이 열려요. "커플"은 만난 날부터 D+일수를 세고 100일·주년을 기념일로 계산해요. "디데이"는 정한 날까지 D-일수를 세요.'),
+    h('p', { class: 'desc' }, '블로그 이름 오른쪽에 가장 가까운 기념일이 나오고, 누르면 전체 목록이 열려요. "커플"은 만난 날을 1일로 해서 D+일수를 세고 100일·주년을 기념일로 계산해요. "디데이"는 정한 날까지 D-일수를 세요.'),
     box,
     h('div', { class: 'row' }, h('button', { class: 'btn sm', type: 'button', onclick: () => add({})?.name.focus() }, icon('plus', 14), '디데이 추가'), save));
 }
@@ -153,6 +167,34 @@ function profileTab() {
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '저장');
 
+  // 아이디 바꾸기 (계정당 1번)
+  const idInput = h('input', { class: 'input', value: '@' + me.handle, disabled: true });
+  const urlInput = h('input', { class: 'input mono', readonly: true, value: location.origin + location.pathname + '#/u/' + me.handle });
+  const idHost = h('div', { class: 'row id-row' });
+  const paintId = () => {
+    idInput.value = '@' + state.me.handle;
+    urlInput.value = location.origin + location.pathname + '#/u/' + state.me.handle;
+    idHost.replaceChildren(state.me.handleChanged
+      ? h('small', { class: 'hint-line' }, '아이디는 한 번 바꿨어요 (계정당 1번만 바꿀 수 있어요)')
+      : h('button', { class: 'btn sm', type: 'button', onclick: onHandle }, icon('edit', 14), '아이디 바꾸기 (1번만 가능)'));
+  };
+  const onHandle = async () => {
+    const v = await askText({ title: '아이디 바꾸기', ok: '다음', placeholder: '새 아이디 (영문 소문자·숫자·_ 3~20자)',
+      label: '계정당 딱 1번만 바꿀 수 있어요. 블로그 주소가 새 아이디로 바뀌고, 이전 주소로 들어와도 새 주소로 이어져요. 이전 아이디는 다른 사람이 쓸 수 없게 남아요.' });
+    if (!v) return;
+    const nh = normalizeHandle(v);
+    if (!HANDLE_RE.test(nh)) { toast('아이디는 영문 소문자·숫자·밑줄(_) 3~20자예요'); return; }
+    if (nh === state.me.handle) { toast('지금 아이디와 같아요'); return; }
+    try { if (!(await handleAvailable(nh))) { toast('이미 사용 중인 아이디예요'); return; } } catch (e) { toast(friendly(e)); return; }
+    if (!(await confirmDialog(`'@${nh}'(으)로 바꿀까요? 한 번 바꾸면 다시 바꿀 수 없어요.`, { ok: '바꾸기' }))) return;
+    try {
+      await changeHandle(nh);
+      paintId();
+      toast(hasRealEmail() ? `아이디를 @${nh}(으)로 바꿨어요` : `아이디를 @${nh}(으)로 바꿨어요. 다음 로그인부터 새 아이디로 해 주세요`, { ms: 6000 });
+    } catch (e) { toast(friendly(e), { ms: 5000 }); }
+  };
+  paintId();
+
   const real = hasRealEmail();
   const onEmail = async () => {
     const em = await askText({ title: real ? '이메일 변경' : '이메일 등록', label: '새 이메일로 확인 메일을 보내드려요. 메일의 링크를 눌러야 적용돼요.', type: 'email', ok: '다음', placeholder: 'name@example.com' });
@@ -178,7 +220,7 @@ function profileTab() {
         h('div', { class: 'btn-col' },
           h('button', { class: 'btn sm', onclick: () => file.click() }, icon('image', 14), '사진 바꾸기'),
           h('button', { class: 'btn ghost sm', onclick: removeAvatar }, '사진 지우기'), file)),
-      h('label', { class: 'field' }, h('span', { class: 'lbl' }, '아이디'), h('input', { class: 'input', value: '@' + me.handle, disabled: true })),
+      h('div', { class: 'field' }, h('span', { class: 'lbl' }, '아이디'), idInput, idHost),
       h('label', { class: 'field' }, h('span', { class: 'lbl' }, '표시 이름'), display),
       h('label', { class: 'field' }, h('span', { class: 'lbl' }, '소개'), bio),
       h('div', { class: 'row' }, saveBtn)),
@@ -188,8 +230,8 @@ function profileTab() {
       h('h3', { class: 'panel-title' }, '내 블로그 주소'),
       h('p', { class: 'desc' }, '이 링크를 공유하면 공개 글과 비밀번호 글 목록을 볼 수 있어요.'),
       h('div', { class: 'row' },
-        h('input', { class: 'input mono', readonly: true, value: location.origin + location.pathname + '#/u/' + me.handle }),
-        h('button', { class: 'btn', onclick: () => copyText(location.origin + location.pathname + '#/u/' + me.handle, '주소를 복사했어요') }, icon('copy', 15), '복사'))),
+        urlInput,
+        h('button', { class: 'btn', onclick: () => copyText(urlInput.value, '주소를 복사했어요') }, icon('copy', 15), '복사'))),
     h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '로그인 · 복구'),
       h('p', { class: 'desc' }, real

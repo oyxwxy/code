@@ -158,7 +158,7 @@ export const DEFAULT_THEME = {
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
-/** 디데이 목록 정리: { id, name, date:'YYYY-MM-DD', kind:'couple'|'dday', emoji } */
+/** 디데이 목록 정리: { id, name, date:'YYYY-MM-DD', kind:'couple'|'dday', emoji, color:''|'#rrggbb' } */
 export function sanitizeDdays(list) {
   if (!Array.isArray(list)) return [];
   const out = [];
@@ -172,6 +172,7 @@ export function sanitizeDdays(list) {
     out.push({
       id: typeof e.id === 'string' && e.id ? e.id.slice(0, 20) : Math.random().toString(36).slice(2, 10),
       name, date: e.date, kind: e.kind === 'dday' ? 'dday' : 'couple', emoji: clampIconText(e.emoji) || '💗',
+      color: /^#[0-9a-f]{6}$/i.test(e.color || '') ? e.color.toLowerCase() : '',
     });
     if (out.length >= MAX_DDAYS) break;
   }

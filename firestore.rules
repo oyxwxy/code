@@ -14,6 +14,13 @@ service cloud.firestore {
     match /handles/{h} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      // 아이디를 바꾸면 이전 아이디 문서에 'movedTo'(새 아이디)만 한 번 적을 수 있어요
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && !('movedTo' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['movedTo'])
+        && request.resource.data.movedTo == getAfter(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.handle;
     }
 
     match /invites/{code} {
@@ -53,7 +60,17 @@ service cloud.firestore {
                == get(/databases/$(database)/documents/meta/admin).data.uid)
         );
       allow update: if request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['display', 'bio', 'theme']);
+        && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['display', 'bio', 'theme'])
+          ||
+          // 아이디 바꾸기: 계정당 딱 1번 (handleChanged 가 이미 있으면 안 돼요)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['handle', 'handleChanged'])
+            && !('handleChanged' in resource.data)
+            && request.resource.data.handleChanged == true
+            && request.resource.data.handle.matches('^[a-z0-9_]{3,20}$')
+            && !exists(/databases/$(database)/documents/handles/$(request.resource.data.handle))
+            && getAfter(/databases/$(database)/documents/handles/$(request.resource.data.handle)).data.uid == uid)
+        );
     }
 
     match /posts/{id} {

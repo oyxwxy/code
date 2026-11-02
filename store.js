@@ -130,7 +130,17 @@ export async function signIn(idOrEmail, password) {
   const id = (idOrEmail || '').trim();
   if (!id || !password) throw new Error('아이디(또는 이메일)와 비밀번호를 입력해 주세요');
   // 이메일로 가입한 계정은 이메일로, 이메일 없이 가입한 계정은 아이디로 로그인해요
-  const email = id.includes('@') && !id.startsWith('@') ? id.toLowerCase() : toEmail(normalizeHandle(id));
+  let email;
+  if (id.includes('@') && !id.startsWith('@')) email = id.toLowerCase();
+  else {
+    const hd = normalizeHandle(id);
+    email = toEmail(hd);
+    // 아이디를 바꾼 계정: 이전 아이디는 새 아이디를 알려주고, 새 아이디는 가입 때의 로그인 주소로 이어줘요
+    let info = null;
+    try { const s = await getDoc(doc(db, 'handles', hd)); info = s.exists() ? s.data() : null; } catch { /* 못 읽으면 기본 방식으로 */ }
+    if (info?.movedTo) throw new Error(`이 아이디는 '${info.movedTo}'(으)로 바뀌었어요. 새 아이디로 로그인해 주세요`);
+    if (info?.loginEmail) email = info.loginEmail;
+  }
   await signInWithEmailAndPassword(auth, email, password);
   await refreshMe();
   if (!state.me) {
@@ -161,6 +171,30 @@ export async function getProfileByHandle(handle) {
   const s = await getDoc(doc(db, 'handles', normalizeHandle(handle)));
   if (!s.exists()) return null;
   return getProfile(s.data().uid);
+}
+
+/**
+ * 아이디 바꾸기 — 계정마다 딱 1번만 (profiles.handleChanged 로 막아요, 규칙도 똑같이 막아요).
+ * - 새 아이디가 비어 있어야 해요. 이전 아이디는 'movedTo' 표시를 남겨서 다른 사람이 못 쓰고, 이전 블로그 주소도 계속 열려요.
+ * - 이메일 없이 가입한 계정은 로그인 주소가 '이전아이디@도메인'이라 그대로 두고, 새 아이디 문서(handles)에 그 주소를 적어 두어요.
+ *   (이 주소는 이전 아이디에서 나온 값이라 공개돼도 비밀이 아니에요. 실제 이메일은 절대 적지 않아요.)
+ */
+export async function changeHandle(newHandle) {
+  const me = state.me, user = state.user;
+  if (!me || !user) throw new Error('로그인이 필요해요');
+  if (me.handleChanged) throw new Error('아이디는 한 번만 바꿀 수 있어요');
+  const nh = normalizeHandle(newHandle);
+  if (!HANDLE_RE.test(nh)) throw new Error('아이디는 영문 소문자·숫자·밑줄(_) 3~20자예요');
+  if (nh === me.handle) throw new Error('지금 아이디와 같아요');
+  if (!(await handleAvailable(nh))) throw new Error('이미 사용 중인 아이디예요');
+  const batch = writeBatch(db);
+  const next = { uid: user.uid };
+  if (user.email && user.email.endsWith('@' + AUTH_DOMAIN)) next.loginEmail = user.email;
+  batch.set(doc(db, 'handles', nh), next);
+  batch.update(doc(db, 'handles', me.handle), { movedTo: nh });
+  batch.update(doc(db, 'profiles', user.uid), { handle: nh, handleChanged: true });
+  await batch.commit();
+  await refreshMe();
 }
 
 /** display / bio / theme 만 수정할 수 있어요 (규칙) */

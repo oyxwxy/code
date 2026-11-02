@@ -124,6 +124,12 @@ export async function blog({ params, query, root }) {
   root.append(loader());
   const handle = decodeURIComponent(params[0]);
   const prof = await getProfileByHandle(handle);
+  // 아이디를 바꾼 계정의 이전 주소로 들어왔으면 새 주소로 이어줘요
+  if (prof && prof.handle && prof.handle !== handle.trim().toLowerCase().replace(/^@/, '')) {
+    const q = location.hash.includes('?') ? location.hash.slice(location.hash.indexOf('?')) : '';
+    location.replace('#/u/' + prof.handle + q);
+    return;
+  }
   if (!prof) {
     applyTheme(DEFAULT_THEME);
     root.replaceChildren(emptyState('블로그를 찾을 수 없어요', `@${handle} 아이디가 없어요.`, h('a', { class: 'btn', href: '#/' }, '처음으로')));

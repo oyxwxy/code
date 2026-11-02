@@ -1,5 +1,5 @@
 // 디데이: 커플 계산(D+N, 100일·주년 기념일) + 일반 디데이. 날짜는 모두 '내 기기의 오늘' 기준이에요.
-import { h, icon, modal, txt } from './util.js';
+import { h, icon, modal, txt, mix } from './util.js';
 
 const DAY = 86400000;
 export const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -15,12 +15,15 @@ export const todayStart = () => { const n = new Date(); return new Date(n.getFul
 const diffDays = (a, b) => Math.round((a - b) / DAY);   // a - b (일)
 const ymdDots = (s) => s.replaceAll('-', '.');
 
-/** 카드에 크게 보여줄 글자: 커플은 D+N(만난 지 N일), 일반은 D-N / D-DAY / D+N */
+/** 커플은 만난 날을 1일로 세요 (만난 날 = D+1). 지난 날수 + 1 */
+const coupleDays = (d, today) => diffDays(today, d) + 1;
+
+/** 카드에 크게 보여줄 글자: 커플은 D+N(만난 날이 1일), 일반은 D-N / D-DAY / D+N */
 export function ddayText(e, today = todayStart()) {
   const d = parseDay(e.date);
   if (!d) return '';
   const n = diffDays(today, d);
-  if (e.kind === 'couple') return n >= 0 ? `D+${n}` : `D${n}`;
+  if (e.kind === 'couple') return n >= 0 ? `D+${n + 1}` : `D${n}`;
   return n === 0 ? 'D-DAY' : n < 0 ? `D${n}` : `D+${n}`;   // n<0 → 'D-12'
 }
 
@@ -30,8 +33,8 @@ function upcoming(e, today) {
   if (!d) return [];
   if (e.kind !== 'couple') return diffDays(d, today) >= 0 ? [{ diff: diffDays(d, today), label: '' }] : [];
   const out = [];
-  const n = diffDays(today, d);
-  const k = Math.max(1, Math.ceil(n / 100));              // 다음 100일 단위
+  const n = coupleDays(d, today);                          // 만난 날이 1일째
+  const k = Math.max(1, Math.ceil(n / 100));              // 다음 100일 단위 (100일째 되는 날 = 만난 날 + 99일)
   out.push({ diff: k * 100 - n, label: `${k * 100}일` });
   for (let y = 1; y <= 100; y++) {                         // n주년 (같은 월·일)
     const a = new Date(d.getFullYear() + y, d.getMonth(), d.getDate());
@@ -56,7 +59,7 @@ export function nearest(list, today = todayStart()) {
 }
 
 // [카드 배경, 테두리·강조, 글자색(숫자)]
-const TINTS = [
+export const TINTS = [
   ['#ece8fb', '#b9aef0', '#5b4bc0'], ['#fde3df', '#f4a9a0', '#c2463a'], ['#f6e3f7', '#d9a8e0', '#9a3aab'],
   ['#fde4ec', '#f3a9c1', '#c23a72'], ['#e4f5df', '#a6d79a', '#3f8a31'], ['#e1f0fb', '#9bc7ea', '#2f74b3'], ['#fdf1d9', '#ecc979', '#a87a10'],
 ];
@@ -70,6 +73,17 @@ export function ddayPill(list) {
     icon('heart', 14), h('span', { class: 'dd-pill-txt' }, txtLine));
 }
 
+/** 카드 색: 직접 고른 색(e.color)이 있으면 그 색으로, 없으면 순서대로 기본 파스텔 */
+export function tintFor(e, i = 0) {
+  const c = (e?.color || '').toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(c)) {
+    const preset = TINTS.find((t) => t[1].toLowerCase() === c);
+    if (preset) return preset;
+    return [mix(c, '#ffffff', 0.84), mix(c, '#ffffff', 0.45), mix(c, '#000000', 0.3)];
+  }
+  return TINTS[i % TINTS.length];
+}
+
 /** 'D+1200' → ['D+', '1200'] (D-DAY 는 그대로) */
 const splitD = (t) => { const m = /^(D[+-])(\d+)$/.exec(t || ''); return m ? [m[1], m[2]] : ['', t || '']; };
 
@@ -79,7 +93,7 @@ function openDdays(list) {
   const body = h('div', { class: 'dd-wrap' },
     h('div', { class: 'dd-head' }, icon('heart', 16), h('span', null, 'D-DAY'), h('b', null, String(rows.length))),
     h('div', { class: 'dd-list' }, rows.map((e, i) => {
-      const [bg, edge, ink] = TINTS[i % TINTS.length];
+      const [bg, edge, ink] = tintFor(e, i);
       const text = ddayText(e, today);
       const [d, n] = splitD(text);
       const card = h('div', { class: 'dd-card' + (text === 'D-DAY' ? ' today' : '') },
