@@ -452,7 +452,24 @@ function designTab() {
     skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START' }),
     skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
     skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인' }),
-    toneRow());
+    toneRow(),
+    gameBoardRow());
+  // 픽셀 아케이드: 타이틀 화면 메뉴에 보일 게시판 (최대 4개, 고른 순서대로)
+  const gameBoardRow = () => {
+    if (T.skin !== 'game' || !T.boards.length) return null;
+    const sel = (T.gameBoards || []).filter((id) => T.boards.some((b) => b.id === id));
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, `타이틀 메뉴에 보일 게시판 · ${sel.length}/4`),
+      h('div', { class: 'opt-grid cols-4' }, T.boards.map((b) => {
+        const at = sel.indexOf(b.id);
+        return h('button', { class: 'opt center' + (at >= 0 ? ' on' : ''), type: 'button', onclick: () => {
+          if (at >= 0) set({ gameBoards: sel.filter((x) => x !== b.id) });
+          else if (sel.length >= 4) toast('최대 4개까지 고를 수 있어요');
+          else set({ gameBoards: [...sel, b.id] });
+        } }, at >= 0 ? h('em', { class: 'skin-note' }, `${at + 1}번째`) : null, h('small', null, b.name));
+      })),
+      h('p', { class: 'desc' }, "'전체 보기'는 늘 맨 위에 있어요. 하나도 안 고르면 앞에서부터 4개가 보여요. 다른 사람에게는 글이 있는 게시판만 보여요."));
+  };
   // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
   const toneRow = () => {
     const key = T.skin || T.pview;

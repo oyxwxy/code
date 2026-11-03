@@ -262,7 +262,9 @@ function dressGame({ root, head, body, main, prof, theme, boards, selectBoard, p
   const name = txt(prof.display) || prof.handle;
   const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
   // 게시판 = 메뉴 (최대 5개). 마우스·포커스가 가면 ▶ 커서가 따라가요
-  const items = [{ id: 'all', name: '전체 보기' }, ...boards.slice(0, 4)];
+  // 메뉴에 보일 게시판: 꾸미기에서 고른 것(theme.gameBoards, 고른 순서대로) → 없으면 앞에서부터 4개
+  const picked = (theme.gameBoards || []).map((id) => boards.find((b) => b.id === id)).filter(Boolean);
+  const items = [{ id: 'all', name: '전체 보기' }, ...(picked.length ? picked : boards).slice(0, 4)];
   const menu = h('ul', { class: 'gm-menu' }, items.map((b, i) => h('li', null,
     h('button', { class: 'gm-item' + (i === 0 ? ' on' : ''), type: 'button',
       onmouseenter: (e) => mark(e.currentTarget), onfocus: (e) => mark(e.currentTarget),
@@ -402,14 +404,23 @@ function recordsView(rows, ctx) {
   window.addEventListener('pointerup', onUp);
   stage.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
   stage.addEventListener('dragstart', (e) => e.preventDefault());
+  // 넘기기 버튼 (휠·끌기가 안 되는 환경에서도 넘길 수 있게)
+  const step = (d) => stage.scrollBy({ left: d * Math.max(200, stage.clientWidth * 0.6), behavior: reduced() ? 'auto' : 'smooth' });
+  const prev = h('button', { class: 'rec-nav prev', type: 'button', 'aria-label': '앞으로 넘기기', onclick: () => step(-1) }, icon('chevl', 18));
+  const next = h('button', { class: 'rec-nav next', type: 'button', 'aria-label': '뒤로 넘기기', onclick: () => step(1) }, icon('chevr', 18));
+  const wrap = h('div', { class: 'rec-wrap' }, h('div', { class: 'rec-cap', 'aria-live': 'polite' }, capDate, capTitle, capMeta), stage, prev, next);
   const edges = () => {
     const max = stage.scrollWidth - stage.clientWidth;
-    stage.classList.toggle('fade-l', stage.scrollLeft > 4);
-    stage.classList.toggle('fade-r', stage.scrollLeft < max - 4);
+    const l = stage.scrollLeft > 4, r = stage.scrollLeft < max - 4;
+    stage.classList.toggle('fade-l', l);
+    stage.classList.toggle('fade-r', r);
+    prev.disabled = !l; next.disabled = !r;
+    wrap.classList.toggle('no-scroll', max <= 4);
   };
   stage.addEventListener('scroll', edges, { passive: true });
+  window.addEventListener('resize', () => { if (wrap.isConnected) edges(); });
   requestAnimationFrame(edges);
-  return h('div', { class: 'rec-wrap' }, h('div', { class: 'rec-cap', 'aria-live': 'polite' }, capDate, capTitle, capMeta), stage);
+  return wrap;
 }
 
 // ── 프롬모음 2: 서랍 (칸칸이 나뉜 서랍 속 카드) ──

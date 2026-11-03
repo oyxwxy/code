@@ -55,7 +55,8 @@ html[data-skin='home'] body {
 .skin-home .search { border-radius: 0; box-shadow: inset 1px 1px 0 rgb(0 0 0 / .08); background: var(--surface); border-color: var(--hp-frame); }
 .skin-home .kind-pills .pill { border-radius: 6px 6px 0 0; border-color: var(--hp-check-line); border-bottom: 0; background: var(--hp-tab); color: var(--hp-tab-ink); font: 12px Galmuri11, sans-serif; height: 27px; }
 .skin-home .kind-pills .pill.on { background: var(--surface); color: var(--text); }
-.skin-home .posts {
+/* 체크 바탕: 기본 글 목록과 프롬 모음(레코드 진열 · 서랍 · 폴더 인덱스) 모두 */
+.skin-home .posts, .skin-home .rec-wrap, .skin-home .dw-wrap, .skin-home .fd-wrap {
   margin-top: 0; padding: 16px; border: 1px solid var(--hp-check-line); box-shadow: inset 0 0 0 4px var(--surface);
   background-color: var(--surface);
   background-image: repeating-linear-gradient(0deg, var(--hp-check) 0 10px, transparent 10px 20px), repeating-linear-gradient(90deg, var(--hp-check) 0 10px, transparent 10px 20px);
@@ -217,6 +218,19 @@ html[data-skin='term'] body { background: var(--tm-bg) radial-gradient(ellipse a
 .rec-item:hover .rec-cover, .rec-item:focus-visible .rec-cover { transform: translate3d(0, -48px, 70px) rotateY(16deg); box-shadow: 0 30px 40px -18px rgb(0 0 0 / .5); }
 .rec-item:hover .rec-plus, .rec-item:focus-visible .rec-plus { opacity: 1; }
 /* 옆 칸이 밀리지 않아서, 오른쪽으로 쓸면 한 장씩 넘겨 보듯 바뀌어요 */
+/* 넘기기 버튼 */
+.rec-nav { position: absolute; top: calc(50% + 11px); z-index: 6; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; transform: translateY(-50%); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 50%; box-shadow: 0 6px 16px -8px rgb(0 0 0 / .35); transition: opacity .2s, background .15s; }
+.rec-nav.prev { left: 4px; } .rec-nav.next { right: 4px; }
+.rec-nav:hover:not(:disabled) { background: var(--accent-soft); }
+.rec-nav:disabled { opacity: 0; pointer-events: none; }
+.rec-wrap.no-scroll .rec-nav { display: none; }
+.skin-home .rec-nav { border-radius: 0; border-color: var(--hp-frame); background: linear-gradient(var(--surface), var(--hp-bar2)); box-shadow: inset 1px 1px 0 rgb(255 255 255 / .6), 2px 2px 0 var(--hp-shade); }
+.skin-term .rec-nav { border-radius: 0; background: var(--tm-bg); color: var(--tm-ink); border: 2px solid var(--tm-ink); box-shadow: none; }
+.skin-term .rec-nav:hover:not(:disabled) { background: var(--tm-ink); color: var(--tm-bg); }
+.skin-game .rec-nav { border-radius: 0; background: var(--gm-acc); color: var(--gm-on); border: 2px solid var(--gm-ink); box-shadow: 3px 3px 0 var(--gm-ink); }
+.skin-game .rec-nav:hover:not(:disabled) { background: var(--gm-acc); transform: translate(-1px, calc(-50% - 1px)); box-shadow: 4px 4px 0 var(--gm-ink); }
+.skin-grid .rec-nav { border-radius: 0; background: var(--gc-bg); color: var(--gc-ink); border: 1.5px solid var(--gc-acc); box-shadow: none; }
+.skin-grid .rec-nav:hover:not(:disabled) { background: var(--gc-acc); color: var(--gc-on); }
 @media (max-width: 640px) { .rec-stage { height: 410px; padding: 64px 16px 60px; } .rec-row { --step: 26px; --size: 120px; } }
 @media (prefers-reduced-motion: reduce) { .rec-cover { transition: none; } }
 
@@ -535,7 +549,10 @@ html[data-skin='term'] body { background: var(--tm-bg) radial-gradient(ellipse a
 }
 
 /* ═════════ 프롬 모음도 페이지 스킨에 맞춰서 (흰 바탕 없이 화면 바탕 위에) ═════════ */
-.skin-home .fd-wrap { --paper: var(--hp-win); --ink: var(--hp-frame); }
+.skin-home .fd-wrap { --paper: var(--hp-win); --ink: var(--hp-frame); padding: 18px 4%; }
+.skin-home .fd-cab, .skin-home .fd-front { box-shadow: 3px 3px 0 var(--hp-check-line); }
+.skin-home .rec-wrap { padding: 12px 10px 4px; }
+.skin-home .dw-wrap { padding: 22px 16px; }
 .skin-home .fd-tab, .skin-home .fd-file { font-family: Galmuri11, sans-serif; }
 .skin-term .fd-wrap { --ink: var(--tm-ink); --paper: var(--tm-bg); }
 .skin-term .fd-tab.dark { text-shadow: none; }

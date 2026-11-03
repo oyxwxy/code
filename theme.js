@@ -160,7 +160,7 @@ export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
-  skin: '', shelf: '', pview: '', skinTone: '',
+  skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [],
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -224,6 +224,7 @@ export function sanitizeTheme(t) {
     skin: pick(SKINS, t.skin),
     shelf: pick(SHELVES, t.shelf),
     pview: pick(PVIEWS, t.pview),
+    gameBoards: Array.isArray(t.gameBoards) ? [...new Set(t.gameBoards.filter((id) => typeof id === 'string' && BOARD_ID_RE.test(id)))].slice(0, 4) : [],
     skinTone: typeof t.skinTone === 'string' && /^[a-z0-9]{1,16}$/.test(t.skinTone) ? t.skinTone : '',
   };
 }
