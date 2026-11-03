@@ -20,12 +20,133 @@ export function ensureSkinFont() {
   document.head.append(h('link', { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css' }));
 }
 
-/** 화면 전체 색(변수)만 스킨으로 바꿔요. 다른 화면으로 가면 app.js 가 지워요 */
-export function setPageSkin(skin) {
-  if (!skin) { delete document.documentElement.dataset.skin; return; }
+// ── 색상 프리셋 ──
+// 스킨마다 여러 벌. 고른 값은 theme.skinTone 에 저장돼요 (페이지 스킨이 없으면 프롬창의 프리셋으로 써요).
+// 각 프리셋: name, sw(설정 화면 색 견본 3개), dark, vars(화면 변수)
+const base = (o) => ({
+  '--bg': o.bg, '--surface': o.surface, '--text': o.text, '--muted': o.muted, '--border': o.border,
+  '--accent': o.accent, '--accent-soft': o.soft, '--on-accent': o.onAccent || '#ffffff',
+});
+const SERIF = "'Times New Roman', 'Noto Serif KR', Georgia, serif";
+const MONO = "GalmuriMono11, Galmuri11, 'JetBrains Mono', ui-monospace, monospace";
+const SANS = "'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif";
+
+const homeTone = (name, dark, c) => ({
+  name, dark, sw: [c.bg, c.win, c.check],
+  vars: {
+    ...base(c), '--font': SERIF, '--radius': '2px',
+    '--hp-grid': c.grid, '--hp-win': c.win, '--hp-bar1': c.bar1, '--hp-bar2': c.bar2, '--hp-frame': c.frame, '--hp-shade': c.shade,
+    '--hp-check': c.check, '--hp-check-line': c.checkLine, '--hp-tab': c.tab, '--hp-tab-ink': c.tabInk,
+    '--hp-title': c.title, '--hp-title-line': c.titleLine, '--hp-title-shadow': c.titleShadow, '--hp-link': c.link,
+    '--hp-tagbg': c.tagBg, '--hp-tagline': c.tagLine,
+    '--fl-bg': c.bg, '--fl-bg2': c.bg, '--fl-ink': c.text, '--fl-sub': c.muted, '--fl-mark': c.checkLine,
+    '--fl-hl': c.hl, '--fl-hl-ink': c.text, '--fl-blend': 'normal', '--fl-filter': 'saturate(.9)', '--fl-frame': c.frame,
+    '--fl-pattern': `linear-gradient(${c.grid} 1px, transparent 1px), linear-gradient(90deg, ${c.grid} 1px, transparent 1px)`, '--fl-pattern-size': '22px 22px',
+    '--idc-paper': c.win, '--idc-paper2': c.surface, '--idc-ink': c.text, '--idc-acc': c.checkLine, '--idc-acc2': c.accent,
+  },
+});
+const termTone = (name, c) => ({
+  name, dark: true, sw: [c.bg, c.ink, c.hl],
+  vars: {
+    ...base({ bg: c.bg, surface: c.surface, text: c.ink, muted: c.sub, border: c.ink, accent: c.ink, soft: c.soft, onAccent: c.bg }),
+    '--font': MONO, '--radius': '0px',
+    '--tm-bg': c.bg, '--tm-glow': c.glow, '--tm-edge': c.edge, '--tm-ink': c.ink, '--tm-sub': c.sub, '--tm-ca': c.ca, '--tm-cb': c.cb,
+    '--fl-bg': c.bg, '--fl-bg2': c.glow, '--fl-ink': c.ink, '--fl-sub': c.sub, '--fl-mark': c.sub,
+    '--fl-hl': c.hl, '--fl-hl-ink': '#111111', '--fl-blend': 'luminosity', '--fl-filter': 'grayscale(1) contrast(1.15) brightness(1.1)', '--fl-frame': c.ink,
+    '--fl-pattern': 'repeating-linear-gradient(0deg, rgb(0 0 0 / .14) 0 1px, transparent 1px 3px)', '--fl-pattern-size': 'auto',
+    '--idc-paper': '#f2efe6', '--idc-paper2': '#ffffff', '--idc-ink': '#16182a', '--idc-acc': c.bg, '--idc-acc2': c.bg,
+  },
+});
+const gameTone = (name, dark, c) => ({
+  name, dark, sw: [c.bg, c.acc, c.acc2],
+  vars: {
+    ...base({ bg: c.bg, surface: c.bg, text: c.ink, muted: c.muted, border: c.ink, accent: c.acc, soft: c.soft, onAccent: c.onAcc }),
+    '--font': SANS, '--radius': '0px',
+    '--gm-bg': c.bg, '--gm-ink': c.ink, '--gm-acc': c.acc, '--gm-acc2': c.acc2, '--gm-line': c.line, '--gm-on': c.onAcc,
+    '--fl-bg': c.bg, '--fl-bg2': c.bg, '--fl-ink': c.ink, '--fl-sub': c.muted, '--fl-mark': c.acc,
+    '--fl-hl': c.acc, '--fl-hl-ink': c.onAcc, '--fl-blend': dark ? 'luminosity' : 'multiply', '--fl-filter': 'grayscale(1) contrast(1.1)', '--fl-frame': c.ink,
+    '--fl-pattern': `radial-gradient(circle, ${c.line} 0 1.2px, transparent 1.6px)`, '--fl-pattern-size': '16px 16px',
+    '--idc-paper': dark ? '#f3f0ff' : c.bg, '--idc-paper2': '#ffffff', '--idc-ink': dark ? '#151325' : c.ink, '--idc-acc': c.acc, '--idc-acc2': c.acc2,
+  },
+});
+const floatTone = (name, dark, c) => ({
+  name, dark, sw: [c.bg, c.hl, c.ink],
+  vars: {
+    '--fl-bg': c.bg, '--fl-bg2': c.bg2, '--fl-ink': c.ink, '--fl-sub': c.sub, '--fl-mark': c.sub, '--fl-hl': c.hl, '--fl-hl-ink': c.hlInk,
+    '--fl-blend': c.blend, '--fl-filter': c.filter, '--fl-frame': c.ink, '--fl-pattern': 'none', '--fl-pattern-size': 'auto',
+  },
+});
+const cardTone = (name, c) => ({
+  name, dark: false, sw: [c.paper, c.ink, c.acc],
+  vars: { '--idc-paper': c.paper, '--idc-paper2': c.paper2, '--idc-ink': c.ink, '--idc-acc': c.acc, '--idc-acc2': c.acc2 },
+});
+
+export const TONES = {
+  home: {
+    blue: homeTone('모눈 블루', false, { bg: '#fdfdff', surface: '#ffffff', text: '#2b2a33', muted: '#6d7088', border: '#9aa3b8', accent: '#7486c2', soft: '#e8ecf8',
+      grid: '#bfd1f1', win: '#f6f2e9', bar1: '#efeeea', bar2: '#d7d5cf', frame: '#858894', shade: '#dfe4f1', check: 'rgb(240 160 182 / .3)', checkLine: '#cf8fa1',
+      tab: '#ffe7ee', tabInk: '#7b3c50', title: '#ffffff', titleLine: '#2b2a33', titleShadow: '#f2b4c4', link: '#2a3a90', tagBg: '#fff7d8', tagLine: '#c9b98a', hl: '#ffd9e3' }),
+    berry: homeTone('딸기우유', false, { bg: '#fff8fa', surface: '#ffffff', text: '#4a2f37', muted: '#9a7480', border: '#e2b9c5', accent: '#e07f9c', soft: '#fbe3ea',
+      grid: '#f6cad7', win: '#fffdfd', bar1: '#ffeef3', bar2: '#f3cbd7', frame: '#b98596', shade: '#f8dbe3', check: 'rgb(140 200 170 / .3)', checkLine: '#8fbfa6',
+      tab: '#e6f6ed', tabInk: '#3f6e57', title: '#ffffff', titleLine: '#5a2f3c', titleShadow: '#a8dcc2', link: '#b0456a', tagBg: '#eaf8f0', tagLine: '#9cc9b1', hl: '#d8f2e4' }),
+    matcha: homeTone('말차 노트', false, { bg: '#fbfbf4', surface: '#fffef8', text: '#2f3527', muted: '#737a64', border: '#b5bf9f', accent: '#7b9a55', soft: '#e7efd9',
+      grid: '#d3e2c4', win: '#f4f1e1', bar1: '#eef0e2', bar2: '#d3d8bd', frame: '#7f8a6c', shade: '#e1e8d2', check: 'rgb(214 170 96 / .26)', checkLine: '#c4a265',
+      tab: '#fbefd6', tabInk: '#6d5222', title: '#ffffff', titleLine: '#34402a', titleShadow: '#e3c27d', link: '#4f6b2e', tagBg: '#fff4d9', tagLine: '#cdb27a', hl: '#f6e3b4' }),
+    night: homeTone('밤 모눈', true, { bg: '#151826', surface: '#23283d', text: '#e7e8f5', muted: '#9097b8', border: '#3d4466', accent: '#8f86ff', soft: '#2a2c4c',
+      grid: '#252b46', win: '#1d2133', bar1: '#2b3150', bar2: '#20253c', frame: '#4a5276', shade: '#0d0f19', check: 'rgb(150 130 255 / .16)', checkLine: '#6a66b8',
+      tab: '#2a2950', tabInk: '#cbc6ff', title: '#f6f3ff', titleLine: '#5c53c9', titleShadow: '#2e2a63', link: '#b3c0ff', tagBg: '#262a44', tagLine: '#4c5380', hl: '#3b3878' }),
+  },
+  term: {
+    blue: termTone('VHS 블루', { bg: '#0b1fd6', glow: '#1735f2', edge: '#0614a8', ink: '#f4f6ff', sub: '#a8b4ff', surface: '#1430e6', soft: '#2843f0', ca: 'rgb(255 40 130 / .65)', cb: 'rgb(40 230 255 / .65)', hl: '#e8ff3a' }),
+    green: termTone('그린 모니터', { bg: '#04140b', glow: '#0b2a17', edge: '#010805', ink: '#7dffa1', sub: '#3fae64', surface: '#082011', soft: '#0d3a1f', ca: 'rgb(0 255 120 / .35)', cb: 'rgb(170 255 210 / .25)', hl: '#7dffa1' }),
+    amber: termTone('앰버', { bg: '#170c02', glow: '#2a1704', edge: '#0b0500', ink: '#ffbf5a', sub: '#b07a2a', surface: '#221303', soft: '#3a2308', ca: 'rgb(255 90 0 / .45)', cb: 'rgb(255 230 150 / .3)', hl: '#ffbf5a' }),
+    pink: termTone('핑크 VHS', { bg: '#c4126f', glow: '#e0278a', edge: '#8a0a4c', ink: '#fff3fa', sub: '#ffb3d9', surface: '#d01d7b', soft: '#de3a8f', ca: 'rgb(0 220 255 / .6)', cb: 'rgb(255 255 0 / .45)', hl: '#fff35a' }),
+  },
+  game: {
+    coral: gameTone('코랄 아케이드', false, { bg: '#fbf7ef', ink: '#1d1b22', muted: '#6c6772', acc: '#ff5b3a', acc2: '#2f6bff', line: 'rgb(29 27 34 / .16)', soft: '#ffe4dc', onAcc: '#1d1b22' }),
+    lime: gameTone('라임', false, { bg: '#f5faf0', ink: '#10140f', muted: '#5c6559', acc: '#33cc55', acc2: '#ff3fa4', line: 'rgb(16 20 15 / .16)', soft: '#ddf6e2', onAcc: '#10140f' }),
+    lavender: gameTone('라벤더', false, { bg: '#f7f4ff', ink: '#221a3a', muted: '#6e6789', acc: '#8a5cff', acc2: '#ffb21f', line: 'rgb(34 26 58 / .16)', soft: '#e9e0ff', onAcc: '#ffffff' }),
+    night: gameTone('나이트', true, { bg: '#0f0d1c', ink: '#f3f0ff', muted: '#a29cbf', acc: '#ff4f9a', acc2: '#3fe0ff', line: 'rgb(243 240 255 / .16)', soft: '#2a1d3a', onAcc: '#0f0d1c' }),
+  },
+  float: {
+    blue: floatTone('블루', true, { bg: '#1d2bff', bg2: '#2a38ff', ink: '#ffffff', sub: '#b6beff', hl: '#e8ff3a', hlInk: '#111111', blend: 'luminosity', filter: 'grayscale(1) contrast(1.15) brightness(1.12)' }),
+    red: floatTone('레드', true, { bg: '#e3262b', bg2: '#ef3a3e', ink: '#ffffff', sub: '#ffc4c4', hl: '#ffffff', hlInk: '#111111', blend: 'luminosity', filter: 'grayscale(1) contrast(1.15) brightness(1.1)' }),
+    ink: floatTone('먹색', true, { bg: '#0d0d10', bg2: '#17171c', ink: '#f2f2f2', sub: '#8d8d96', hl: '#e8ff3a', hlInk: '#111111', blend: 'normal', filter: 'grayscale(1) contrast(1.1)' }),
+    paper: floatTone('종이', false, { bg: '#f1ede2', bg2: '#f6f3ea', ink: '#1d1d1d', sub: '#7a756a', hl: '#ff6a3d', hlInk: '#111111', blend: 'multiply', filter: 'grayscale(1) contrast(1.1)' }),
+  },
+  card: {
+    navy: cardTone('여권 네이비', { paper: '#f3efe4', paper2: '#fffdf7', ink: '#1e2433', acc: '#b8473a', acc2: '#2f4f7a' }),
+    forest: cardTone('숲', { paper: '#ecefe4', paper2: '#fbfcf6', ink: '#1f3a2e', acc: '#c0562f', acc2: '#2e5a46' }),
+    plum: cardTone('자두', { paper: '#f4eef2', paper2: '#fffafd', ink: '#3a1f35', acc: '#b03a6e', acc2: '#5a3a7a' }),
+    mono: cardTone('모노', { paper: '#f2f2ef', paper2: '#ffffff', ink: '#111111', acc: '#111111', acc2: '#777777' }),
+  },
+};
+/** 고른 프리셋 (없거나 모르는 값이면 첫 번째) */
+export const toneOf = (key, tone) => { const t = TONES[key]; return t ? (t[tone] || Object.values(t)[0]) : null; };
+
+let applied = [];
+function setVars(vars) {
+  const s = document.documentElement.style;
+  // 기본 색(--bg 등)은 다음 화면의 applyTheme 이 다시 정하니까, 스킨 전용 변수만 지워요
+  applied.forEach((k) => s.removeProperty(k));
+  applied = [];
+  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|fl|idc)-/.test(k)) applied.push(k); }
+}
+
+/** 화면 전체 색(변수)을 스킨으로 바꿔요. 다른 화면으로 가면 app.js 가 data-skin 을 지우고, 다음 화면의 테마가 색을 다시 정해요 */
+export function setPageSkin(skin, tone = '') {
+  const el = document.documentElement;
+  if (!skin) { delete el.dataset.skin; return; }
   ensureSkinFont();
-  document.documentElement.dataset.skin = skin;
-  document.documentElement.dataset.mode = skin === 'term' ? 'dark' : 'light';
+  const t = toneOf(skin, tone);
+  setVars(t?.vars);
+  el.dataset.skin = skin;
+  el.dataset.mode = t?.dark ? 'dark' : 'light';
+}
+/** 페이지 스킨 없이 프롬창만 쓸 때: 프롬창 색만 정해요 */
+export function setViewTone(pview, tone = '') {
+  ensureSkinFont();
+  setVars(toneOf(pview, tone)?.vars);
 }
 
 // ═════════════════════ 페이지 스킨 ═════════════════════
@@ -34,7 +155,7 @@ export function setPageSkin(skin) {
  * ctx: { root, head, body, side, main, pickBar, prof, theme, boards, selectBoard, posts }
  */
 export function dressBlog(skin, ctx) {
-  setPageSkin(skin);
+  setPageSkin(skin, ctx.theme.skinTone);
   ctx.root.classList.add('skin', 'skin-' + skin);
   if (skin === 'home') dressHome(ctx);
   else if (skin === 'term') dressTerm(ctx);
@@ -99,51 +220,42 @@ function dressTerm({ root, head, pickBar, prof }) {
   document.addEventListener('keydown', onKey);
 }
 
-// ── 3. 게임 타이틀: 초록 그리드 복도 + 큰 픽셀 제목 + START ──
-function corridorSvg() {
-  const W = 1000, H = 560, cx = W / 2, cy = H / 2;
-  const iw = 230, ih = 128;   // 소실점 쪽 안쪽 사각형
-  const lines = [];
-  const L = (x1, y1, x2, y2) => lines.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`);
-  // 깊이(안쪽으로 갈수록 촘촘하게)
-  for (let k = 0; k <= 9; k++) {
-    const t = 1 - Math.pow(0.72, k);
-    const w = W - (W - iw) * t, hh = H - (H - ih) * t;
-    lines.push(`<rect x="${(cx - w / 2).toFixed(1)}" y="${(cy - hh / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${hh.toFixed(1)}"/>`);
-  }
-  // 바깥 테두리 → 안쪽 사각형으로 모이는 선
-  const N = 10;
-  for (let i = 0; i <= N; i++) {
-    const f = i / N;
-    L(f * W, 0, cx - iw / 2 + f * iw, cy - ih / 2);
-    L(f * W, H, cx - iw / 2 + f * iw, cy + ih / 2);
-  }
-  for (let i = 1; i < 6; i++) {
-    const f = i / 6;
-    L(0, f * H, cx - iw / 2, cy - ih / 2 + f * ih);
-    L(W, f * H, cx + iw / 2, cy - ih / 2 + f * ih);
-  }
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">${lines.join('')}</g></svg>`;
+// ── 3. 게임 타이틀: 픽셀 아케이드 타이틀 화면 (HUD · 원근 바닥 · 메뉴 · PRESS START) ──
+function floorSvg() {
+  const W = 1000, H = 300, cx = W / 2;
+  const L = [];
+  for (let i = -14; i <= 14; i++) L.push(`<line x1="${cx}" y1="0" x2="${cx + i * 120}" y2="${H}"/>`);
+  for (let k = 1; k <= 12; k++) { const y = H * Math.pow(k / 12, 2.2); L.push(`<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}"/>`); }
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.2" vector-effect="non-scaling-stroke">${L.join('')}</g></svg>`;
 }
 
-function dressGame({ root, head, body, main, prof, theme, boards, selectBoard }) {
+function dressGame({ root, head, body, main, prof, theme, boards, selectBoard, posts }) {
   const name = txt(prof.display) || prof.handle;
-  const avatar = h('div', { class: 'gm-photo', 'aria-hidden': 'true' });
-  if (theme.avatar) loadImage(theme.avatar).then((u) => { if (u) { avatar.style.backgroundImage = `url("${u}")`; avatar.classList.add('on'); } });
-  // 게시판은 화면 가장자리의 작은 메뉴 상자로 (최대 6개)
-  const spots = ['l1', 'l2', 'r1', 'r2', 'l3', 'r3'];
-  const menu = boards.slice(0, 6).map((b, i) =>
-    h('button', { class: 'gm-tag ' + spots[i], type: 'button', onclick: () => { selectBoard(b.id); go(); } }, '• ' + b.name));
   const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  // 게시판 = 메뉴 (최대 5개). 마우스·포커스가 가면 ▶ 커서가 따라가요
+  const items = [{ id: 'all', name: '전체 보기' }, ...boards.slice(0, 4)];
+  const menu = h('ul', { class: 'gm-menu' }, items.map((b, i) => h('li', null,
+    h('button', { class: 'gm-item' + (i === 0 ? ' on' : ''), type: 'button',
+      onmouseenter: (e) => mark(e.currentTarget), onfocus: (e) => mark(e.currentTarget),
+      onclick: () => { selectBoard(b.id); go(); } }, h('i', { 'aria-hidden': 'true' }, '▶'), h('span', null, b.name)))));
+  const mark = (el) => menu.querySelectorAll('.gm-item').forEach((x) => x.classList.toggle('on', x === el));
+  const player = h('div', { class: 'gm-player' }, h('div', { class: 'gm-face' }), h('small', null, 'PLAYER 1'));
+  if (theme.avatar) loadImage(theme.avatar).then((u) => { if (u) { player.firstChild.style.backgroundImage = `url("${u}")`; player.classList.add('on'); } });
+  const year = new Date().getFullYear();
   const hero = h('section', { class: 'gm-hero' },
-    h('div', { class: 'gm-grid', html: corridorSvg() }),
-    h('div', { class: 'gm-dots l', 'aria-hidden': 'true' }),
-    avatar,
-    h('div', { class: 'gm-id' }, '@' + prof.handle),
-    h('h1', { class: 'gm-title' }, h('span', null, name)),
-    ...menu,
-    h('button', { class: 'gm-start', type: 'button', onclick: go },
-      h('span', { class: 'gm-ring', 'aria-hidden': 'true' }), h('b', null, 'START'), h('span', { class: 'gm-cur', 'aria-hidden': 'true' }, '↖')));
+    h('div', { class: 'gm-sky', 'aria-hidden': 'true' }, h('i', { class: 'c1' }), h('i', { class: 'c2' }), h('i', { class: 'c3' })),
+    h('div', { class: 'gm-floor', html: floorSvg() }),
+    h('div', { class: 'gm-hud' },
+      h('span', null, h('b', null, '1P'), '@' + prof.handle),
+      h('span', null, h('b', null, 'HI-SCORE'), pad(posts.length, 6)),
+      h('span', null, h('b', null, 'CREDIT'), '01')),
+    h('div', { class: 'gm-center' },
+      h('p', { class: 'gm-kicker' }, '— PROMPT ARCADE —'),
+      h('h1', { class: 'gm-title' }, name),
+      menu,
+      h('button', { class: 'gm-press', type: 'button', onclick: go }, 'PRESS START')),
+    player,
+    h('div', { class: 'gm-copy' }, `© ${year} @${prof.handle}`));
   head.before(hero);
   body.classList.add('gm-body');
 }
@@ -197,6 +309,31 @@ function recordsView(rows, ctx) {
       if ((e.deltaY > 0 && stage.scrollLeft < max) || (e.deltaY < 0 && stage.scrollLeft > 0)) { e.preventDefault(); stage.scrollLeft += e.deltaY; }
     }
   }, { passive: false });
+  // 스크롤바 대신: 마우스로 끌어서 넘기고, 넘칠 때만 양 끝을 흐리게
+  let drag = null, moved = false;
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    drag = { x: e.clientX, left: stage.scrollLeft }; moved = false;
+  });
+  const onMove = (e) => {
+    if (!stage.isConnected) { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); return; }
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (Math.abs(dx) > 5) { moved = true; stage.classList.add('dragging'); }
+    if (moved) stage.scrollLeft = drag.left - dx;
+  };
+  const onUp = () => { drag = null; stage.classList.remove('dragging'); };
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  stage.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+  stage.addEventListener('dragstart', (e) => e.preventDefault());
+  const edges = () => {
+    const max = stage.scrollWidth - stage.clientWidth;
+    stage.classList.toggle('fade-l', stage.scrollLeft > 4);
+    stage.classList.toggle('fade-r', stage.scrollLeft < max - 4);
+  };
+  stage.addEventListener('scroll', edges, { passive: true });
+  requestAnimationFrame(edges);
   return h('div', { class: 'rec-wrap' }, h('div', { class: 'rec-cap', 'aria-live': 'polite' }, capDate, capTitle, capMeta), stage);
 }
 
@@ -231,17 +368,20 @@ function drawerView(rows, ctx) {
 function foldersView(rows, ctx) {
   const groups = Object.keys(KINDS).map((k) => [k, rows.filter((p) => kindOf(p) === k)]).filter(([, g]) => g.length);
   const offs = ['a', 'b', 'c', 'b'];
+  // 탭 모양: 아래로 갈수록 부드럽게 벌어지는 곡선 (선 굵기는 크기와 상관없이 일정)
+  const tabShape = () => h('span', { class: 'fd-shape', 'aria-hidden': 'true', html:
+    '<svg viewBox="0 0 300 34" preserveAspectRatio="none"><path d="M0 34 C10 34 13 30 15 23 L19 9 C21 3 24 1 31 1 L269 1 C276 1 279 3 281 9 L285 23 C287 30 290 34 300 34" vector-effect="non-scaling-stroke"/></svg>' });
   let n = 0, turn = 0;
   const cab = h('div', { class: 'fd-cab' });
   groups.forEach(([k, list], gi) => {
     cab.append(h('div', { class: 'fd-row divider ' + (gi % 2 ? 'c' : 'a') },
-      h('span', { class: 'fd-tab dark', tabindex: '-1' }, h('b', null, kindLabel(k)), h('em', null, pad(list.length))), h('span', { class: 'fd-edge' })));
+      h('span', { class: 'fd-tab dark', tabindex: '-1' }, tabShape(), h('b', null, kindLabel(k)), h('em', null, pad(list.length))), h('span', { class: 'fd-edge' })));
     list.forEach((p) => {
       n++;
       const row = h('div', { class: 'fd-row ' + offs[turn++ % offs.length] });
       const files = h('div', { class: 'fd-files' });
       const tab = h('button', { class: 'fd-tab', type: 'button', 'aria-expanded': 'false', onclick: () => toggle() },
-        h('i', null, pad(n)), h('span', null, txt(p.title) || '제목 없음'));
+        tabShape(), h('i', null, pad(n)), h('span', null, txt(p.title) || '제목 없음'));
       let loaded = false;
       const toggle = () => {
         const open = !row.classList.contains('open');
@@ -372,6 +512,11 @@ function floatView(content, ctx) {
       } }, '+ 기본과 함께 복사') : null),
     h('button', { class: 'fl-plain', type: 'button', onclick: ctx.onPlain }, '기본 보기'));
   paintText();
+  // 글이 길면 스크롤바 대신 아래를 흐리게
+  const fade = () => text.classList.toggle('more', text.scrollHeight > text.clientHeight + 2 && text.scrollTop + text.clientHeight < text.scrollHeight - 2);
+  text.addEventListener('scroll', fade, { passive: true });
+  tabs.addEventListener('click', () => requestAnimationFrame(fade));
+  requestAnimationFrame(fade);
 
   // 떠다니는 이미지
   const floaters = I.ids.slice(0, 12).map((ref, i) => {
@@ -426,13 +571,26 @@ function startFloat(stage, fl) {
   requestAnimationFrame(step);
 }
 
-// ── 프롬창 2: 네임카드 (신분증 모양 + 붙임 쪽지) ──
-function barcode(seed) {
-  let x = 0; for (const c of seed) x = (x * 31 + c.charCodeAt(0)) >>> 0;
-  const bars = [];
-  for (let i = 0; i < 46; i++) { x = (x * 1103515245 + 12345) >>> 0; bars.push(h('i', { style: { width: (1 + (x >>> 16) % 3) + 'px' } })); }
-  return h('div', { class: 'idc-bar', 'aria-hidden': 'true' }, bars);
+// ── 프롬창 2: 네임카드 (여권·우표 모양 + 표 모양 쪽지) ──
+const KIND_CODE = { style: 'STY', character: 'CHR', scene: 'SCN' };
+function mrz(post, handle, kind, n) {
+  const clean = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '<');
+  const d = post.created ? new Date(post.created) : new Date();
+  const ymd = String(d.getFullYear()).slice(2) + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2);
+  const fill = (s) => (s + '<'.repeat(44)).slice(0, 44);
+  return [fill(`PD<DRW${clean(handle)}<<${KIND_CODE[kind] || 'PRM'}<<${clean(post.id).slice(0, 10)}`), fill(`${clean(post.id).slice(-9)}<${ymd}<${pad(n, 2)}<<${clean(handle).slice(0, 12)}`)];
 }
+const postmarkSvg = (top, mid, bottom) => {
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return `<svg viewBox="0 0 220 96" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6">
+    <circle cx="48" cy="48" r="42"/><circle cx="48" cy="48" r="33"/>
+    <path d="M96 30 q10 -6 20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/><path d="M96 42 q10 -6 20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/>
+    <path d="M96 54 q10 -6 20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/><path d="M96 66 q10 -6 20 0 t20 0 t20 0 t20 0 t20 0 t20 0"/></g>
+    <g fill="currentColor" text-anchor="middle" font-family="'JetBrains Mono', monospace">
+    <text x="48" y="31" font-size="8" letter-spacing="1">${esc(top)}</text>
+    <text x="48" y="52" font-size="11" font-weight="700">${esc(mid)}</text>
+    <text x="48" y="70" font-size="8" letter-spacing="1">${esc(bottom)}</text></g></svg>`;
+};
 
 function cardView(content, ctx) {
   const { post, author } = ctx;
@@ -441,10 +599,9 @@ function cardView(content, ctx) {
   const I = imgSet(content);
   const blog = txt(author?.display) || ctx.handle;
   const d = post.created ? new Date(post.created) : null;
-  const issue = d ? `${pad(d.getMonth() + 1, 2)}/${pad(d.getDate(), 2)}/${d.getFullYear()}` : '—';
+  const issue = d ? `${d.getFullYear()}.${pad(d.getMonth() + 1, 2)}.${pad(d.getDate(), 2)}` : '—';
   const serial = 'DRW-' + String(post.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
 
-  // 사진: 여러 장이면 아래 작은 칸으로 넘겨요
   let at = 0;
   const photo = h('button', { class: 'idc-photo', type: 'button', 'aria-label': '사진 크게 보기',
     onclick: () => {
@@ -461,46 +618,45 @@ function cardView(content, ctx) {
   const strip = h('div', { class: 'idc-strip' }, I.ids.length > 1 ? I.ids.slice(0, 8).map((_, i) =>
     h('button', { type: 'button', 'aria-label': `${i + 1}번째 사진`, onclick: () => show(i) }, pad(i + 1, 2))) : []);
 
-  const field = (label, value, cls = '') => h('div', { class: 'idc-field ' + cls }, h('small', null, label), h('div', { class: 'idc-val' }, value));
+  const row = (ko, en, value) => h('div', { class: 'idc-row' },
+    h('span', { class: 'idc-k' }, ko, h('small', null, en)), h('span', { class: 'idc-dots', 'aria-hidden': 'true' }), h('span', { class: 'idc-v' }, value));
+  const [m1, m2] = mrz(post, ctx.handle, kind, files.length);
   const card = h('article', { class: 'idc' },
-    h('span', { class: 'idc-hz tl', 'aria-hidden': 'true' }), h('span', { class: 'idc-hz tr', 'aria-hidden': 'true' }),
-    h('div', { class: 'idc-left' },
-      h('span', { class: 'idc-chip' }, ctx.handle.slice(0, 6).toUpperCase()),
-      photo,
-      h('div', { class: 'idc-plate' }, kindLabel(kind)),
-      strip,
-      h('div', { class: 'idc-codes' }, barcode(post.id || 'x'), h('span', { class: 'idc-ticks', 'aria-hidden': 'true' }))),
-    h('div', { class: 'idc-right' },
-      h('div', { class: 'idc-sign', 'aria-hidden': 'true' }, blog),
-      h('h2', { class: 'idc-brand' }, blog),
-      h('p', { class: 'idc-doc' }, 'PROMPT IDENTIFICATION DOCUMENT'),
-      field('NAME', txt(post.title) || '제목 없음', 'boxed'),
-      h('div', { class: 'idc-two' },
-        field('KIND', kindLabel(kind)),
-        field('BOARD', ctx.boardName || '—')),
-      field('DATE OF ISSUE', issue),
-      h('div', { class: 'idc-bottom' },
-        h('span', { class: 'idc-line', 'aria-hidden': 'true' }),
-        h('span', { class: 'idc-stamp', 'aria-hidden': 'true' }, h('small', null, 'DRAWER'), h('b', null, kindLabel(kind)), h('small', null, '@' + ctx.handle)),
-        h('span', { class: 'idc-holo', 'aria-hidden': 'true' }, blog.slice(0, 1).toUpperCase()),
-        h('span', { class: 'idc-serial' }, serial))));
+    h('div', { class: 'idc-guil', 'aria-hidden': 'true' }),
+    h('header', { class: 'idc-top' }, h('b', null, 'PROMPT PASS'), h('span', null, '프롬프트 여권'), h('em', null, serial)),
+    h('div', { class: 'idc-main' },
+      h('div', { class: 'idc-left' },
+        h('div', { class: 'idc-stampbox' }, photo, h('span', { class: 'idc-denom' }, kindLabel(kind))),
+        strip,
+        h('div', { class: 'idc-postmark', html: postmarkSvg('@' + ctx.handle.slice(0, 12).toUpperCase(), issue, 'DRAWER POST') })),
+      h('div', { class: 'idc-right' },
+        h('small', { class: 'idc-lbl' }, '이름 / NAME'),
+        h('h2', { class: 'idc-name' }, txt(post.title) || '제목 없음'),
+        row('종류', 'KIND', kindLabel(kind)),
+        row('게시판', 'BOARD', ctx.boardName || '—'),
+        row('발급일', 'ISSUED', issue),
+        row('발급처', 'AUTHORITY', blog),
+        row('수록', 'PAGES', `${files.length}매 · 사진 ${I.ids.length}장`),
+        h('div', { class: 'idc-sig' }, h('span', null, blog), h('small', null, 'SIGNATURE OF BEARER')))),
+    h('div', { class: 'idc-mrz', 'aria-hidden': 'true' }, h('span', null, m1), h('span', null, m2)));
   show(0);
 
-  // 붙임 쪽지: 프롬마다 한 장, 누르면 복사
+  // 표 모양 쪽지: 프롬마다 한 장, 누르면 복사
   const slips = files.map((f, i) => {
     const pre = h('pre', { class: 'idc-text' + (f.spoiler ? ' sp' : '') }, f.text);
-    const slip = h('section', { class: 'idc-slip' + (f.neg ? ' neg' : '') },
-      h('div', { class: 'idc-slip-head' },
-        h('small', null, `ATTACHMENT ${pad(i + 1, 2)}`), h('b', null, f.name),
-        h('div', { class: 'idc-slip-tools' },
-          f.base ? h('button', { class: 'btn ghost sm', type: 'button', onclick: () => copyText([f.base, f.text].filter((x) => x.trim()).join(', '), '기본 + 변형을 함께 복사했어요') }, '기본과 함께') : null,
-          h('button', { class: 'btn sm', type: 'button', onclick: () => copyText(f.text, `${f.name} 복사했어요`) }, icon('copy', 14), '복사'))),
-      pre);
     pre.addEventListener('click', () => {
       if (pre.classList.contains('sp')) { pre.classList.remove('sp'); return; }
       copyText(f.text, `${f.name} 복사했어요`);
     });
-    return slip;
+    return h('section', { class: 'idc-slip' + (f.neg ? ' neg' : '') },
+      h('div', { class: 'idc-stub', 'aria-hidden': 'true' }, h('small', null, 'No.'), h('b', null, pad(i + 1, 2))),
+      h('div', { class: 'idc-slip-body' },
+        h('div', { class: 'idc-slip-head' },
+          h('b', null, f.name),
+          h('div', { class: 'idc-slip-tools' },
+            f.base ? h('button', { class: 'btn ghost sm', type: 'button', onclick: () => copyText([f.base, f.text].filter((x) => x.trim()).join(', '), '기본 + 변형을 함께 복사했어요') }, '기본과 함께') : null,
+            h('button', { class: 'btn sm', type: 'button', onclick: () => copyText(f.text, `${f.name} 복사했어요`) }, icon('copy', 14), '복사'))),
+        pre));
   });
   return h('div', { class: 'idc-wrap' }, card,
     h('div', { class: 'idc-slips' }, slips),

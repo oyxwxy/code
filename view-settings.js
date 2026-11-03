@@ -8,6 +8,7 @@ import { TINTS as DD_TINTS } from './dday.js';
 import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { openCropper } from './crop.js';
+import { TONES } from './skins.js';
 
 const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 // 초대 탭은 관리자에게만 보여요
@@ -421,7 +422,23 @@ function designTab() {
     h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장한 뒤 블로그에서 확인해 보세요.'),
     skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: '초록 그리드 타이틀' }),
     skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
-    skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '터미널과 잘 어울려요', card: '신분증 카드' }));
+    skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '여권·우표 카드' }),
+    toneRow());
+  // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
+  const toneRow = () => {
+    const key = T.skin || T.pview;
+    const set_ = TONES[key];
+    if (!set_) return null;
+    const cur = set_[T.skinTone] ? T.skinTone : Object.keys(set_)[0];
+    const label = T.skin ? `색상 프리셋 · ${SKINS[T.skin]}` : `색상 프리셋 · ${PVIEWS[T.pview]}`;
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, label),
+      h('div', { class: 'opt-grid cols-4' }, Object.entries(set_).map(([k, t]) =>
+        h('button', { class: 'opt center' + (cur === k ? ' on' : ''), onclick: () => set({ skinTone: k }) },
+          h('span', { class: 'tone-sw', 'aria-hidden': 'true' }, t.sw.map((c) => h('i', { style: { background: c } }))),
+          h('small', null, t.name)))),
+      T.skin && T.pview ? h('p', { class: 'desc' }, '프롬창도 이 색을 따라가요.') : null);
+  };
 
   const paintPreview = () => {
     preview.replaceChildren(h('div', { class: 'posts layout-' + T.layout }, SAMPLE.map((p) => postCard(p, true))));

@@ -1,6 +1,6 @@
 import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
 import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly, skinOn } from './store.js';
-import { promptView, setPageSkin } from './skins.js';
+import { promptView, setPageSkin, setViewTone } from './skins.js';
 import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME } from './theme.js';
 import { imageGallery } from './gallery.js';
 import { openLightbox } from './lightbox.js';
@@ -143,7 +143,8 @@ export async function post({ params, root }) {
   const board = aTheme.boards.find((b) => b.id === p.board);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만. 페이지 스킨 색을 글 보기에도 이어서 입혀요
   const pview = skinOn() ? aTheme.pview : '';
-  if (skinOn() && aTheme.skin) setPageSkin(aTheme.skin);
+  if (skinOn() && aTheme.skin) setPageSkin(aTheme.skin, aTheme.skinTone);
+  else if (pview) setViewTone(pview, aTheme.skinTone);
   const showBody = (content) => {
     const plain = () => bodyBox.replaceChildren(
       h('div', { class: 'skin-back-row' }, h('button', { class: 'btn ghost sm', type: 'button', onclick: () => bodyBox.replaceChildren(showBody(content)) }, '스킨으로 보기')),

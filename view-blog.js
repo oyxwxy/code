@@ -381,7 +381,7 @@ export async function blog({ params, query, root }) {
   root.replaceChildren(head, bodyEl, pickBar);
   if (skin) {
     const shownBoards = boards.filter((b) => isOwner || posts.some((p) => boardOf(p) === b.id));
-    dressBlog(skin, { root, head, body: bodyEl, side, main, pickBar, prof, theme, boards: shownBoards, selectBoard });
+    dressBlog(skin, { root, head, body: bodyEl, side, main, pickBar, prof, theme, boards: shownBoards, selectBoard, posts });
   }
   paintTools();
   paintPills();
