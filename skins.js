@@ -76,6 +76,22 @@ const floatTone = (name, dark, c) => ({
     '--fl-blend': c.blend, '--fl-filter': c.filter, '--fl-frame': c.ink, '--fl-pattern': 'none', '--fl-pattern-size': 'auto',
   },
 });
+const gridTone = (name, dark, c) => ({
+  name, dark, sw: [c.bg, c.acc, c.ink],
+  vars: {
+    ...base({ bg: c.bg, surface: c.bg, text: c.ink, muted: c.muted, border: c.acc, accent: c.acc, soft: c.soft, onAccent: c.onAcc }),
+    '--font': SANS, '--radius': '0px',
+    '--gc-bg': c.bg, '--gc-ink': c.ink, '--gc-acc': c.acc, '--gc-on': c.onAcc,
+    '--fl-bg': c.bg, '--fl-bg2': c.bg, '--fl-ink': c.ink, '--fl-sub': c.muted, '--fl-mark': c.acc,
+    '--fl-hl': c.acc, '--fl-hl-ink': c.onAcc, '--fl-blend': dark ? 'luminosity' : 'multiply', '--fl-filter': 'grayscale(1) contrast(1.1)', '--fl-frame': c.acc,
+    '--fl-pattern': `linear-gradient(${c.line} 1px, transparent 1px), linear-gradient(90deg, ${c.line} 1px, transparent 1px)`, '--fl-pattern-size': '28px 28px',
+    '--idc-paper': dark ? '#f2f2ee' : c.bg, '--idc-paper2': '#ffffff', '--idc-ink': dark ? '#111111' : c.ink, '--idc-acc': c.acc, '--idc-acc2': dark ? '#333333' : c.ink,
+  },
+});
+const idTone = (name, c) => ({
+  name, dark: false, sw: [c.paper, c.o, c.t],
+  vars: { '--idv-paper': c.paper, '--idv-ink': c.ink, '--idv-o': c.o, '--idv-t': c.t },
+});
 const cardTone = (name, c) => ({
   name, dark: false, sw: [c.paper, c.ink, c.acc],
   vars: { '--idc-paper': c.paper, '--idc-paper2': c.paper2, '--idc-ink': c.ink, '--idc-acc': c.acc, '--idc-acc2': c.acc2 },
@@ -108,17 +124,29 @@ export const TONES = {
     lavender: gameTone('라벤더', false, { bg: '#f7f4ff', ink: '#221a3a', muted: '#6e6789', acc: '#8a5cff', acc2: '#ffb21f', line: 'rgb(34 26 58 / .16)', soft: '#e9e0ff', onAcc: '#ffffff' }),
     night: gameTone('나이트', true, { bg: '#0f0d1c', ink: '#f3f0ff', muted: '#a29cbf', acc: '#ff4f9a', acc2: '#3fe0ff', line: 'rgb(243 240 255 / .16)', soft: '#2a1d3a', onAcc: '#0f0d1c' }),
   },
+  grid: {
+    green: gridTone('형광 그린', false, { bg: '#ffffff', ink: '#0b0b0b', muted: '#5d5d5d', acc: '#16c93a', soft: '#e2f9e6', onAcc: '#0b0b0b', line: 'rgb(22 201 58 / .35)' }),
+    blue: gridTone('일렉트릭 블루', false, { bg: '#ffffff', ink: '#0b0b18', muted: '#5d5d6d', acc: '#2f5bff', soft: '#e3e9ff', onAcc: '#ffffff', line: 'rgb(47 91 255 / .3)' }),
+    pink: gridTone('핫핑크', false, { bg: '#fffafd', ink: '#1a0b14', muted: '#6d5d66', acc: '#ff3d9a', soft: '#ffe3f1', onAcc: '#1a0b14', line: 'rgb(255 61 154 / .3)' }),
+    dark: gridTone('블랙 그린', true, { bg: '#0b0d0b', ink: '#f2f5f2', muted: '#9aa39a', acc: '#2bff5c', soft: '#123018', onAcc: '#0b0d0b', line: 'rgb(43 255 92 / .25)' }),
+  },
   float: {
     blue: floatTone('블루', true, { bg: '#1d2bff', bg2: '#2a38ff', ink: '#ffffff', sub: '#b6beff', hl: '#e8ff3a', hlInk: '#111111', blend: 'luminosity', filter: 'grayscale(1) contrast(1.15) brightness(1.12)' }),
     red: floatTone('레드', true, { bg: '#e3262b', bg2: '#ef3a3e', ink: '#ffffff', sub: '#ffc4c4', hl: '#ffffff', hlInk: '#111111', blend: 'luminosity', filter: 'grayscale(1) contrast(1.15) brightness(1.1)' }),
     ink: floatTone('먹색', true, { bg: '#0d0d10', bg2: '#17171c', ink: '#f2f2f2', sub: '#8d8d96', hl: '#e8ff3a', hlInk: '#111111', blend: 'normal', filter: 'grayscale(1) contrast(1.1)' }),
     paper: floatTone('종이', false, { bg: '#f1ede2', bg2: '#f6f3ea', ink: '#1d1d1d', sub: '#7a756a', hl: '#ff6a3d', hlInk: '#111111', blend: 'multiply', filter: 'grayscale(1) contrast(1.1)' }),
   },
-  card: {
+  pass: {
     navy: cardTone('여권 네이비', { paper: '#f3efe4', paper2: '#fffdf7', ink: '#1e2433', acc: '#b8473a', acc2: '#2f4f7a' }),
     forest: cardTone('숲', { paper: '#ecefe4', paper2: '#fbfcf6', ink: '#1f3a2e', acc: '#c0562f', acc2: '#2e5a46' }),
     plum: cardTone('자두', { paper: '#f4eef2', paper2: '#fffafd', ink: '#3a1f35', acc: '#b03a6e', acc2: '#5a3a7a' }),
     mono: cardTone('모노', { paper: '#f2f2ef', paper2: '#ffffff', ink: '#111111', acc: '#111111', acc2: '#777777' }),
+  },
+  card: {
+    cream: idTone('크림', { paper: '#f2ede1', ink: '#1b1b1b', o: '#e8692c', t: '#4fb5ac' }),
+    mint: idTone('민트', { paper: '#e9f2ee', ink: '#14241e', o: '#1f9e7a', t: '#e5a33b' }),
+    lilac: idTone('라일락', { paper: '#efeaf5', ink: '#211a2e', o: '#7a5cd6', t: '#e86a9a' }),
+    char: idTone('차콜', { paper: '#e7e6e2', ink: '#151515', o: '#151515', t: '#9a9a9a' }),
   },
 };
 /** 고른 프리셋 (없거나 모르는 값이면 첫 번째) */
@@ -130,7 +158,7 @@ function setVars(vars) {
   // 기본 색(--bg 등)은 다음 화면의 applyTheme 이 다시 정하니까, 스킨 전용 변수만 지워요
   applied.forEach((k) => s.removeProperty(k));
   applied = [];
-  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|fl|idc)-/.test(k)) applied.push(k); }
+  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|gc|fl|idc|idv)-/.test(k)) applied.push(k); }
 }
 
 /** 화면 전체 색(변수)을 스킨으로 바꿔요. 다른 화면으로 가면 app.js 가 data-skin 을 지우고, 다음 화면의 테마가 색을 다시 정해요 */
@@ -160,6 +188,7 @@ export function dressBlog(skin, ctx) {
   if (skin === 'home') dressHome(ctx);
   else if (skin === 'term') dressTerm(ctx);
   else if (skin === 'game') dressGame(ctx);
+  else if (skin === 'grid') dressGrid(ctx);
 }
 
 // ── 1. 홈페이지: 모눈종이 바탕 위 옛날 브라우저 창 ──
@@ -258,6 +287,52 @@ function dressGame({ root, head, body, main, prof, theme, boards, selectBoard, p
     h('div', { class: 'gm-copy' }, `© ${year} @${prof.handle}`));
   head.before(hero);
   body.classList.add('gm-body');
+}
+
+// ── 4. 그리드 타이틀 (처음 버전): 원근 그리드 복도 + 큰 픽셀 제목 + START ──
+function corridorSvg() {
+  const W = 1000, H = 560, cx = W / 2, cy = H / 2;
+  const iw = 230, ih = 128;
+  const lines = [];
+  const L = (x1, y1, x2, y2) => lines.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`);
+  for (let k = 0; k <= 9; k++) {
+    const t = 1 - Math.pow(0.72, k);
+    const w = W - (W - iw) * t, hh = H - (H - ih) * t;
+    lines.push(`<rect x="${(cx - w / 2).toFixed(1)}" y="${(cy - hh / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${hh.toFixed(1)}"/>`);
+  }
+  const N = 10;
+  for (let i = 0; i <= N; i++) {
+    const f = i / N;
+    L(f * W, 0, cx - iw / 2 + f * iw, cy - ih / 2);
+    L(f * W, H, cx - iw / 2 + f * iw, cy + ih / 2);
+  }
+  for (let i = 1; i < 6; i++) {
+    const f = i / 6;
+    L(0, f * H, cx - iw / 2, cy - ih / 2 + f * ih);
+    L(W, f * H, cx + iw / 2, cy - ih / 2 + f * ih);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">${lines.join('')}</g></svg>`;
+}
+
+function dressGrid({ head, body, main, prof, theme, boards, selectBoard }) {
+  const name = txt(prof.display) || prof.handle;
+  const avatar = h('div', { class: 'gc-photo', 'aria-hidden': 'true' });
+  if (theme.avatar) loadImage(theme.avatar).then((u) => { if (u) { avatar.style.backgroundImage = `url("${u}")`; avatar.classList.add('on'); } });
+  const spots = ['l1', 'l2', 'r1', 'r2', 'l3', 'r3'];
+  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  const menu = boards.slice(0, 6).map((b, i) =>
+    h('button', { class: 'gc-tag ' + spots[i], type: 'button', onclick: () => { selectBoard(b.id); go(); } }, '• ' + b.name));
+  const hero = h('section', { class: 'gc-hero' },
+    h('div', { class: 'gc-grid', html: corridorSvg() }),
+    h('div', { class: 'gc-dots', 'aria-hidden': 'true' }),
+    avatar,
+    h('div', { class: 'gc-id' }, '@' + prof.handle),
+    h('h1', { class: 'gc-title' }, h('span', null, name)),
+    ...menu,
+    h('button', { class: 'gc-start', type: 'button', onclick: go },
+      h('span', { class: 'gc-ring', 'aria-hidden': 'true' }), h('b', null, 'START'), h('span', { class: 'gc-cur', 'aria-hidden': 'true' }, '↖')));
+  head.before(hero);
+  body.classList.add('gc-body');
 }
 
 // ═════════════════════ 프롬 모음 ═════════════════════
@@ -458,7 +533,8 @@ function popPrompt(f, p) {
  */
 export function promptView(pview, content, ctx) {
   if (pview === 'float') return floatView(content, ctx);
-  if (pview === 'card') return cardView(content, ctx);
+  if (pview === 'pass') return cardView(content, ctx);
+  if (pview === 'card') return idCardView(content, ctx);
   return null;
 }
 
@@ -627,8 +703,7 @@ function cardView(content, ctx) {
     h('div', { class: 'idc-main' },
       h('div', { class: 'idc-left' },
         h('div', { class: 'idc-stampbox' }, photo, h('span', { class: 'idc-denom' }, kindLabel(kind))),
-        strip,
-        h('div', { class: 'idc-postmark', html: postmarkSvg('@' + ctx.handle.slice(0, 12).toUpperCase(), issue, 'DRAWER POST') })),
+        strip),
       h('div', { class: 'idc-right' },
         h('small', { class: 'idc-lbl' }, '이름 / NAME'),
         h('h2', { class: 'idc-name' }, txt(post.title) || '제목 없음'),
@@ -638,6 +713,7 @@ function cardView(content, ctx) {
         row('발급처', 'AUTHORITY', blog),
         row('수록', 'PAGES', `${files.length}매 · 사진 ${I.ids.length}장`),
         h('div', { class: 'idc-sig' }, h('span', null, blog), h('small', null, 'SIGNATURE OF BEARER')))),
+    h('div', { class: 'idc-postmark', html: postmarkSvg('@' + ctx.handle.slice(0, 12).toUpperCase(), issue, 'DRAWER POST') }),
     h('div', { class: 'idc-mrz', 'aria-hidden': 'true' }, h('span', null, m1), h('span', null, m2)));
   show(0);
 
@@ -660,5 +736,74 @@ function cardView(content, ctx) {
   });
   return h('div', { class: 'idc-wrap' }, card,
     h('div', { class: 'idc-slips' }, slips),
+    h('button', { class: 'fl-plain idc-plain', type: 'button', onclick: ctx.onPlain }, '기본 보기'));
+}
+
+// ── 프롬창 3: 신분증 (처음 버전 네임카드) ──
+function barcode(seed) {
+  let x = 0; for (const c of seed) x = (x * 31 + c.charCodeAt(0)) >>> 0;
+  const bars = [];
+  for (let i = 0; i < 46; i++) { x = (x * 1103515245 + 12345) >>> 0; bars.push(h('i', { style: { width: (1 + (x >>> 16) % 3) + 'px' } })); }
+  return h('div', { class: 'idv-bar', 'aria-hidden': 'true' }, bars);
+}
+
+function idCardView(content, ctx) {
+  const { post, author } = ctx;
+  const kind = kindOf(post);
+  const files = promptFiles(content, kind);
+  const I = imgSet(content);
+  const blog = txt(author?.display) || ctx.handle;
+  const d = post.created ? new Date(post.created) : null;
+  const issue = d ? `${pad(d.getMonth() + 1, 2)}/${pad(d.getDate(), 2)}/${d.getFullYear()}` : '—';
+  const serial = 'DRW-' + String(post.id || '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
+  let at = 0;
+  const photo = h('button', { class: 'idv-photo', type: 'button', 'aria-label': '사진 크게 보기',
+    onclick: () => {
+      if (photo.classList.contains('sp')) { photo.classList.remove('sp'); I.revealed.add(at); return; }
+      if (I.ids.length) openLightbox(I.ids, at, { spoilers: I.spoilers, revealed: I.revealed });
+    } }, h('img', { alt: '', draggable: 'false' }));
+  const show = (i) => {
+    at = i;
+    photo.classList.toggle('sp', I.spoilers.has(i) && !I.revealed.has(i));
+    photo.classList.toggle('none', !I.ids.length);
+    if (I.ids[i]) loadImage(I.ids[i]).then((u) => { if (u && at === i) photo.firstChild.src = u; });
+    strip.querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i));
+  };
+  const strip = h('div', { class: 'idv-strip' }, I.ids.length > 1 ? I.ids.slice(0, 8).map((_, i) =>
+    h('button', { type: 'button', 'aria-label': `${i + 1}번째 사진`, onclick: () => show(i) }, pad(i + 1, 2))) : []);
+  const field = (label, value, cls = '') => h('div', { class: 'idv-field ' + cls }, h('small', null, label), h('div', { class: 'idv-val' }, value));
+  const card = h('article', { class: 'idv' },
+    h('span', { class: 'idv-hz tl', 'aria-hidden': 'true' }), h('span', { class: 'idv-hz tr', 'aria-hidden': 'true' }),
+    h('div', { class: 'idv-left' },
+      h('span', { class: 'idv-chip' }, ctx.handle.slice(0, 6).toUpperCase()),
+      photo,
+      h('div', { class: 'idv-plate' }, kindLabel(kind)),
+      strip,
+      h('div', { class: 'idv-codes' }, barcode(post.id || 'x'), h('span', { class: 'idv-ticks', 'aria-hidden': 'true' }))),
+    h('div', { class: 'idv-right' },
+      h('div', { class: 'idv-sign', 'aria-hidden': 'true' }, blog),
+      h('h2', { class: 'idv-brand' }, blog),
+      h('p', { class: 'idv-doc' }, 'PROMPT IDENTIFICATION DOCUMENT'),
+      field('NAME', txt(post.title) || '제목 없음', 'boxed'),
+      h('div', { class: 'idv-two' }, field('KIND', kindLabel(kind)), field('BOARD', ctx.boardName || '—')),
+      field('DATE OF ISSUE', issue),
+      h('div', { class: 'idv-bottom' },
+        h('span', { class: 'idv-line', 'aria-hidden': 'true' }),
+        h('span', { class: 'idv-stamp', 'aria-hidden': 'true' }, h('small', null, 'DRAWER'), h('b', null, kindLabel(kind)), h('small', null, '@' + ctx.handle)),
+        h('span', { class: 'idv-holo', 'aria-hidden': 'true' }, blog.slice(0, 1).toUpperCase()),
+        h('span', { class: 'idv-serial' }, serial))));
+  show(0);
+  const slips = files.map((f, i) => {
+    const pre = h('pre', { class: 'idv-text' + (f.spoiler ? ' sp' : '') }, f.text);
+    pre.addEventListener('click', () => { if (pre.classList.contains('sp')) { pre.classList.remove('sp'); return; } copyText(f.text, `${f.name} 복사했어요`); });
+    return h('section', { class: 'idv-slip' + (f.neg ? ' neg' : '') },
+      h('div', { class: 'idv-slip-head' },
+        h('small', null, `ATTACHMENT ${pad(i + 1, 2)}`), h('b', null, f.name),
+        h('div', { class: 'idv-slip-tools' },
+          f.base ? h('button', { class: 'btn ghost sm', type: 'button', onclick: () => copyText([f.base, f.text].filter((x) => x.trim()).join(', '), '기본 + 변형을 함께 복사했어요') }, '기본과 함께') : null,
+          h('button', { class: 'btn sm', type: 'button', onclick: () => copyText(f.text, `${f.name} 복사했어요`) }, icon('copy', 14), '복사'))),
+      pre);
+  });
+  return h('div', { class: 'idv-wrap' }, card, h('div', { class: 'idv-slips' }, slips),
     h('button', { class: 'fl-plain idc-plain', type: 'button', onclick: ctx.onPlain }, '기본 보기'));
 }

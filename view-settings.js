@@ -420,9 +420,9 @@ function designTab() {
   const skinPanel = () => h('section', { class: 'panel' },
     h('h3', { class: 'panel-title' }, '스킨 ', h('small', { class: 'muted' }, '테스트 중 · 관리자만')),
     h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장한 뒤 블로그에서 확인해 보세요.'),
-    skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: '초록 그리드 타이틀' }),
+    skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START' }),
     skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
-    skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '여권·우표 카드' }),
+    skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인' }),
     toneRow());
   // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
   const toneRow = () => {
