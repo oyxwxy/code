@@ -1,7 +1,7 @@
 import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
 import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly, skinOn } from './store.js';
 import { promptView, setPageSkin, setViewTone } from './skins.js';
-import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME } from './theme.js';
+import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME, previewTheme } from './theme.js';
 import { imageGallery } from './gallery.js';
 import { openLightbox } from './lightbox.js';
 import { loadImage } from './images.js';
@@ -133,13 +133,15 @@ export async function post({ params, root }) {
     return;
   }
   const author = await getProfile(p.owner);
-  applyTheme(author?.theme);
+  // 설정의 미리보기 창 안이면 저장 전 꾸미기로 보여줘요
+  const authorTheme = previewTheme(txt(author?.handle) || txt(p.handle)) || author?.theme;
+  applyTheme(authorTheme);
   const title = txt(p.title) || '제목 없음';
   document.title = `${title} · ${APP_NAME}`;
   const isOwner = state.user?.uid === p.owner;
   const handle = txt(author?.handle) || txt(p.handle);
   const authorName = txt(author?.display) || handle;
-  const aTheme = sanitizeTheme(author?.theme);
+  const aTheme = sanitizeTheme(authorTheme);
   const board = aTheme.boards.find((b) => b.id === p.board);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만. 페이지 스킨 색을 글 보기에도 이어서 입혀요
   const pview = skinOn() ? aTheme.pview : '';

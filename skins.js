@@ -443,9 +443,11 @@ function drawerView(rows, ctx) {
 function foldersView(rows, ctx) {
   const groups = Object.keys(KINDS).map((k) => [k, rows.filter((p) => kindOf(p) === k)]).filter(([, g]) => g.length);
   const offs = ['a', 'b', 'c', 'b'];
-  // 탭 모양: 아래로 갈수록 부드럽게 벌어지는 곡선 (선 굵기는 크기와 상관없이 일정)
+  // 탭 모양: 아래로 갈수록 부드럽게 벌어지는 곡선. 끝선은 폴더 윗선 한가운데(34.75px)에 딱 맞춰 이어지고, 채움은 윗선을 덮도록 조금 더 내려가요
   const tabShape = () => h('span', { class: 'fd-shape', 'aria-hidden': 'true', html:
-    '<svg viewBox="0 0 300 34" preserveAspectRatio="none"><path d="M0 34 C10 34 13 30 15 23 L19 9 C21 3 24 1 31 1 L269 1 C276 1 279 3 281 9 L285 23 C287 30 290 34 300 34" vector-effect="non-scaling-stroke"/></svg>' });
+    '<svg viewBox="0 0 300 34" preserveAspectRatio="none">'
+    + '<path class="f" d="M0 34.75 C10 34.75 13 30.75 15 23 L19 9 C21 3 24 1 31 1 L269 1 C276 1 279 3 281 9 L285 23 C287 30.75 290 34.75 300 34.75 L300 37 L0 37 Z"/>'
+    + '<path class="s" d="M0 34.75 C10 34.75 13 30.75 15 23 L19 9 C21 3 24 1 31 1 L269 1 C276 1 279 3 281 9 L285 23 C287 30.75 290 34.75 300 34.75" vector-effect="non-scaling-stroke"/></svg>' });
   let n = 0, turn = 0;
   const cab = h('div', { class: 'fd-cab' });
   groups.forEach(([k, list], gi) => {

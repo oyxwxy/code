@@ -187,6 +187,15 @@ export function sanitizeDdays(list) {
 }
 
 /** 저장된(또는 남의) 테마를 안전한 값으로 정리 */
+/** 설정의 '내 블로그 미리보기' 창(iframe) 안에서는 저장 전 꾸미기를 써요 */
+export function previewTheme(handle) {
+  try {
+    if (window.parent === window) return null;
+    const p = window.parent.__drawerPreview;
+    return p && p.handle === handle ? p.theme : null;
+  } catch { return null; }
+}
+
 export function sanitizeTheme(t) {
   t = t || {};
   const d = DEFAULT_THEME;

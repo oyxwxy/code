@@ -1,7 +1,7 @@
 import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog, txt } from './util.js';
 import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, skinOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
 import { dressBlog, collectionView } from './skins.js';
-import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
+import { applyTheme, sanitizeTheme, DEFAULT_THEME, previewTheme } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
 import { selectField } from './widgets.js';
@@ -136,7 +136,7 @@ export async function blog({ params, query, root }) {
     root.replaceChildren(emptyState('블로그를 찾을 수 없어요', `@${handle} 아이디가 없어요.`, h('a', { class: 'btn', href: '#/' }, '처음으로')));
     return;
   }
-  const theme = sanitizeTheme(prof.theme);
+  const theme = sanitizeTheme(previewTheme(prof.handle) || prof.theme);
   applyTheme(theme);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만 입혀요. 다른 사람에게는 지금 모습 그대로
   const skin = skinOn() ? theme.skin : '', shelf = skinOn() ? theme.shelf : '';
@@ -326,10 +326,12 @@ export async function blog({ params, query, root }) {
     }
     // 프롬 모음 스킨: 고르기 모드가 아닐 때만 (순서 바꾸기·고르기는 기본 배치에서)
     if (shelf && !picking) {
-      const v = collectionView(shelf, rows.slice(0, shown), { boardName, boardOf, display: txt(prof.display) || prof.handle });
+      // 레코드 진열은 한 줄로 넘겨 보는 모양이라 '더 보기' 없이 전부 보여줘요
+      const all = shelf === 'records';
+      const v = collectionView(shelf, all ? rows : rows.slice(0, shown), { boardName, boardOf, display: txt(prof.display) || prof.handle });
       if (v) {
         list.append(v);
-        if (rows.length > shown) more.append(h('button', { class: 'btn', onclick: () => { shown += PAGE; paint(); } }, `더 보기 (${rows.length - shown})`));
+        if (!all && rows.length > shown) more.append(h('button', { class: 'btn', onclick: () => { shown += PAGE; paint(); } }, `더 보기 (${rows.length - shown})`));
         return;
       }
     }

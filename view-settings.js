@@ -411,6 +411,35 @@ function designTab() {
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '꾸미기 저장');
 
+  // 내 블로그 미리보기: 저장하지 않은 꾸미기 그대로 내 블로그를 창 안에 띄워요 (창 안의 화면이 부모 창의 __drawerPreview 를 읽어요)
+  const previewBtn = h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview() }, icon('eye', 16), '내 블로그 미리보기');
+  function openSitePreview() {
+    const handle = state.me?.handle;
+    if (!handle) return;
+    window.__drawerPreview = { handle, theme: sanitizeTheme(T) };
+    let mobile = false;
+    const src = () => location.pathname + location.search + '#/u/' + encodeURIComponent(handle);
+    const frame = h('iframe', { class: 'pv-frame', title: '내 블로그 미리보기', src: src() });
+    const win = h('div', { class: 'pv-win' });
+    const devBtn = h('button', { class: 'btn ghost sm', type: 'button', onclick: () => {
+      mobile = !mobile; win.classList.toggle('mobile', mobile); devBtn.textContent = mobile ? 'PC 크기' : '모바일 크기';
+    } }, '모바일 크기');
+    const close = () => { back.remove(); document.removeEventListener('keydown', onKey); delete window.__drawerPreview; document.body.style.overflow = ''; };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    win.append(
+      h('div', { class: 'pv-head' },
+        h('b', null, '미리보기'), h('small', null, '저장하기 전 모습이에요 · 안에서 글을 눌러 프롬창도 볼 수 있어요'),
+        h('div', { class: 'pv-tools' },
+          h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { frame.src = src(); } }, '처음으로'),
+          devBtn,
+          h('button', { class: 'btn sm', type: 'button', 'aria-label': '닫기', onclick: close }, icon('x', 16)))),
+      h('div', { class: 'pv-body' }, frame));
+    const back = h('div', { class: 'pv-back', onclick: (e) => { if (e.target === back) close(); } }, win);
+    document.body.append(back);
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKey);
+  }
+
   // 스킨 (테스트 중 · 관리자만)
   const skinRow = (label, map, key, note = {}) => h('div', { class: 'skin-set' },
     h('span', { class: 'lbl' }, label),
@@ -419,7 +448,7 @@ function designTab() {
         h('small', null, name), note[k] ? h('em', { class: 'skin-note' }, note[k]) : null))));
   const skinPanel = () => h('section', { class: 'panel' },
     h('h3', { class: 'panel-title' }, '스킨 ', h('small', { class: 'muted' }, '테스트 중 · 관리자만')),
-    h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장한 뒤 블로그에서 확인해 보세요.'),
+    h('div', { class: 'row between skin-pv-row' }, h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장하지 않아도 미리보기로 확인할 수 있어요.'), previewBtn),
     skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START' }),
     skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
     skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인' }),
@@ -641,7 +670,7 @@ function designTab() {
         h('button', { class: 'btn ghost', onclick: async () => {
           if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, bannerMore: T.bannerMore, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
         } }, '기본값으로'),
-        saveBtn),
+        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview() }, icon('eye', 16), '미리보기'), saveBtn)),
       h('h3', { class: 'preview-title' }, '미리보기'),
       preview);
   }
