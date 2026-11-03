@@ -1,5 +1,6 @@
 import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
-import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly } from './store.js';
+import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly, skinOn } from './store.js';
+import { promptView, setPageSkin } from './skins.js';
 import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME } from './theme.js';
 import { imageGallery } from './gallery.js';
 import { openLightbox } from './lightbox.js';
@@ -138,7 +139,18 @@ export async function post({ params, root }) {
   const isOwner = state.user?.uid === p.owner;
   const handle = txt(author?.handle) || txt(p.handle);
   const authorName = txt(author?.display) || handle;
-  const board = sanitizeTheme(author?.theme).boards.find((b) => b.id === p.board);
+  const aTheme = sanitizeTheme(author?.theme);
+  const board = aTheme.boards.find((b) => b.id === p.board);
+  // 스킨(테스트 중): 보는 사람이 관리자일 때만. 페이지 스킨 색을 글 보기에도 이어서 입혀요
+  const pview = skinOn() ? aTheme.pview : '';
+  if (skinOn() && aTheme.skin) setPageSkin(aTheme.skin);
+  const showBody = (content) => {
+    const plain = () => bodyBox.replaceChildren(
+      h('div', { class: 'skin-back-row' }, h('button', { class: 'btn ghost sm', type: 'button', onclick: () => bodyBox.replaceChildren(showBody(content)) }, '스킨으로 보기')),
+      renderBody(content, kindOf(p)));
+    const sk = pview ? promptView(pview, content, { post: p, author, handle, boardName: board?.name || '', onPlain: plain }) : null;
+    return sk || renderBody(content, kindOf(p));
+  };
 
   const share = () => {
     const url = location.origin + location.pathname + '#/p/' + p.id;
@@ -189,7 +201,7 @@ export async function post({ params, root }) {
         btn.textContent = '여는 중…';
         try {
           const u = await unlockContent(p, r.enc, pw.value);
-          bodyBox.replaceChildren(renderBody(u.content, kindOf(p)));   // 비밀번호 글은 이미 가려져 있어서 스포일러 덮개 없음
+          bodyBox.replaceChildren(showBody(u.content));   // 비밀번호 글은 이미 가려져 있어서 스포일러 덮개 없음
         } catch (ex) {
           err.textContent = ex?.name === 'OperationError' || ex instanceof DOMException ? '비밀번호가 올바르지 않아요' : friendly(ex);
           btn.disabled = false;
@@ -204,6 +216,6 @@ export async function post({ params, root }) {
     pw.focus();
     return;
   }
-  const body = renderBody(r.content, kindOf(p));
+  const body = showBody(r.content);
   bodyBox.replaceChildren(p.spoiler && p.vis === 'public' ? spoilerWrap(body) : body);
 }

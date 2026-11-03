@@ -1,6 +1,6 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, neighborsOn, ddayOn, bannerSlideOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS } from './theme.js';
+import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
 import { colorField, stepper, iconField, datePicker, selectField } from './widgets.js';
@@ -410,6 +410,19 @@ function designTab() {
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '꾸미기 저장');
 
+  // 스킨 (테스트 중 · 관리자만)
+  const skinRow = (label, map, key, note = {}) => h('div', { class: 'skin-set' },
+    h('span', { class: 'lbl' }, label),
+    h('div', { class: 'opt-grid cols-4' }, Object.entries(map).map(([k, name]) =>
+      h('button', { class: 'opt center' + (T[key] === k ? ' on' : ''), onclick: () => set({ [key]: k }) },
+        h('small', null, name), note[k] ? h('em', { class: 'skin-note' }, note[k]) : null))));
+  const skinPanel = () => h('section', { class: 'panel' },
+    h('h3', { class: 'panel-title' }, '스킨 ', h('small', { class: 'muted' }, '테스트 중 · 관리자만')),
+    h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장한 뒤 블로그에서 확인해 보세요.'),
+    skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: '초록 그리드 타이틀' }),
+    skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
+    skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '터미널과 잘 어울려요', card: '신분증 카드' }));
+
   const paintPreview = () => {
     preview.replaceChildren(h('div', { class: 'posts layout-' + T.layout }, SAMPLE.map((p) => postCard(p, true))));
   };
@@ -579,6 +592,7 @@ function designTab() {
         h('h3', { class: 'panel-title' }, '글 목록 배치'),
         h('div', { class: 'opt-grid cols-4' }, Object.entries(LAYOUTS).map(([k, name]) =>
           h('button', { class: 'opt center' + (T.layout === k ? ' on' : ''), onclick: () => set({ layout: k }) }, svg(LAYOUT_ICON[k]), h('small', null, name))))),
+      skinOn() ? skinPanel() : null,
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '모서리'),
         h('div', { class: 'opt-grid cols-3' }, [['sharp', '각지게'], ['soft', '부드럽게'], ['round', '둥글게']].map(([k, name]) =>

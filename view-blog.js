@@ -1,5 +1,6 @@
 import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog, txt } from './util.js';
-import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
+import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, skinOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
+import { dressBlog, collectionView } from './skins.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
@@ -137,6 +138,8 @@ export async function blog({ params, query, root }) {
   }
   const theme = sanitizeTheme(prof.theme);
   applyTheme(theme);
+  // 스킨(테스트 중): 보는 사람이 관리자일 때만 입혀요. 다른 사람에게는 지금 모습 그대로
+  const skin = skinOn() ? theme.skin : '', shelf = skinOn() ? theme.shelf : '';
   document.title = `${txt(prof.display) || prof.handle} · ${APP_NAME}`;
   const isOwner = state.user?.uid === prof.uid;
   const allPosts = await listPosts(prof.uid);
@@ -192,6 +195,7 @@ export async function blog({ params, query, root }) {
     if (location.hash !== blogHash()) history.replaceState(history.state, '', blogHash());
   };
   state.lastBlog = { handle, hash: blogHash() };
+  const selectBoard = (k) => { boardFilter = k; shown = PAGE; rememberBoard(); paintPills(); paint(); };
   const syncWrite = () => {
     state.writeBoard = writeBoard();
     newBtn.setAttribute('href', writeHref());
@@ -283,7 +287,7 @@ export async function blog({ params, query, root }) {
     const entries = [['all', '전체', 'grid'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
       ...(showUncat && (isOwner || has.has(NONE)) ? [[NONE, '미분류', 'file']] : [])];
     boardBox.replaceChildren(...entries.map(([k, label, ic]) =>
-      h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => { boardFilter = k; shown = PAGE; rememberBoard(); paintPills(); paint(); } },
+      h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => selectBoard(k) },
         icon(ic, 15), h('span', null, label))));
   }
 
@@ -319,6 +323,15 @@ export async function blog({ params, query, root }) {
         : emptyState(isOwner ? '아직 글이 없어요' : '아직 공개된 글이 없어요',
           isOwner ? '첫 프롬프트를 저장해 볼까요?' : '', isOwner ? h('a', { class: 'btn primary', href: writeHref() }, icon('plus', 15), '새 글 쓰기') : null));
       return;
+    }
+    // 프롬 모음 스킨: 고르기 모드가 아닐 때만 (순서 바꾸기·고르기는 기본 배치에서)
+    if (shelf && !picking) {
+      const v = collectionView(shelf, rows.slice(0, shown), { boardName, boardOf, display: txt(prof.display) || prof.handle });
+      if (v) {
+        list.append(v);
+        if (rows.length > shown) more.append(h('button', { class: 'btn', onclick: () => { shown += PAGE; paint(); } }, `더 보기 (${rows.length - shown})`));
+        return;
+      }
     }
     const box = h('div', { class: 'posts layout-' + theme.layout + (picking ? ' picking' : '') },
       rows.slice(0, shown).map((p) => postCard(p, isOwner, isOwner && !picking, boardObj(boardOf(p)))));
@@ -358,13 +371,18 @@ export async function blog({ params, query, root }) {
 
   const hasSide = boards.length > 0 || topTags.length > 0 || !!nbZone;
   const side = hasSide ? h('aside', { class: 'blog-side' },
-    boards.length ? h('div', { class: 'side-sec' }, h('h4', null, '게시판', h('em', { class: 'side-total', title: '전체 글 개수' }, posts.length)), boardBox) : null,
-    topTags.length ? h('div', { class: 'side-sec' }, h('h4', null, '태그'), tagBox) : null,
+    boards.length ? h('div', { class: 'side-sec side-boards' }, h('h4', null, '게시판', h('em', { class: 'side-total', title: '전체 글 개수' }, posts.length)), boardBox) : null,
+    topTags.length ? h('div', { class: 'side-sec side-tagsec' }, h('h4', null, '태그'), tagBox) : null,
     nbZone) : null;
   const main = h('div', { class: 'blog-main' },
     h('div', { class: 'toolbar' }, search, kindBox),
     toolsHost, list, more);
-  root.replaceChildren(head, h('div', { class: 'blog-body' + (hasSide ? ' has-side' : '') }, side, main), pickBar);
+  const bodyEl = h('div', { class: 'blog-body' + (hasSide ? ' has-side' : '') }, side, main);
+  root.replaceChildren(head, bodyEl, pickBar);
+  if (skin) {
+    const shownBoards = boards.filter((b) => isOwner || posts.some((p) => boardOf(p) === b.id));
+    dressBlog(skin, { root, head, body: bodyEl, side, main, pickBar, prof, theme, boards: shownBoards, selectBoard });
+  }
   paintTools();
   paintPills();
   paint();

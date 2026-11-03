@@ -30,6 +30,12 @@ export const LAYOUTS = {
   journal: '저널',
 };
 
+// 스킨 (테스트 중 · 관리자만): 페이지 스킨 / 프롬 모음(글 목록) / 프롬창(글 보기)
+export const SKINS = { '': '없음', home: '홈페이지', term: '터미널', game: '게임 타이틀' };
+export const SHELVES = { '': '위 배치 그대로', records: '레코드 진열', drawer: '서랍', folders: '폴더 인덱스' };
+export const PVIEWS = { '': '기본', float: '유영', card: '네임카드' };
+const pick = (map, v) => (typeof v === 'string' && Object.prototype.hasOwnProperty.call(map, v) ? v : '');
+
 export const RADII = { sharp: '4px', soft: '14px', round: '26px' };
 export const HEADERS = { center: '가운데', left: '왼쪽', banner: '대문 배너' };
 export const MAX_NEIGHBORS = 30;
@@ -154,6 +160,7 @@ export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
+  skin: '', shelf: '', pview: '',
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -205,6 +212,9 @@ export function sanitizeTheme(t) {
     uncat: t.uncat !== false,
     favicon: sanitizeFavicon(t.favicon),
     buttons: sanitizeButtons(t.buttons),
+    skin: pick(SKINS, t.skin),
+    shelf: pick(SHELVES, t.shelf),
+    pview: pick(PVIEWS, t.pview),
   };
 }
 

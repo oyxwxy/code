@@ -29,5 +29,8 @@ export const DDAY_FOR_ALL = true;
 // 대문 배너 슬라이드(여러 장 자동 넘김): true 면 전체 공개. false 면 관리자·BETA_HANDLES 에게만 보여요.
 export const BANNER_SLIDE_FOR_ALL = false;
 
+// 스킨(페이지 스킨 · 프롬 모음 · 프롬창): true 면 전체 공개. false 면 관리자·BETA_HANDLES 에게만 보이고 고를 수 있어요.
+export const SKINS_FOR_ALL = false;
+
 // 이미지 호스팅(ImgBB) API 키. 브라우저 코드에 들어가므로 공개된다는 점을 알고 쓰세요
 export const IMGBB_KEY = 'cd95c1a1e9387659cd79b2b33902dce1';

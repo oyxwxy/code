@@ -49,6 +49,7 @@ async function route() {
   const path = qi >= 0 ? raw.slice(0, qi) : raw;
   const query = new URLSearchParams(qi >= 0 ? raw.slice(qi + 1) : '');
   const token = ++navToken;
+  delete document.documentElement.dataset.skin;   // 스킨 색은 화면마다 다시 정해요
   state.writeBoard = '';   // 화면이 바뀌면 '보고 있는 게시판'은 비워요 (블로그 화면이 다시 채워요)
   const root = h('div', { class: 'view' });
   viewEl.replaceChildren(root);
