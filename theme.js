@@ -68,9 +68,9 @@ export const LAYOUTS = {
 };
 
 // 스킨: 페이지 스킨 / 프롬 모음(글 목록) / 프롬창(글 보기)
-export const SKINS = { '': '없음', home: '홈페이지', term: '터미널', game: '픽셀 아케이드', grid: '그리드 타이틀', chart: '천문 지도', probe: '관측 기록', space: '우주 유영', mosaic: '시즌 모자이크' };
-export const SHELVES = { '': '위 배치 그대로', records: '레코드 진열', drawer: '서랍', folders: '폴더 인덱스', stars: '별자리' };
-export const PVIEWS = { '': '기본', float: '유영', card: '신분증', pass: '여권' };
+export const SKINS = { '': '없음', home: '홈페이지', term: '터미널', game: '픽셀 아케이드', grid: '그리드 타이틀', chart: '천문 지도', probe: '관측 기록', space: '우주 유영' };
+export const SHELVES = { '': '위 배치 그대로', records: '레코드 진열', drawer: '서랍', folders: '폴더 인덱스', stars: '별자리', planets: '행성', log: '관측 로그' };
+export const PVIEWS = { '': '기본', float: '유영', card: '신분증', pass: '여권', signal: '교신' };
 const pick = (map, v) => (typeof v === 'string' && Object.prototype.hasOwnProperty.call(map, v) ? v : '');
 
 export const RADII = { sharp: '4px', soft: '14px', round: '26px' };

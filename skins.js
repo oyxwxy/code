@@ -187,16 +187,6 @@ const spaceTone = (name, c) => ({
     ...flFrom({ bg: c.bg, flBg2: c.n1, text: c.ink, muted: c.muted, accent: c.acc, hl: c.acc, hlInk: c.bg }, true),
   },
 });
-// 시즌 모자이크: 계절·기념일마다 색과 그림이 바뀌어요. pal 은 모자이크 칸 색(글자 하나 = 색 하나)
-const mosaicTone = (name, c) => ({
-  name, dark: false, sw: [c.bg, c.pal.a, c.pal.b || c.accent], art: c.art, pal: c.pal,
-  vars: {
-    ...base({ bg: c.bg, surface: c.surface, text: c.text, muted: c.muted, border: c.border, accent: c.accent, soft: c.soft, onAccent: '#ffffff' }),
-    '--font': "'Pretendard Variable', Pretendard, system-ui, sans-serif", '--radius': '0px',
-    '--ms-bg': c.bg, '--ms-ink': c.text, '--ms-acc': c.accent,
-    ...flFrom({ bg: c.bg, text: c.text, muted: c.muted, accent: c.accent, hl: c.soft, hlInk: c.text }, false),
-  },
-});
 const TONES2 = {
   chart: {
     plate: chartTone('청판 성도', { paper: '#ece5d3', plate: '#1c3a8c', plate2: '#21429a', line: '#f3efe3', ink: '#1b2a55', acc: '#f3efe3' }),
@@ -211,49 +201,16 @@ const TONES2 = {
     mars: probeTone('화성', false, { bg: '#e7dccd', surface: '#efe6da', ink: '#2a1912', muted: '#7a6457', acc: '#d4552e', soft: '#dccdbd', grain: 'rgb(60 20 0 / .08)' }),
   },
   space: {
-    deep: spaceTone('깊은 우주', { bg: '#04060f', surface: '#0b1022', ink: '#e8ecff', muted: '#97a2c8', acc: '#9cc0ff', soft: '#16213f', n1: '#1b2a6b', n2: '#3a1d5c', n3: '#0f4a6b' }),
-    nebula: spaceTone('성운', { bg: '#07040e', surface: '#130a22', ink: '#f6ecff', muted: '#b8a3cc', acc: '#ff9bd6', soft: '#2a143c', n1: '#5c1d5e', n2: '#7a2a3a', n3: '#2a1d6b' }),
-    aurora: spaceTone('오로라', { bg: '#020c0c', surface: '#081a1a', ink: '#e6fff8', muted: '#8fc2b3', acc: '#6effd2', soft: '#0f2e2a', n1: '#0d5a4a', n2: '#1d3a6b', n3: '#3a6b1d' }),
-    dawn: spaceTone('새벽 행성', { bg: '#08060c', surface: '#140f18', ink: '#fff2e6', muted: '#c9ab96', acc: '#ffb36b', soft: '#2e1d16', n1: '#6b3a1d', n2: '#3a1d4a', n3: '#1d2a5a' }),
+    deep: spaceTone('깊은 우주', { bg: '#05070d', surface: '#0c1120', ink: '#dfe5f5', muted: '#8a93ad', acc: '#a9c1ff', soft: '#141b31', n1: '#1a2b5c', n2: '#2a1f4a', n3: '#0e3a52' }),
+    dusk: spaceTone('행성의 새벽', { bg: '#07060b', surface: '#110f17', ink: '#f2e9e1', muted: '#a8988e', acc: '#f0b48a', soft: '#231a18', n1: '#5c2f1a', n2: '#2a1d3f', n3: '#15233f' }),
+    ice: spaceTone('얼음 행성', { bg: '#040a0e', surface: '#0a161c', ink: '#e2f2f5', muted: '#86a3aa', acc: '#9fe3ea', soft: '#10262c', n1: '#0e4652', n2: '#1b2e52', n3: '#0d3a3a' }),
+    violet: spaceTone('보랏빛 성운', { bg: '#07050d', surface: '#110c1b', ink: '#ece5f7', muted: '#9c90b3', acc: '#c4a8ff', soft: '#1d1530', n1: '#3d1f5c', n2: '#5c1f45', n3: '#1f2a5c' }),
   },
-  mosaic: {
-    auto: { name: '자동 (계절·기념일)', dark: false, sw: ['#f6f4ee', '#4c9a52', '#ff8fb1'], vars: {} },
-    xmas: mosaicTone('크리스마스', { bg: '#f6f4ee', surface: '#ffffff', text: '#1d1d1b', muted: '#6d6b63', border: '#d9d6cc', accent: '#c4302b', soft: '#e7f0e3',
-      art: 'xmas', pal: { a: '#4c9a52', b: '#2f7a3b', c: '#7cc06a', d: '#a7d39a', r: '#d63a33', y: '#f3c443', w: '#ffffff', t: '#7a5233' } }),
-    buddha: mosaicTone('부처님 오신 날', { bg: '#fbf6ee', surface: '#ffffff', text: '#2b1d16', muted: '#7d6a5d', border: '#e6d9c8', accent: '#d9486b', soft: '#fde3e8',
-      art: 'lotus', pal: { a: '#f28aa5', b: '#e2557a', c: '#ffc2d0', d: '#ffe1e8', g: '#5aa16b', y: '#f6c64b', r: '#c9303d', k: '#6b4a33' } }),
-    spring: mosaicTone('봄', { bg: '#fbf7f6', surface: '#ffffff', text: '#2c2224', muted: '#7c6c70', border: '#eadfe0', accent: '#e36f92', soft: '#fbe5ec',
-      art: 'blossom', pal: { a: '#f7b6c8', b: '#f093ad', c: '#fbd3de', d: '#fde9ef', t: '#7b5a48', g: '#9fcf8f' } }),
-    summer: mosaicTone('여름', { bg: '#f3f8fa', surface: '#ffffff', text: '#122a33', muted: '#5f7680', border: '#d3e3ea', accent: '#1f8fbf', soft: '#dcf0f8',
-      art: 'sea', pal: { a: '#3fa7d6', b: '#1f7fb3', c: '#8fd1ec', d: '#cdeef8', y: '#ffcf4a', s: '#f2e2b8', w: '#ffffff' } }),
-    autumn: mosaicTone('가을', { bg: '#faf5ee', surface: '#ffffff', text: '#2d1d12', muted: '#7d6655', border: '#eadccb', accent: '#d2602a', soft: '#fbe5d3',
-      art: 'maple', pal: { a: '#e4762f', b: '#c9472b', c: '#f2a64a', d: '#f6c779', t: '#6b4a33', r: '#a8321f' } }),
-    winter: mosaicTone('겨울', { bg: '#f4f6f9', surface: '#ffffff', text: '#18212e', muted: '#677385', border: '#d9e0ea', accent: '#3d6fb6', soft: '#e3ebf6',
-      art: 'snow', pal: { a: '#c9d8ea', b: '#9fb8d6', c: '#e8eff8', d: '#ffffff', m: '#6f87a6', k: '#3d4d63' } }),
-  },
+
 };
-// 부처님 오신 날 (음력 4월 8일, 양력 날짜)
-const BUDDHA_DAYS = { 2025: '05-05', 2026: '05-24', 2027: '05-13', 2028: '05-02', 2029: '05-20', 2030: '05-09', 2031: '05-28', 2032: '05-16' };
-/** 오늘 날짜에 맞는 모자이크 시즌 */
-export function seasonOf(d = new Date()) {
-  const y = d.getFullYear(), m = d.getMonth() + 1;
-  if (m === 12) return 'xmas';
-  const bd = BUDDHA_DAYS[y];
-  if (bd) {
-    const day = new Date(`${y}-${bd}T00:00:00`);
-    const diff = (day - new Date(y, d.getMonth(), d.getDate())) / 86400000;
-    if (diff >= -1 && diff <= 14) return 'buddha';   // 2주 전부터 다음 날까지
-  }
-  return m <= 2 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'autumn';
-}
 Object.assign(TONES, TONES2);
-/** 고른 프리셋 (없거나 모르는 값이면 첫 번째). 시즌 모자이크의 '자동'은 오늘 날짜로 골라요 */
-export const toneOf = (key, tone) => {
-  const t = TONES[key];
-  if (!t) return null;
-  if (key === 'mosaic' && (!tone || tone === 'auto' || !t[tone])) return t[seasonOf()];
-  return t[tone] || Object.values(t)[0];
-};
+/** 고른 프리셋 (없거나 모르는 값이면 첫 번째) */
+export const toneOf = (key, tone) => { const t = TONES[key]; return t ? (t[tone] || Object.values(t)[0]) : null; };
 
 let applied = [];
 function setVars(vars) {
@@ -301,7 +258,6 @@ export function dressBlog(skin, ctx) {
   else if (skin === 'chart') dressChart(ctx);
   else if (skin === 'probe') dressProbe(ctx);
   else if (skin === 'space') dressSpace(ctx);
-  else if (skin === 'mosaic') dressMosaic(ctx);
 }
 
 // ── 1. 홈페이지: 모눈종이 바탕 위 옛날 브라우저 창 ──
@@ -622,7 +578,7 @@ function dressProbe({ head, body, main, prof, boards, selectBoard, posts }) {
   let lines = full.split(/\s+/).filter(Boolean);
   if (lines.length === 1 && lines[0].length > 6) { const w = lines[0], per = /[가-힣]/.test(w) ? 2 : Math.ceil(w.length / Math.ceil(w.length / 4)); lines = []; for (let i = 0; i < w.length; i += per) lines.push(w.slice(i, i + per)); }
   lines = lines.slice(0, 4);
-  const units = (l) => [...l].reduce((n, c) => n + (/[가-힣ㄱ-ㅎ]/.test(c) ? 1 : /[MW]/i.test(c) ? 0.78 : 0.6), 0);
+  const units = (l) => [...l].reduce((n, c) => n + (/[가-힣ㄱ-ㅎ]/.test(c) ? 1.02 : /[MW]/i.test(c) ? 0.88 : 0.68), 0);
   const wUnits = Math.max(2.4, ...lines.map(units));
   const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
   const last = posts.reduce((m, p) => Math.max(m, p.created || 0), 0);
@@ -650,167 +606,104 @@ function dressProbe({ head, body, main, prof, boards, selectBoard, posts }) {
   body.classList.add('pb-body');
 }
 
-// ── 7. 우주 유영: 움직이는 별밭 + 성운 + 떠다니는 카드 ──
+// ── 7. 우주 유영: 고요한 우주를 천천히 떠다니는 느낌 ──
+// 별은 적고 작게, 반짝임은 거의 없이. 대신 스크롤하면 별들이 깊이에 따라 다르게 흘러가서(시차) 앞으로 떠가는 느낌을 내요.
+// 화면 구석엔 커다란 행성의 가장자리와 먼 은하 하나만 은은하게.
 function spaceSky(root) {
   const cv = h('canvas', { class: 'sp-sky', 'aria-hidden': 'true' });
-  const neb = h('div', { class: 'sp-neb', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'));
-  root.prepend(neb, cv);
+  const deco = h('div', { class: 'sp-deco', 'aria-hidden': 'true' }, h('i', { class: 'sp-galaxy' }), h('i', { class: 'sp-planet' }));
+  root.prepend(deco, cv);
   const ctx = cv.getContext('2d');
-  let W = 0, H = 0, stars = [], shoot = null, mx = 0, my = 0, raf = 0;
   const DPR = Math.min(2, window.devicePixelRatio || 1);
+  let W = 0, H = 0, stars = [], raf = 0, t0 = performance.now();
+  const ink = getComputedStyle(document.documentElement).getPropertyValue('--sp-ink').trim() || '#e8ecff';
   const resize = () => {
     W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    const n = Math.round(W * H / 2600);
-    stars = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, z: Math.random(), tw: Math.random() * 6.28, s: 0.002 + Math.random() * 0.01 }));
+    const n = Math.round(W * H / 6500);   // 적게
+    stars = Array.from({ length: n }, () => {
+      const z = Math.random();             // 0 = 멀리, 1 = 가까이
+      return { x: Math.random() * W, y: Math.random() * H * 3, z, r: 0.25 + z * z * 0.9, a: 0.18 + z * 0.55, ph: Math.random() * 6.28 };
+    });
+    if (reduced()) draw(performance.now());
   };
-  const color = getComputedStyle(document.documentElement).getPropertyValue('--sp-ink').trim() || '#e8ecff';
-  const draw = (t) => {
-    if (!cv.isConnected) { cancelAnimationFrame(raf); removeEventListener('resize', resize); removeEventListener('pointermove', onMove); return; }
+  function draw(now) {
+    if (!cv.isConnected) { cancelAnimationFrame(raf); removeEventListener('resize', resize); return; }
+    const t = (now - t0) / 1000, sy = scrollY;
     ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = ink;
     for (const s of stars) {
-      const depth = 0.3 + s.z * 0.7;
-      const x = (s.x + mx * depth * 18 + t * 0.004 * depth) % W, y = (s.y + my * depth * 18 + t * 0.0015 * depth) % H;
-      const a = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(s.tw + t * s.s)) * depth;
-      ctx.globalAlpha = a; ctx.fillStyle = color;
-      const r = 0.4 + depth * 1.3;
-      ctx.beginPath(); ctx.arc(x < 0 ? x + W : x, y < 0 ? y + H : y, r, 0, 6.283); ctx.fill();
-      if (depth > 0.93) { ctx.globalAlpha = a * 0.5; ctx.fillRect(x - r * 4, y - 0.4, r * 8, 0.8); ctx.fillRect(x - 0.4, y - r * 4, 0.8, r * 8); }
-    }
-    // 가끔 별똥별
-    if (!shoot && Math.random() < 0.003) shoot = { x: Math.random() * W * 0.8, y: Math.random() * H * 0.4, l: 0 };
-    if (shoot) {
-      shoot.l += 14;
-      const g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x + shoot.l, shoot.y + shoot.l * 0.45);
-      g.addColorStop(0, 'transparent'); g.addColorStop(1, color);
-      ctx.globalAlpha = Math.max(0, 1 - shoot.l / 420); ctx.strokeStyle = g; ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(shoot.x + shoot.l, shoot.y + shoot.l * 0.45); ctx.stroke();
-      if (shoot.l > 420) shoot = null;
+      const sp = 0.05 + s.z * 0.35;                         // 가까운 별일수록 빨리 흘러요
+      const y = ((s.y - sy * sp - t * (1.5 + s.z * 3)) % (H * 3) + H * 3) % (H * 3);
+      if (y > H) continue;
+      ctx.globalAlpha = s.a * (0.88 + 0.12 * Math.sin(s.ph + t * 0.4));   // 아주 조금만 숨 쉬듯
+      ctx.beginPath(); ctx.arc(s.x, y, s.r, 0, 6.283); ctx.fill();
     }
     ctx.globalAlpha = 1;
     if (!reduced()) raf = requestAnimationFrame(draw);
-  };
-  const onMove = (e) => { mx = (e.clientX / W - 0.5) * -1; my = (e.clientY / H - 0.5) * -1; };
+  }
   resize();
   addEventListener('resize', resize);
-  addEventListener('pointermove', onMove, { passive: true });
   raf = requestAnimationFrame(draw);
+}
+// 아이디로 정해지는 좌표 (적경·적위)
+function coordsOf(handle) {
+  const R = seeded(handle + 'radec');
+  const ra = `${String(Math.floor(R() * 24)).padStart(2, '0')}h ${String(Math.floor(R() * 60)).padStart(2, '0')}m`;
+  const dec = `${R() < 0.5 ? '−' : '+'}${Math.floor(R() * 89)}° ${String(Math.floor(R() * 60)).padStart(2, '0')}′`;
+  return `RA ${ra} · DEC ${dec}`;
 }
 function dressSpace({ root, head, body, main, prof, boards, selectBoard }) {
   spaceSky(root);
   const name = txt(prof.display) || prof.handle;
   const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-  const R = seeded(prof.handle + 'sp');
-  const spark = Array.from({ length: 7 }, (_, i) => h('i', { class: 'sp-spark', 'aria-hidden': 'true', style: { left: (6 + R() * 88) + '%', top: (8 + R() * 80) + '%', '--s': (0.5 + R() * 1.1).toFixed(2), '--d': (R() * 4).toFixed(2) + 's' } }));
   const hero = h('section', { class: 'sp-hero' },
-    ...spark,
+    h('p', { class: 'sp-coord' }, coordsOf(prof.handle)),
     h('div', { class: 'sp-pin' }, h('span', null, 'you are here'), h('i', { 'aria-hidden': 'true' })),
     h('h1', { class: 'sp-name' }, name),
-    h('p', { class: 'sp-sub' }, `@${prof.handle} · drifting since ${yearOf(prof)}`),
-    h('div', { class: 'sp-orbits' }, boards.slice(0, 5).map((b, i) => h('button', { type: 'button', style: { '--i': i }, onclick: () => { selectBoard(b.id); go(); } }, h('i', { 'aria-hidden': 'true' }), b.name))),
-    h('button', { class: 'sp-dive', type: 'button', onclick: go, 'aria-label': '글 목록으로' }, h('span', null, 'dive in'), h('i', { 'aria-hidden': 'true' }, '↓')));
+    h('p', { class: 'sp-sub' }, `@${prof.handle} · adrift since ${yearOf(prof)}`),
+    boards.length ? h('nav', { class: 'sp-orbits', 'aria-label': '게시판' }, boards.slice(0, 6).map((b) => h('button', { type: 'button', onclick: () => { selectBoard(b.id); go(); } }, b.name))) : null,
+    h('button', { class: 'sp-dive', type: 'button', onclick: go }, 'drift down'));
   head.before(hero);
   body.classList.add('sp-body');
 }
 
-// ── 8. 시즌 모자이크: 계절·기념일마다 바뀌는 흐릿한 픽셀 그림 ──
-// 그림은 칸 지도로 만들어요: 그림마다 '어느 칸에 어떤 색 글자'를 계산 → 색은 tone.pal
-function artMap(kind, R) {
-  const W = 21, H = 18;
-  const g = Array.from({ length: H }, () => Array(W).fill(''));
-  const put = (x, y, c) => { if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = c; };
-  const pick = (s) => s[Math.floor(R() * s.length)];
-  const blob = (cx, cy, rx, ry, cols, rough = 0.18) => {
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
-      if (d < 1 - rough + R() * rough * 2) put(x, y, pick(cols));
-    }
-  };
-  if (kind === 'xmas') {
-    put(10, 0, 'y'); put(9, 1, 'y'); put(10, 1, 'y'); put(11, 1, 'y');
-    for (let r = 0; r < 14; r++) {
-      const half = Math.floor(r * 0.72) + (r % 3 === 0 ? 0 : 1) - (r > 0 && r % 4 === 0 ? 1 : 0);
-      for (let x = 10 - half; x <= 10 + half; x++) put(x, 2 + r, R() < 0.09 ? pick('ry') : pick('aabbccd'));
-    }
-    for (let y = 16; y < 18; y++) for (let x = 9; x <= 11; x++) put(x, y, 't');
-  } else if (kind === 'lotus') {
-    const lan = [[4, 4], [10, 6], [16, 4]];
-    lan.forEach(([cx, cy]) => {
-      for (let y = 0; y < cy - 2; y++) put(cx, y, 'k');
-      for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 2; x <= cx + 2; x++) {
-        const d = (x - cx) ** 2 + (y - cy) ** 2;
-        if (d <= 5) put(x, y, d <= 1 ? 'd' : d <= 2 ? 'c' : R() < 0.5 ? 'a' : 'b');
-      }
-      put(cx, cy + 3, 'y'); put(cx, cy + 4, 'y');
-    });
-    // 아래쪽 연꽃
-    const fl = [[10, 13, 3], [7, 15, 2], [13, 15, 2], [10, 16, 2]];
-    fl.forEach(([cx, cy, r]) => { for (let y = cy - r; y <= cy; y++) for (let x = cx - r; x <= cx + r; x++) if (Math.abs(x - cx) <= r - (cy - y) * 0.6) put(x, y, pick('aabc')); });
-    for (let x = 3; x <= 17; x++) put(x, 17, R() < 0.8 ? 'g' : '');
-  } else if (kind === 'blossom' || kind === 'maple') {
-    const cols = kind === 'blossom' ? 'aabbccd' : 'aabbccdr';
-    blob(10, 6, 8.5, 5.2, cols);
-    for (let y = 10; y < 17; y++) put(10, y, 't');
-    put(11, 12, 't'); put(9, 14, 't'); put(12, 11, 't'); put(8, 13, 't');
-    for (let i = 0; i < 12; i++) put(Math.floor(R() * W), 12 + Math.floor(R() * 6), pick(cols));
-    if (kind === 'blossom') for (let x = 4; x <= 16; x++) if (R() < 0.7) put(x, 17, 'g');
-  } else if (kind === 'sea') {
-    blob(15, 3.2, 2.6, 2.6, 'y', 0.05);
-    for (let y = 8; y < 16; y++) for (let x = 0; x < W; x++) {
-      const wave = Math.sin((x + y * 1.7) * 0.9) > 0.2;
-      put(x, y, y < 10 ? (wave ? 'd' : 'c') : y < 13 ? (wave ? 'c' : 'a') : (wave ? 'a' : 'b'));
-    }
-    for (let y = 16; y < 18; y++) for (let x = 0; x < W; x++) put(x, y, R() < 0.12 ? 'w' : 's');
-  } else {   // snow: 눈 덮인 산 + 내리는 눈
-    const peak = (cx, top, w) => { for (let y = top; y < 15; y++) { const half = Math.floor((y - top) * w); for (let x = cx - half; x <= cx + half; x++) put(x, y, y - top < 2 + (x % 2) ? 'd' : pick('mmk')); } };
-    peak(7, 4, 0.9); peak(14, 6, 1.0);
-    for (let y = 15; y < 18; y++) for (let x = 0; x < W; x++) put(x, y, pick('abcd'));
-    for (let i = 0; i < 16; i++) { const x = Math.floor(R() * W), y = Math.floor(R() * 12); if (!g[y][x]) put(x, y, 'w'); }
-  }
-  return { W, H, g };
-}
-function mosaicArt(tone, seed) {
-  const R = seeded(seed + tone.art);
-  const { W, H, g } = artMap(tone.art, R);
-  const pal = { w: '#ffffff', ...tone.pal };
-  const cells = [];
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const ch = g[y][x];
-    if (ch && pal[ch]) {
-      // 밝게(--l) 또는 어둡게(--k) 살짝 흔들어요 (color-mix 는 음수 % 를 못 써서 둘로 나눠요)
-      const v = R() - 0.5, l = v > 0 ? Math.round(v * 44) : 0, k = v < 0 ? Math.round(-v * 30) : 0;
-      cells.push(h('i', { class: 'on', style: { '--c': pal[ch], '--l': l + '%', '--k': k + '%', '--o': (0.8 + R() * 0.2).toFixed(2) } }));
-      continue;
-    }
-    // 그림 가장자리에 흐릿한 칸을 조금 (손으로 붙인 모자이크 느낌)
-    const near = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].map(([dx, dy]) => g[y + dy]?.[x + dx]).find((c) => c && pal[c] && c !== 'w');
-    cells.push(near && R() < 0.45 ? h('i', { class: 'halo', style: { '--c': pal[near], '--o': (0.12 + R() * 0.2).toFixed(2) } }) : h('i'));
-  }
-  return h('div', { class: 'ms-grid', style: { '--cols': W } }, cells);
-}
-const SEASON_COPY = {
-  xmas: ['rockin\' around', '반짝이는 연말 프롬프트를 모았어요'], lotus: ['lotus lanterns', '연등처럼 환하게 밝혀 둔 서랍'], blossom: ['in full bloom', '봄바람 따라 꺼내 보는 서랍'],
-  sea: ['summer tide', '파도처럼 밀려온 프롬프트'], maple: ['falling leaves', '천천히 물드는 가을 서랍'], snow: ['first snow', '눈 내리는 날의 조용한 서랍'],
-};
-function dressMosaic({ head, body, main, prof, theme }) {
-  const tone = toneOf('mosaic', theme.skinTone);
-  const name = txt(prof.display) || prof.handle;
-  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-  const [sub, line] = SEASON_COPY[tone.art] || SEASON_COPY.xmas;
-  // 기념일 장식: 크리스마스엔 산타 모자, 부처님 오신 날엔 연등 줄
-  const hat = tone.art === 'xmas' ? h('span', { class: 'ms-hat', 'aria-hidden': 'true', html:
-    '<svg viewBox="0 0 64 48"><path d="M6 40 C14 14 30 4 48 10 C56 13 58 22 60 30 L52 28 C46 22 36 20 30 26 C22 32 18 38 18 42 Z" fill="#d63a33"/><rect x="2" y="36" width="34" height="10" rx="5" fill="#fff"/><circle cx="60" cy="31" r="5" fill="#fff"/></svg>' }) : null;
-  const lanterns = tone.art === 'lotus' ? h('div', { class: 'ms-lanterns', 'aria-hidden': 'true' }, ...['#f28aa5', '#f6c64b', '#e2557a', '#ffc2d0', '#f28aa5'].map((c, i) => h('i', { style: { '--c': c, '--i': i } }))) : null;
-  const hero = h('section', { class: 'ms-hero ms-' + tone.art },
-    h('p', { class: 'ms-brand' }, (txt(prof.display) || prof.handle).toUpperCase()),
-    lanterns,
-    mosaicArt(tone, prof.handle),
-    h('h1', { class: 'ms-title' }, hat, h('span', null, sub)),
-    h('p', { class: 'ms-line' }, `${name} — ${line}`),
-    h('button', { class: 'ms-go', type: 'button', onclick: go }, 'OPEN DRAWER'));
-  head.before(hero);
-  body.classList.add('ms-body');
+// ── 프롬 모음 5: 행성 (글 = 떠 있는 행성) ──
+// 글 사진을 동그랗게 잘라 빛과 그림자를 입혀 행성처럼. 크기와 높이를 조금씩 다르게 흩어 놓아요.
+function planetsView(rows, ctx) {
+  const wrap = h('div', { class: 'pl-wrap' });
+  rows.forEach((p, i) => {
+    const R = seeded(p.id + 'pl');
+    const size = Math.round(96 + R() * 74);
+    const th = safeThumb(p.thumb);
+    const hide = (p.spoiler && p.vis === 'public') || p.thumbSp;
+    const a = h('a', { class: 'pl-item', href: '#/p/' + p.id, style: { '--sz': size + 'px', '--dy': Math.round((R() - 0.5) * 60) + 'px', '--tilt': Math.round((R() - 0.5) * 40) + 'deg' } },
+      h('span', { class: 'pl-ball' + (hide ? ' sp' : '') + (th ? '' : ' none'), style: th ? { backgroundImage: `url("${th}")` } : {} },
+        R() < 0.3 ? h('i', { class: 'pl-ring', 'aria-hidden': 'true' }) : null),
+      h('span', { class: 'pl-name' }, txt(p.title) || '제목 없음'),
+      h('small', { class: 'pl-meta' }, [ctx.boardName(ctx.boardOf(p)), fmtDate(p.created)].filter(Boolean).join(' · ')));
+    if (p.vis === 'locked') a.classList.add('locked');
+    wrap.append(a);
+  });
+  return wrap;
 }
 
+// ── 프롬 모음 6: 관측 로그 (관측 기록 스킨과 짝) ──
+function logView(rows, ctx) {
+  const head = h('div', { class: 'lg-row lg-head', 'aria-hidden': 'true' },
+    h('span', null, 'NO.'), h('span', null, 'SPECIMEN'), h('span', null, 'DESIGNATION'), h('span', null, 'CLASS'), h('span', null, 'SECTOR'), h('span', null, 'LOGGED'));
+  const R = seeded('log');
+  return h('div', { class: 'lg-wrap' }, head, rows.map((p, i) => {
+    const th = safeThumb(p.thumb);
+    const hide = (p.spoiler && p.vis === 'public') || p.thumbSp;
+    return h('a', { class: 'lg-row', href: '#/p/' + p.id },
+      h('span', { class: 'lg-no' }, pad(i + 1, 3)),
+      h('span', { class: 'lg-img' + (hide ? ' sp' : '') }, th ? h('img', { src: th, alt: '', loading: 'lazy' }) : h('i', null, '—')),
+      h('span', { class: 'lg-title' }, txt(p.title) || '제목 없음', p.vis === 'locked' ? h('em', null, 'SEALED') : null),
+      h('span', { class: 'lg-kind' }, kindLabel(kindOf(p))),
+      h('span', { class: 'lg-board' }, ctx.boardName(ctx.boardOf(p)) || '—'),
+      h('span', { class: 'lg-date' }, fmtDate(p.created)));
+  }));
+}
 // ═════════════════════ 프롬 모음 ═════════════════════
 /**
  * 글 목록을 다른 모양으로 보여줘요.
@@ -821,6 +714,8 @@ export function collectionView(shelf, rows, ctx) {
   if (shelf === 'drawer') return drawerView(rows, ctx);
   if (shelf === 'folders') return foldersView(rows, ctx);
   if (shelf === 'stars') return starsView(rows, ctx);
+  if (shelf === 'planets') return planetsView(rows, ctx);
+  if (shelf === 'log') return logView(rows, ctx);
   return null;
 }
 
@@ -1023,6 +918,7 @@ export function promptView(pview, content, ctx) {
   if (pview === 'float') return floatView(content, ctx);
   if (pview === 'pass') return cardView(content, ctx);
   if (pview === 'card') return idCardView(content, ctx);
+  if (pview === 'signal') return signalView(content, ctx);
   return null;
 }
 
@@ -1294,4 +1190,47 @@ function idCardView(content, ctx) {
   });
   return h('div', { class: 'idv-wrap' }, card, h('div', { class: 'idv-slips' }, slips),
     h('button', { class: 'fl-plain idc-plain', type: 'button', onclick: ctx.onPlain }, '기본 보기'));
+}
+
+// ── 프롬창 4: 교신 (우주 유영과 짝) ──
+// 예시 사진은 행성처럼 동그랗게, 프롬은 '수신된 교신'처럼 한 줄씩 나타나요. 누르면 복사.
+function signalView(content, ctx) {
+  const { post } = ctx;
+  const kind = kindOf(post);
+  const files = promptFiles(content, kind);
+  const I = imgSet(content);
+  let at = 0;
+  const ball = h('button', { class: 'sg-ball', type: 'button', 'aria-label': '사진 크게 보기',
+    onclick: () => { if (ball.classList.contains('sp')) { ball.classList.remove('sp'); I.revealed.add(at); return; } if (I.ids.length) openLightbox(I.ids, at, { spoilers: I.spoilers, revealed: I.revealed }); } });
+  const show = (i) => {
+    at = i;
+    ball.classList.toggle('sp', I.spoilers.has(i) && !I.revealed.has(i));
+    ball.classList.toggle('none', !I.ids.length);
+    if (I.ids[i]) loadImage(I.ids[i]).then((u) => { if (u && at === i) ball.style.backgroundImage = `url("${u}")`; });
+    moons.querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i));
+  };
+  const moons = h('div', { class: 'sg-moons' }, I.ids.length > 1 ? I.ids.slice(0, 8).map((_, i) => h('button', { type: 'button', 'aria-label': `${i + 1}번째 사진`, onclick: () => show(i) })) : []);
+  const logs = files.map((f, i) => {
+    const pre = h('pre', { class: 'sg-text' + (f.spoiler ? ' sp' : '') }, f.text);
+    const row = h('section', { class: 'sg-log' + (f.neg ? ' neg' : ''), style: { '--i': i } },
+      h('div', { class: 'sg-head' }, h('span', null, `TRANSMISSION ${pad(i + 1, 2)}`), h('b', null, f.name),
+        h('div', { class: 'sg-tools' },
+          f.base ? h('button', { type: 'button', onclick: () => copyText([f.base, f.text].filter((x) => x.trim()).join(', '), '기본 + 변형을 함께 복사했어요') }, '+ 기본과 함께') : null,
+          h('button', { type: 'button', onclick: () => copyText(f.text, `${f.name} 복사했어요`) }, 'copy'))),
+      pre);
+    pre.addEventListener('click', () => { if (pre.classList.contains('sp')) { pre.classList.remove('sp'); return; } copyText(f.text, `${f.name} 복사했어요`); });
+    return row;
+  });
+  const wrap = h('div', { class: 'sg-wrap' },
+    h('div', { class: 'sg-top' },
+      h('div', { class: 'sg-planet' }, ball, moons),
+      h('div', { class: 'sg-info' },
+        h('p', { class: 'sg-coord' }, coordsOf(ctx.handle + post.id)),
+        h('h2', { class: 'sg-title' }, txt(post.title) || '제목 없음'),
+        h('p', { class: 'sg-sub' }, [kindLabel(kind), ctx.boardName, fmtDate(post.created)].filter(Boolean).join(' · ')),
+        h('p', { class: 'sg-hint' }, `${files.length} transmissions received — 글자를 누르면 복사돼요`))),
+    h('div', { class: 'sg-logs' }, logs),
+    h('button', { class: 'fl-plain idc-plain', type: 'button', onclick: ctx.onPlain }, '기본 보기'));
+  show(0);
+  return wrap;
 }

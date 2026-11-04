@@ -1,5 +1,5 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, isBeta, isBetaSkin, isBetaShelf, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
+import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, isBeta, isBetaSkin, isBetaShelf, isBetaPview, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
 import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette, sanitizeBgm, MAX_BGM } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
@@ -92,9 +92,9 @@ function skinTab() {
   // 테스트 중인 페이지 스킨은 관리자에게만 보여요 (옆에 '관리자' 표시)
   const skinRow = (label, map, key, note = {}) => h('div', { class: 'skin-set' },
     h('span', { class: 'lbl' }, label),
-    h('div', { class: 'opt-grid cols-4' }, Object.entries(map).filter(([k]) => !((key === 'skin' && isBetaSkin(k)) || (key === 'shelf' && isBetaShelf(k))) || isBeta()).map(([k, name]) =>
+    h('div', { class: 'opt-grid cols-4' }, Object.entries(map).filter(([k]) => !((key === 'skin' && isBetaSkin(k)) || (key === 'shelf' && isBetaShelf(k)) || (key === 'pview' && isBetaPview(k))) || isBeta()).map(([k, name]) =>
       h('button', { class: 'opt center' + (T[key] === k ? ' on' : ''), onclick: () => set({ [key]: k }) },
-        h('small', null, name, (key === 'skin' && isBetaSkin(k)) || (key === 'shelf' && isBetaShelf(k)) ? h('i', { class: 'beta-dot' }, '관리자') : null), note[k] ? h('em', { class: 'skin-note' }, note[k]) : null))));
+        h('small', null, name, (key === 'skin' && isBetaSkin(k)) || (key === 'shelf' && isBetaShelf(k)) || (key === 'pview' && isBetaPview(k)) ? h('i', { class: 'beta-dot' }, '관리자') : null), note[k] ? h('em', { class: 'skin-note' }, note[k]) : null))));
   // 픽셀 아케이드: 타이틀 화면 메뉴에 보일 게시판 (최대 4개, 고른 순서대로)
   const gameBoardRow = () => {
     if (T.skin !== 'game' || !T.boards.length) return null;
@@ -150,9 +150,9 @@ function skinTab() {
       h('div', { class: 'row between skin-pv-row' },
         h('p', { class: 'desc' }, '블로그 전체 모양 · 글 목록 · 글 보기 화면을 따로 골라 꾸며요. 저장하지 않아도 미리보기로 확인할 수 있어요.'),
         h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) }) }, icon('eye', 16), '내 블로그 미리보기')),
-      skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START', chart: '화면 전체가 한 장의 성도', probe: '아날로그·디지털 관측 기록', space: '진짜 우주를 떠다니는 느낌', mosaic: '계절·기념일마다 바뀌는 모자이크' }),
-      skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬', stars: '글 = 별, 게시판 = 별자리' }),
-      skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인' }),
+      skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START', chart: '화면 전체가 한 장의 성도', probe: '아날로그·디지털 관측 기록', space: '고요한 우주를 천천히 떠다니는 느낌' }),
+      skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬', stars: '글 = 별, 게시판 = 별자리', planets: '글 = 떠 있는 행성', log: '흑백 관측 데이터 표' }),
+      skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인', signal: '행성 사진 + 수신된 교신' }),
       toneRow(),
       gameBoardRow()),
     h('section', { class: 'panel' }, h('h3', { class: 'panel-title' }, '스킨 글꼴'), fontRow()),

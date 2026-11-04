@@ -1029,6 +1029,8 @@ a.board-badge:hover { border-color: var(--accent); }
   .blog-body.has-side { display: flex; flex-direction: column; }
   .blog-side { display: contents; }
   .blog-side > .side-sec:not(.nb-zone) { order: 1; }
+  /* 옆으로 미는 게시판·태그 줄이 화면보다 넓어지지 않게 (가로로 밀려나던 문제) */
+  .blog-body.has-side > *, .blog-side > .side-sec { min-width: 0; max-width: 100%; }
   .blog-main { order: 2; }
   .blog-side > .nb-zone { order: 3; margin-top: 8px; }
   .skin-home .blog-body.has-side { display: grid; }

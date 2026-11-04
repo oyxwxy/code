@@ -32,9 +32,11 @@ export const BANNER_SLIDE_FOR_ALL = true;
 // 스킨(페이지 스킨 · 프롬 모음 · 프롬창): true 면 전체 공개. false 면 관리자·BETA_HANDLES 에게만 보이고 고를 수 있어요.
 export const SKINS_FOR_ALL = true;
 // 아직 테스트 중인 페이지 스킨: 여기 적힌 스킨은 관리자·BETA_HANDLES 만 고르고 볼 수 있어요 (다른 사람에게는 스킨 없이 보여요). 공개하려면 목록에서 빼요.
-export const BETA_SKINS = ['chart', 'probe', 'space', 'mosaic'];
+export const BETA_SKINS = ['chart', 'probe', 'space'];
 // 아직 테스트 중인 프롬 모음(글 목록) 스킨 — 관리자·BETA_HANDLES 만
-export const BETA_SHELVES = ['stars'];
+export const BETA_SHELVES = ['stars', 'planets', 'log'];
+// 아직 테스트 중인 프롬창(글 보기) 스킨 — 관리자·BETA_HANDLES 만
+export const BETA_PVIEWS = ['signal'];
 
 // 이미지 호스팅(ImgBB) API 키. 브라우저 코드에 들어가므로 공개된다는 점을 알고 쓰세요
 export const IMGBB_KEY = 'cd95c1a1e9387659cd79b2b33902dce1';
