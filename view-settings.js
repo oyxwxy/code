@@ -112,7 +112,7 @@ function skinTab() {
       h('p', { class: 'desc' }, (T.showAll ? "'전체'는 늘 맨 위에 있어요. " : "('전체'를 숨겨 둬서 '전체'는 빠져요) ")
         + '고른 게시판이 고른 순서대로 타이틀 메뉴에 보여요. 하나도 안 고르면 앞에서부터 4개가 보여요. 왼쪽 게시판 목록은 그대로예요. 다른 사람에게는 글이 있는 게시판만 보여요.'));
   };
-  // 우주 유영: 화면에 떠다닐 글 사진 · 게시판을 골라요 (안 고르면 최근 글 4개 · 앞쪽 게시판 4개)
+  // 우주 유영: 머리말 지도에 이름 붙여 표시할 글(위성) · 게시판(행성)을 골라요
   let myPosts = null;
   const spaceRow = () => {
     if (T.skin !== 'space') return null;
@@ -127,7 +127,7 @@ function skinTab() {
         const at = F.posts.indexOf(p.id);
         return h('button', { class: 'zf-pick' + (at >= 0 ? ' on' : ''), type: 'button', title: p.title || '', onclick: () => {
           if (at >= 0) setF({ posts: F.posts.filter((x) => x !== p.id) });
-          else if (F.posts.length >= 6) toast('글 사진은 6개까지 고를 수 있어요');
+          else if (F.posts.length >= 6) toast('글은 6개까지 고를 수 있어요');
           else setF({ posts: [...F.posts, p.id] });
         } }, h('img', { src: p.thumb, alt: '', loading: 'lazy' }), at >= 0 ? h('b', null, at + 1) : null);
       }));
@@ -136,9 +136,9 @@ function skinTab() {
     paintPosts();
     const bsel = F.boards.filter((id) => T.boards.some((b) => b.id === id));
     return h('div', { class: 'skin-set' },
-      h('span', { class: 'lbl' }, `떠다닐 글 사진 · ${F.posts.length}/6`),
+      h('span', { class: 'lbl' }, `지도에 위성으로 표시할 글 · ${F.posts.length}/6`),
       grid,
-      T.boards.length ? h('span', { class: 'lbl', style: { marginTop: '12px' } }, `떠다닐 게시판 패치 · ${bsel.length}/4`) : null,
+      T.boards.length ? h('span', { class: 'lbl', style: { marginTop: '12px' } }, `지도에 행성으로 표시할 게시판 · ${bsel.length}/4`) : null,
       T.boards.length ? h('div', { class: 'opt-grid cols-4' }, T.boards.map((b) => {
         const at = bsel.indexOf(b.id);
         return h('button', { class: 'opt center' + (at >= 0 ? ' on' : ''), type: 'button', onclick: () => {
@@ -147,8 +147,7 @@ function skinTab() {
           else setF({ boards: [...bsel, b.id] });
         } }, at >= 0 ? h('em', { class: 'skin-note' }, `${at + 1}번째`) : null, h('small', null, b.name));
       })) : null,
-      h('label', { class: 'switch', style: { marginTop: '12px' } }, h('input', { type: 'checkbox', checked: F.sat, onchange: (e) => setF({ sat: e.target.checked }) }), h('span', { class: 'trk' }), h('span', { class: 'sw-txt' }, '인공위성도 같이 떠다니게')),
-      h('p', { class: 'desc' }, '고른 순서대로 떠다녀요. 하나도 안 고르면 사진이 있는 최근 글 4개와 앞쪽 게시판 4개가 떠다녀요.'));
+      h('p', { class: 'desc' }, '고른 순서대로 이름이 붙은 천체로 표시돼요. 글은 고른 것만 보이고, 게시판은 안 고르면 앞쪽 4개가 보여요.'));
   };
   // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
   const toneRow = () => {
