@@ -337,7 +337,7 @@ export async function blog({ params, query, root }) {
     if (shelf && !picking) {
       // 레코드 진열은 한 줄로 넘겨 보는 모양이라 '더 보기' 없이 전부 보여줘요
       const all = shelf === 'records';
-      const v = collectionView(shelf, all ? rows : rows.slice(0, shown), { boardName, boardOf, display: txt(prof.display) || prof.handle });
+      const v = collectionView(shelf, all ? rows : rows.slice(0, shown), { boardName, boardOf, boardFilter, display: txt(prof.display) || prof.handle });
       if (v) {
         list.append(v);
         if (!all && rows.length > shown) more.append(h('button', { class: 'btn', onclick: () => { shown += PAGE; paint(); } }, `더 보기 (${rows.length - shown})`));

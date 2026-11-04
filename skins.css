@@ -789,11 +789,11 @@ html[data-skin='chart'] .topbar { --text: var(--ch-ink); --muted: color-mix(in s
 .ch-sheet { position: relative; isolation: isolate; overflow-x: clip; padding: clamp(18px, 3vw, 36px); background: var(--ch-plate); color: var(--ch-line); border: 2px solid var(--ch-ink); outline: 1px solid var(--ch-ink); outline-offset: 5px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .06), inset 0 0 140px rgb(0 0 0 / .28); }
 .ch-sky { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 .ch-sky svg { display: block; }
-.ch-sky .g-arc circle, .ch-sky .g-hr line { stroke: var(--ch-line); stroke-width: 1; opacity: .6; }
-.ch-sky .g-milky circle { fill: var(--ch-line); opacity: .62; }
+.ch-sky .g-arc circle, .ch-sky .g-hr line { stroke: var(--ch-line); stroke-width: 1; opacity: .3; }
+.ch-sky .g-milky circle { fill: var(--ch-line); opacity: .38; }
 .ch-sky .g-star polygon { fill: var(--ch-line); }
-.ch-sky text { fill: var(--ch-line); font: italic 15px Georgia, serif; opacity: .85; }
-.ch-sky .g-note text { font-size: 16px; opacity: .55; }
+.ch-sky text { fill: var(--ch-line); font: italic 15px Georgia, serif; opacity: .55; }
+.ch-sky .g-note text { font-size: 15px; opacity: .4; }
 /* 머리말: 이름은 별자리 이름처럼, 프로필 사진은 행성처럼 */
 .skin-chart .blog-head { margin-bottom: 28px; }
 .skin-chart .blog-head .head-in { padding: 10px 0 0; }
@@ -874,7 +874,7 @@ html[data-skin='chart'] .st-con { background: transparent; }
 html[data-skin='probe'] body {
   background-color: var(--pb-bg);
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
     linear-gradient(var(--pb-grid) 1px, transparent 1px), linear-gradient(90deg, var(--pb-grid) 1px, transparent 1px);
   background-size: 160px 160px, 26px 26px, 26px 26px;
 }
@@ -932,47 +932,87 @@ html[data-skin='probe'][data-mode='dark'] .card-thumb img { mix-blend-mode: scre
   .pb-plus:nth-of-type(n+3) { display: none; }
 }
 
-/* ───────── 7. 우주 유영: 고요하게 ───────── */
-html[data-skin='space'] body { background: radial-gradient(ellipse 120% 80% at 50% 0%, color-mix(in srgb, var(--sp-n1) 22%, var(--sp-bg)), var(--sp-bg) 60%) fixed; }
-.sp-sky { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
-.sp-deco { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; }
-/* 먼 은하: 기울어진 흐릿한 타원 하나 */
-.sp-galaxy { position: absolute; left: 8vw; top: 14vh; width: 26vmax; height: 7vmax; border-radius: 50%; transform: rotate(-18deg);
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--sp-ink) 55%, transparent) 0 3%, color-mix(in srgb, var(--sp-n2) 70%, transparent) 18%, transparent 68%); filter: blur(10px); opacity: .45; }
-/* 커다란 행성의 가장자리: 오른쪽 아래, 빛 받는 쪽만 은은하게 */
-.sp-planet { position: absolute; right: -38vmax; bottom: -46vmax; width: 80vmax; height: 80vmax; border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--sp-n3) 60%, var(--sp-bg)), var(--sp-bg) 62%);
-  box-shadow: inset 18px 14px 40px -12px color-mix(in srgb, var(--sp-acc) 55%, transparent), 0 0 80px -10px color-mix(in srgb, var(--sp-acc) 22%, transparent); opacity: .9; }
-.skin-space { position: relative; z-index: 0; }
-.sp-hero { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: clamp(360px, 58vh, 560px); margin: -8px 0 28px; text-align: center; color: var(--sp-ink); }
-.sp-coord { margin: 0 0 30px; font: 11px/1 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .22em; color: var(--muted); }
-.sp-pin { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 14px; font: italic 13px Georgia, serif; color: color-mix(in srgb, var(--sp-ink) 80%, transparent); }
-.sp-pin i { width: 13px; height: 13px; background: #d9443f; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: inset 0 0 0 4px #d9443f, inset 0 0 0 7px #fff; }
-.sp-name { margin: 0; max-width: 92%; font: 250 clamp(38px, 6.4vw, 78px)/1.08 var(--sk-title); letter-spacing: .08em; color: var(--sp-ink); overflow-wrap: anywhere; }
-.sp-sub { margin: 14px 0 0; font-size: 12.5px; letter-spacing: .18em; color: var(--muted); }
-.sp-orbits { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; margin-top: 34px; }
-.sp-orbits button { padding: 4px 0; background: none; border: 0; border-bottom: 1px solid transparent; color: color-mix(in srgb, var(--sp-ink) 75%, transparent); font-size: 13.5px; letter-spacing: .06em; cursor: pointer; transition: color .2s, border-color .2s; }
-.sp-orbits button:hover, .sp-orbits button:focus-visible { color: var(--sp-ink); border-bottom-color: var(--sp-acc); outline: none; }
-.sp-dive { margin-top: 40px; padding: 6px 2px; background: none; border: 0; color: var(--muted); font: 11px 'JetBrains Mono', monospace; letter-spacing: .3em; cursor: pointer; }
-.sp-dive::after { content: ''; display: block; width: 1px; height: 34px; margin: 10px auto 0; background: linear-gradient(var(--muted), transparent); }
+/* ───────── 7. 우주 유영: 무중력 ───────── */
+/* 배경은 거들 뿐: 아주 적은 별 두 겹이 서로 다른 속도로 흐르고, 한쪽에 희미한 빛 하나 */
+html[data-skin='space'] body { background: var(--sp-bg); }
+.zg-space { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--sp-n1) 34%, var(--sp-bg)), var(--sp-bg) 64%); }
+.zg-space i { position: absolute; inset: -50%; }
+.zg-far { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520'%3E%3Ccircle cx='137' cy='64' r='0.46' fill='white' fill-opacity='0.38'/%3E%3Ccircle cx='460' cy='483' r='0.64' fill='white' fill-opacity='0.48'/%3E%3Ccircle cx='96' cy='499' r='0.36' fill='white' fill-opacity='0.50'/%3E%3Ccircle cx='443' cy='2' r='0.66' fill='white' fill-opacity='0.31'/%3E%3Ccircle cx='234' cy='104' r='0.76' fill='white' fill-opacity='0.23'/%3E%3Ccircle cx='26' cy='9' r='0.77' fill='white' fill-opacity='0.35'/%3E%3Ccircle cx='221' cy='432' r='0.68' fill='white' fill-opacity='0.39'/%3E%3Ccircle cx='448' cy='507' r='0.60' fill='white' fill-opacity='0.33'/%3E%3Ccircle cx='224' cy='470' r='0.78' fill='white' fill-opacity='0.53'/%3E%3Ccircle cx='426' cy='102' r='0.43' fill='white' fill-opacity='0.55'/%3E%3Ccircle cx='303' cy='123' r='0.68' fill='white' fill-opacity='0.52'/%3E%3Ccircle cx='512' cy='432' r='0.58' fill='white' fill-opacity='0.52'/%3E%3Ccircle cx='194' cy='310' r='0.48' fill='white' fill-opacity='0.54'/%3E%3Ccircle cx='511' cy='517' r='0.53' fill='white' fill-opacity='0.50'/%3E%3Ccircle cx='491' cy='248' r='0.68' fill='white' fill-opacity='0.35'/%3E%3Ccircle cx='177' cy='375' r='0.60' fill='white' fill-opacity='0.45'/%3E%3Ccircle cx='383' cy='88' r='0.55' fill='white' fill-opacity='0.39'/%3E%3Ccircle cx='167' cy='402' r='0.52' fill='white' fill-opacity='0.46'/%3E%3Ccircle cx='480' cy='44' r='0.49' fill='white' fill-opacity='0.50'/%3E%3Ccircle cx='403' cy='174' r='0.43' fill='white' fill-opacity='0.29'/%3E%3Ccircle cx='12' cy='204' r='0.59' fill='white' fill-opacity='0.50'/%3E%3Ccircle cx='237' cy='414' r='0.58' fill='white' fill-opacity='0.53'/%3E%3Ccircle cx='361' cy='470' r='0.76' fill='white' fill-opacity='0.44'/%3E%3Ccircle cx='5' cy='392' r='0.70' fill='white' fill-opacity='0.49'/%3E%3Ccircle cx='132' cy='210' r='0.54' fill='white' fill-opacity='0.24'/%3E%3Ccircle cx='373' cy='204' r='0.77' fill='white' fill-opacity='0.36'/%3E%3C/svg%3E") 0 0 / 520px 520px; opacity: .55; animation: zg-pan 260s linear infinite; }
+.zg-near { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='760' height='760'%3E%3Ccircle cx='57' cy='93' r='0.42' fill='white' fill-opacity='0.72'/%3E%3Ccircle cx='753' cy='685' r='1.03' fill='white' fill-opacity='0.44'/%3E%3Ccircle cx='217' cy='621' r='0.38' fill='white' fill-opacity='0.65'/%3E%3Ccircle cx='441' cy='653' r='0.66' fill='white' fill-opacity='0.67'/%3E%3Ccircle cx='521' cy='380' r='0.79' fill='white' fill-opacity='0.53'/%3E%3Ccircle cx='274' cy='36' r='1.05' fill='white' fill-opacity='0.49'/%3E%3Ccircle cx='326' cy='389' r='0.69' fill='white' fill-opacity='0.74'/%3E%3Ccircle cx='168' cy='573' r='0.49' fill='white' fill-opacity='0.43'/%3E%3Ccircle cx='180' cy='332' r='0.49' fill='white' fill-opacity='0.56'/%3E%3C/svg%3E") 0 0 / 760px 760px; opacity: .7; animation: zg-pan 150s linear infinite reverse; }
+.zg-glow { inset: auto -20vmax -30vmax auto !important; width: 70vmax; height: 70vmax; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--sp-n2) 40%, transparent), transparent 62%); filter: blur(30px); opacity: .85; }
+@keyframes zg-pan { to { transform: translate(260px, 120px); } }
+
+/* 무대: 떠다니는 것들의 층. --z(깊이)에 따라 마우스·스크롤에 다르게 비켜나요 */
+.zg-hero { --mx: 0; --my: 0; --sc: 0; position: relative; height: clamp(460px, 74vh, 720px); margin: -8px 0 30px; color: var(--sp-ink); perspective: 900px; }
+.zg-layer { translate: calc(var(--mx) * var(--z, .5) * -46px) calc(var(--my) * var(--z, .5) * -34px + var(--sc) * var(--z, .5) * -140px); }
+@keyframes zg-drift {
+  0%   { transform: translate(0, 0) rotate(var(--r0, 0deg)); }
+  25%  { transform: translate(var(--dx), calc(var(--dy) * -.6)) rotate(calc(var(--r0, 0deg) + var(--dr))); }
+  50%  { transform: translate(calc(var(--dx) * -.4), var(--dy)) rotate(calc(var(--r0, 0deg) - var(--dr) * .5)); }
+  75%  { transform: translate(calc(var(--dx) * -.9), calc(var(--dy) * -.3)) rotate(calc(var(--r0, 0deg) + var(--dr) * .7)); }
+  100% { transform: translate(0, 0) rotate(var(--r0, 0deg)); }
+}
+/* 이름: 글자마다 따로 */
+.zg-copy { position: absolute; left: 50%; top: 44%; z-index: 3; width: min(92%, 900px); transform: translate(-50%, -50%); text-align: center; }
+.zg-kick { margin: 0 0 14px; font-size: 11.5px; letter-spacing: .32em; text-transform: lowercase; color: color-mix(in srgb, var(--sp-ink) 55%, transparent); }
+.zg-name { margin: 0; font: 300 clamp(40px, 7.6vw, 96px)/1.05 var(--sk-title); letter-spacing: .04em; overflow-wrap: anywhere; text-shadow: 0 2px 24px var(--sp-bg), 0 0 2px var(--sp-bg); }
+.zg-ch { display: inline-block; white-space: pre; animation: zg-drift var(--t) ease-in-out infinite; animation-delay: var(--d); }
+.zg-sub { margin: 14px 0 0; font-size: 13px; letter-spacing: .18em; color: color-mix(in srgb, var(--sp-ink) 55%, transparent); }
+/* 헬멧(프로필 사진) + 생명줄: 천천히 진자처럼 */
+.zg-astro { position: absolute; left: 4%; top: 6%; z-index: 4; width: min(320px, 34vw); height: 190px; transform-origin: 0 0; animation: zg-swing 22s ease-in-out infinite; }
+@keyframes zg-swing { 0%, 100% { rotate: -3deg; } 50% { rotate: 5deg; } }
+.zg-tether { position: absolute; inset: 0 70px 40px 0; }
+.zg-tether svg { width: 100%; height: 100%; overflow: visible; }
+.zg-tether path { stroke: color-mix(in srgb, var(--sp-ink) 45%, transparent); stroke-width: 1.4; stroke-dasharray: 2 5; stroke-linecap: round; }
+.zg-helmet { position: absolute; right: 0; bottom: 0; width: 92px; height: 92px; border-radius: 50%; padding: 7px; background: radial-gradient(circle at 30% 25%, #ffffff, #c9ced8 45%, #8a91a0 100%); box-shadow: 0 18px 36px -14px rgb(0 0 0 / .8), inset 0 -6px 12px rgb(0 0 0 / .25); animation: zg-drift 19s ease-in-out infinite; --dx: 6px; --dy: 8px; --dr: 14deg; }
+.zg-visor { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: #0c1020 center / cover no-repeat; color: var(--sp-ink); font: 300 30px var(--sk-title); box-shadow: inset 0 0 0 2px rgb(0 0 0 / .35), inset 0 10px 20px rgb(0 0 0 / .45); overflow: hidden; }
+.zg-shine { position: absolute; left: 22%; top: 16%; width: 34%; height: 22%; border-radius: 50%; background: linear-gradient(160deg, rgb(255 255 255 / .75), transparent); transform: rotate(-24deg); pointer-events: none; }
+/* 떠다니는 물체: 폴라로이드(최근 글) · 이름표(게시판) */
+.zg-obj { position: absolute; z-index: 2; animation: zg-drift var(--t) ease-in-out infinite; animation-delay: var(--d); cursor: pointer; transition: filter .3s, opacity .3s; }
+.zg-obj.far { z-index: 1; filter: blur(1.2px) brightness(.75); opacity: .75; }
+.zg-obj:hover, .zg-obj:focus-visible { animation-play-state: paused; filter: none; opacity: 1; z-index: 5; outline: none; }
+.zg-photo { display: block; width: calc(70px + var(--z) * 70px); padding: 6px 6px 18px; background: #f4f2ee; box-shadow: 0 20px 40px -18px rgb(0 0 0 / .85); color: #333; text-decoration: none; }
+.zg-photo img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.zg-photo img.sp { filter: blur(10px); }
+.zg-photo small { position: absolute; left: 7px; right: 7px; bottom: 3px; font: 10px/1.3 var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; }
+.zg-tag { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; border-radius: 6px; background: rgb(255 255 255 / .07); border: 1px solid rgb(255 255 255 / .18); color: var(--sp-ink); font-size: calc(11px + var(--z) * 3px); backdrop-filter: blur(6px); white-space: nowrap; }
+.zg-tag i { width: 7px; height: 7px; border-radius: 2px; background: var(--sp-acc); }
+.zg-tag:hover, .zg-tag:focus-visible { border-color: var(--sp-acc); background: rgb(255 255 255 / .12); }
+.zg-down { position: absolute; left: 50%; bottom: 18px; z-index: 3; width: 34px; height: 54px; translate: -50% 0; padding: 0; border: 1px solid color-mix(in srgb, var(--sp-ink) 35%, transparent); border-radius: 20px; background: none; cursor: pointer; }
+.zg-down i { position: absolute; left: 50%; top: 10px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px; background: var(--sp-ink); animation: zg-scroll 2.6s ease-in-out infinite; }
+@keyframes zg-scroll { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateY(22px); opacity: 0; } 100% { opacity: 0; } }
+/* 글 목록: 카드도 무중력. 들어올 때 기울어진 채 떠밀려 오고, 그 뒤엔 각자 아주 천천히 표류해요 (마우스를 올리면 멈춰요) */
 .skin-space .blog-head .blog-name, .skin-space .head-side { display: none; }
 .skin-space .blog-head .head-in { padding: 0; }
-.skin-space .side-sec h4 { color: var(--muted); letter-spacing: .2em; font-size: 10.5px; text-transform: uppercase; font-weight: 500; }
-.skin-space .side-item { color: color-mix(in srgb, var(--sp-ink) 80%, transparent); border-radius: 8px; background: none; }
-.skin-space .side-item:hover { background: rgb(255 255 255 / .04); color: var(--sp-ink); }
-.skin-space .side-item.on { background: rgb(255 255 255 / .06); color: var(--sp-ink); box-shadow: inset 2px 0 0 var(--sp-acc); }
-.skin-space .search, .skin-space .pill { background: rgb(255 255 255 / .035); border-color: rgb(255 255 255 / .1); }
-.skin-space .pill.on, .skin-space .btn.primary { background: color-mix(in srgb, var(--sp-acc) 85%, #fff); color: var(--sp-bg); border-color: transparent; }
-.skin-space .card { background: color-mix(in srgb, var(--sp-bg) 70%, transparent); border: 1px solid rgb(255 255 255 / .08); box-shadow: none; transition: border-color .3s, transform .3s; }
-.skin-space .card:hover { border-color: color-mix(in srgb, var(--sp-acc) 45%, transparent); transform: translateY(-3px); }
-.skin-space .tag, .skin-space .kind, .skin-space .vis { background: rgb(255 255 255 / .05) !important; border-color: rgb(255 255 255 / .1); color: color-mix(in srgb, var(--sp-ink) 80%, transparent) !important; }
-html[data-skin='space'] .modal { background: color-mix(in srgb, var(--sp-bg) 90%, #fff); border: 1px solid rgb(255 255 255 / .1); }
+.skin-space .side-sec h4 { color: color-mix(in srgb, var(--sp-ink) 55%, transparent); letter-spacing: .24em; font-size: 10.5px; text-transform: uppercase; font-weight: 500; }
+.skin-space .side-item { color: var(--sp-ink); border-radius: 6px; }
+.skin-space .side-item.on { background: rgb(255 255 255 / .08); color: var(--sp-ink); box-shadow: inset 2px 0 0 var(--sp-acc); }
+.skin-space .search, .skin-space .pill { background: rgb(255 255 255 / .05); border-color: rgb(255 255 255 / .14); }
+.skin-space .pill.on, .skin-space .btn.primary { background: var(--sp-ink); color: var(--sp-bg); border-color: var(--sp-ink); }
+.skin-space .card { background: rgb(255 255 255 / .045); border: 1px solid rgb(255 255 255 / .1); box-shadow: 0 24px 50px -30px rgb(0 0 0 / .9); --dx: 4px; --dy: 6px; --dr: 1.2deg; --r0: 0deg; --t: 17s; }
+.skin-space .card:nth-child(3n+1) { --t: 21s; --dr: -1deg; } .skin-space .card:nth-child(3n+2) { --t: 14s; --dx: -5px; }
+.skin-space .card.zg-seen { opacity: 0; transform: translateY(40px) rotate(calc(var(--k, 1) * 1.2deg - 3deg)); }
+.skin-space .card.zg-in { opacity: 1; transform: none; transition: opacity 1s ease calc(var(--k, 0) * 70ms), transform 1.4s cubic-bezier(.16, .8, .2, 1) calc(var(--k, 0) * 70ms); animation: zg-drift var(--t) ease-in-out 1.5s infinite; }
+.skin-space .card:hover { animation-play-state: paused; border-color: color-mix(in srgb, var(--sp-acc) 70%, transparent); }
+.skin-space .tag, .skin-space .kind, .skin-space .vis { background: rgb(255 255 255 / .06) !important; border-color: rgb(255 255 255 / .14); color: var(--sp-ink) !important; }
+html[data-skin='space'] .modal { background: color-mix(in srgb, var(--sp-bg) 88%, #fff); }
 @media (max-width: 640px) {
-  .sp-hero { min-height: 320px; }
-  .sp-name { font-size: clamp(30px, 9.4vw, 40px); letter-spacing: .05em; }
-  .sp-sub { letter-spacing: .1em; font-size: 11.5px; }
-  .sp-orbits { gap: 2px 16px; margin-top: 24px; }
-  .sp-galaxy { width: 50vmax; height: 12vmax; }
+  .zg-hero { height: 520px; }
+  .zg-name { font-size: clamp(32px, 10vw, 46px); }
+  .zg-kick { letter-spacing: .18em; font-size: 10.5px; }
+  .zg-astro { width: 150px; height: 120px; left: 2%; top: 2%; }
+  .zg-helmet { width: 64px; height: 64px; padding: 5px; }
+  .zg-tether { inset: 0 50px 30px 0; }
+  .zg-obj:nth-of-type(n+5) { display: none; }
+  .zg-copy { top: 50%; }
+  .zg-obj { scale: .85; }
+  .zg-photo { width: calc(54px + var(--z) * 40px); padding: 4px 4px 14px; }
+  .zg-tag { font-size: 11px; padding: 5px 10px 5px 8px; }
+  .skin-space .card.zg-in { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zg-space i, .zg-ch, .zg-astro, .zg-helmet, .zg-obj, .zg-down i, .skin-space .card.zg-in { animation: none !important; }
+  .skin-space .card.zg-seen { opacity: 1; transform: none; }
 }
 
 /* ── 프롬 모음: 행성 ── */
@@ -1051,10 +1091,10 @@ html[data-skin='space'] .sg-wrap { background: color-mix(in srgb, var(--bg0) 70%
 @media (max-width: 640px) { .sg-top { grid-template-columns: minmax(0, 1fr); text-align: center; } .sg-ball { width: 170px; } }
 @media (prefers-reduced-motion: reduce) { .sg-log { animation: none; } }
 
-/* 관측 기록: 대문 배너도 단색으로 — 사진의 밝기만 남기고 색은 포인트색 한 가지 + 망점 */
+/* 관측 기록: 대문 배너도 단색으로: 사진의 밝기만 남기고 색은 포인트색 한 가지 + 망점 */
 .skin-probe .head-banner .banner { position: relative; isolation: isolate; border-radius: 0; border: 1.5px solid var(--pb-ink); background-color: var(--pb-acc); background-blend-mode: luminosity; filter: contrast(1.15); }
 .skin-probe .banner-slide { mix-blend-mode: luminosity; }
-.skin-probe .head-banner .banner::before { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(rgb(0 0 0 / .2) .7px, transparent 1px) 0 0 / 3px 3px; }
+.skin-probe .head-banner .banner::before { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(rgb(0 0 0 / .07) .7px, transparent 1px) 0 0 / 3px 3px; }
 .skin-probe .banner-dot::after { border-radius: 0; background: var(--pb-bg); }
 /* 새 스킨: 디데이 · 배경음악 · 창 */
 html[data-skin='chart'] .dd-pill { border-radius: 0; background: transparent; color: var(--ch-line); border: 1px solid var(--ch-line); font: italic 14px var(--sk-ui); }
@@ -1082,3 +1122,10 @@ html[data-skin='probe'] .bgm-panel { background: var(--pb-bg); border: 1.5px sol
 html[data-skin='probe'] .bgm-disc { box-shadow: 0 0 0 1.5px var(--pb-ink); background: var(--pb-ink); }
 html[data-skin='space'] .bgm-panel { background: rgb(10 14 30 / .6); border-color: rgb(255 255 255 / .16); backdrop-filter: blur(10px); color: var(--sp-ink); }
 html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2); }
+/* 행성 목록도 무중력: 각자 다른 속도로 천천히 표류 (마우스를 올리면 멈춰요) */
+.pl-item { --dx: 6px; --dy: 9px; --dr: 4deg; --t: 19s; animation: zg-drift var(--t) ease-in-out infinite; }
+.pl-item:nth-child(3n+1) { --t: 23s; --dx: -7px; --dr: -5deg; animation-delay: -6s; }
+.pl-item:nth-child(3n+2) { --t: 15s; --dy: -8px; animation-delay: -11s; }
+.pl-item:nth-child(4n) { --t: 27s; animation-delay: -3s; }
+.pl-item:hover, .pl-item:focus-visible { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .pl-item { animation: none; } }

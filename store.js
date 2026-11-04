@@ -175,7 +175,7 @@ export async function getProfileByHandle(handle) {
 }
 
 /**
- * 아이디 바꾸기 — 계정마다 딱 1번만 (profiles.handleChanged 로 막아요, 규칙도 똑같이 막아요).
+ * 아이디 바꾸기: 계정마다 딱 1번만 (profiles.handleChanged 로 막아요, 규칙도 똑같이 막아요).
  * - 새 아이디가 비어 있어야 해요. 이전 아이디는 'movedTo' 표시를 남겨서 다른 사람이 못 쓰고, 이전 블로그 주소도 계속 열려요.
  * - 이메일 없이 가입한 계정은 로그인 주소가 '이전아이디@도메인'이라 그대로 두고, 새 아이디 문서(handles)에 그 주소를 적어 두어요.
  *   (이 주소는 이전 아이디에서 나온 값이라 공개돼도 비밀이 아니에요. 실제 이메일은 절대 적지 않아요.)
@@ -315,8 +315,8 @@ export async function unlockContent(post, enc, password) {
 
 /**
  * 글 저장 (새 글/수정 공용)
- * images: [{ src?, data? }] — src(이미 올라간 주소)가 없는 것만 ImgBB에 올려요
- * lock: 수정 시 기존 잠금 키 { keyRaw, salt } — password 비우면 이 키로 다시 암호화
+ * images: [{ src?, data? }]: src(이미 올라간 주소)가 없는 것만 ImgBB에 올려요
+ * lock: 수정 시 기존 잠금 키 { keyRaw, salt }: password 비우면 이 키로 다시 암호화
  */
 export async function savePost({
   id, prev = null, kind = 'style', board = '', title, vis, unlisted = false, spoiler = false, thumbFill = false, tags = [], content, images = [],

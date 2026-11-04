@@ -694,7 +694,7 @@ function designTab() {
       } catch (e) { toast(friendly(e)); }
     });
 
-    // 대문 배너 슬라이드: 추가 사진 (관리자 테스트 기능) — 대표 대문 배너 뒤로 이어져요
+    // 대문 배너 슬라이드: 추가 사진 (관리자 테스트 기능): 대표 대문 배너 뒤로 이어져요
     const slideFile = h('input', { type: 'file', accept: 'image/*', hidden: true });
     slideFile.addEventListener('change', async () => {
       const f = slideFile.files[0];

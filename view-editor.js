@@ -130,7 +130,7 @@ export async function editor({ params, query, root }) {
     onSort: (els) => { const next = els.map((el) => varRows.find((r) => r.el === el)).filter(Boolean); varRows.splice(0, varRows.length, ...next); },
   });
 
-  // 생성 설정 (그림체 전용) — 드롭다운·추천 목록도 브라우저 기본 대신 직접 만든 위젯이에요
+  // 생성 설정 (그림체 전용): 드롭다운·추천 목록도 브라우저 기본 대신 직접 만든 위젯이에요
   const pf = {};
   const paramGrid = h('div', { class: 'param-grid' }, PARAM_FIELDS.map(([k, label]) => {
     const val = txt(content?.params?.[k]);
@@ -221,7 +221,7 @@ export async function editor({ params, query, root }) {
     if (!avail.length) return;
     const list = suggestAll ? avail : avail.slice(0, SUGGEST_SHOW);
     suggestBox.replaceChildren(
-      h('small', { class: 'hint-line' }, '이전 글에서 쓴 태그 — 눌러서 추가'),
+      h('small', { class: 'hint-line' }, '이전 글에서 쓴 태그 · 눌러서 추가'),
       h('div', { class: 'tag-suggest-list' },
         list.map((t) => h('button', { type: 'button', class: 'pill sm', title: '이 태그 추가', onclick: () => { addTagsFrom(t); } }, '#' + t)),
         avail.length > SUGGEST_SHOW ? h('button', { type: 'button', class: 'pill sm more', onclick: () => { suggestAll = !suggestAll; paintSuggest(); } }, suggestAll ? '접기' : `+${avail.length - SUGGEST_SHOW}개 더`) : null));
