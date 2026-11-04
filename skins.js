@@ -630,7 +630,7 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
   const R = seeded(prof.handle + 'zero-g');
   const name = txt(prof.display) || prof.handle;
   const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-  root.prepend(h('div', { class: 'zg-space', 'aria-hidden': 'true' }, h('i', { class: 'zg-far' }), h('i', { class: 'zg-near' }), h('i', { class: 'zg-glow' })));
+  root.prepend(h('div', { class: 'zg-space', 'aria-hidden': 'true' }, h('i', { class: 'zg-far' }), h('i', { class: 'zg-near' }), h('i', { class: 'zg-glow' }), h('i', { class: 'zg-earth' })));
 
   // 이름: 글자마다 따로 떠다녀요
   const letters = [...name].map((c) => h('span', { class: 'zg-ch', style: { '--dx': `${Math.round((R() - 0.5) * 10)}px`, '--dy': `${Math.round((R() - 0.5) * 14)}px`, '--dr': `${((R() - 0.5) * 9).toFixed(1)}deg`, '--t': `${(9 + R() * 8).toFixed(1)}s`, '--d': `${(-R() * 9).toFixed(1)}s` } }, c === ' ' ? ' ' : c));
@@ -641,18 +641,36 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
   const astro = h('div', { class: 'zg-astro zg-layer', style: { '--z': 0.9 } },
     h('span', { class: 'zg-tether', 'aria-hidden': 'true', html: '<svg viewBox="0 0 300 160" preserveAspectRatio="none"><path d="M0 8 C 90 10, 120 150, 300 120" fill="none"/></svg>' }),
     h('span', { class: 'zg-helmet' }, visor, h('i', { class: 'zg-shine', 'aria-hidden': 'true' })));
-  // 떠다니는 물체들: 최근 글 사진(폴라로이드) + 게시판 이름표
-  const spots = [[7, 18], [80, 12], [86, 58], [12, 66], [64, 74], [36, 8], [48, 82]];
+  // 떠다니는 물체들: 글 사진은 우주선 관측창(둥근 창틀 + 리벳), 게시판은 미션 패치(수놓은 둥근 배지)
+  // 무엇이 떠다닐지는 스킨 탭에서 고를 수 있어요 (theme.spaceFloat). 안 고르면 사진 있는 최근 글 4개 · 앞쪽 게시판 4개
+  const spots = [[6, 20], [80, 10], [86, 56], [10, 66], [66, 76], [34, 6], [50, 84], [24, 82], [92, 30], [60, 4], [2, 44]];
+  const F = theme.spaceFloat || {};
+  const byId = new Map(posts.map((p) => [p.id, p]));
+  const pickPosts = (F.posts || []).map((id) => byId.get(id)).filter((p) => p && safeThumb(p.thumb));
+  const floatPosts = (pickPosts.length ? pickPosts : posts.filter((p) => safeThumb(p.thumb)).slice(0, 4)).slice(0, 6);
+  const pickBoards = (F.boards || []).map((id) => boards.find((b) => b.id === id)).filter(Boolean);
+  const floatBoards = (pickBoards.length ? pickBoards : boards).slice(0, 4);
   const items = [];
-  posts.slice(0, 4).forEach((p) => {
-    const th = safeThumb(p.thumb);
-    if (!th) return;
+  const rivets = Array.from({ length: 10 }, (_, i) => { const a = (i / 10) * Math.PI * 2; return `<circle cx="${(50 + Math.cos(a) * 43.2).toFixed(1)}" cy="${(50 + Math.sin(a) * 43.2).toFixed(1)}" r="1.6"/>`; }).join('');
+  floatPosts.forEach((p) => {
     const hide = (p.spoiler && p.vis === 'public') || p.thumbSp;
-    items.push(h('a', { class: 'zg-obj zg-photo', href: '#/p/' + p.id, 'aria-label': txt(p.title) || '글' },
-      h('img', { src: th, alt: '', class: hide ? 'sp' : '', loading: 'lazy', draggable: 'false' }), h('small', null, (txt(p.title) || '').slice(0, 12))));
+    items.push(h('a', { class: 'zg-obj zg-port', href: '#/p/' + p.id, title: txt(p.title) || '', 'aria-label': txt(p.title) || '글' },
+      h('span', { class: 'zg-glass' + (hide ? ' sp' : ''), style: { backgroundImage: `url("${safeThumb(p.thumb)}")` } }),
+      h('span', { class: 'zg-frame', 'aria-hidden': 'true', html: `<svg viewBox="0 0 100 100"><circle class="r1" cx="50" cy="50" r="46"/><circle class="r2" cx="50" cy="50" r="40"/><g class="rv">${rivets}</g></svg>` })));
   });
-  boards.slice(0, 4).forEach((b) => items.push(h('button', { class: 'zg-obj zg-tag', type: 'button', onclick: () => { selectBoard(b.id); go(); } },
-    h('i', { 'aria-hidden': 'true' }), b.name)));
+  const count = (id) => posts.filter((p) => (p.board || '') === id).length;
+  floatBoards.forEach((b, i) => {
+    const label = esc(b.name.toUpperCase().slice(0, 16));
+    const pid = 'zgp' + i + Math.floor(R() * 1e6);
+    items.push(h('button', { class: 'zg-obj zg-patch', type: 'button', 'aria-label': b.name, onclick: () => { selectBoard(b.id); go(); }, html:
+      `<svg viewBox="0 0 120 120" aria-hidden="true"><defs><path id="${pid}" d="M 21 60 A 39 39 0 0 1 99 60"/><path id="${pid}b" d="M 24 66 A 36 36 0 0 0 96 66"/></defs>`
+      + '<circle class="p-bg" cx="60" cy="60" r="56"/><circle class="p-stitch" cx="60" cy="60" r="52"/><circle class="p-in" cx="60" cy="60" r="29"/>'
+      + `<ellipse class="p-orb" cx="60" cy="62" rx="22" ry="7" transform="rotate(-18 60 62)"/><circle class="p-pl" cx="60" cy="60" r="10"/><circle class="p-st" cx="${44 + (i % 3) * 7}" cy="${46 + (i % 2) * 4}" r="1.8"/>`
+      + `<text class="p-tx"><textPath href="#${pid}" startOffset="50%" text-anchor="middle">${label}</textPath></text>`
+      + `<text class="p-tx s"><textPath href="#${pid}b" startOffset="50%" text-anchor="middle">${count(b.id)} ENTRIES</textPath></text></svg>` }));
+  });
+  if (F.sat !== false) items.push(h('span', { class: 'zg-obj zg-sat', 'aria-hidden': 'true', html:
+    '<svg viewBox="0 0 160 80"><g class="s-panel"><rect x="4" y="26" width="46" height="28" rx="1"/><rect x="110" y="26" width="46" height="28" rx="1"/><path d="M4 35h46M4 45h46M19 26v28M34 26v28M110 35h46M110 45h46M125 26v28M140 26v28"/></g><path class="s-arm" d="M50 40h16M94 40h16M80 24v-4"/><rect class="s-body" x="66" y="24" width="28" height="32" rx="3"/><circle class="s-dish" cx="80" cy="15" r="6"/></svg>' }));
   // 자리 · 깊이 · 표류 경로를 아이디로 정해요
   items.forEach((el, i) => {
     const [x, y] = spots[i % spots.length];

@@ -943,7 +943,7 @@ html[data-skin='space'] body { background: var(--sp-bg); }
 @keyframes zg-pan { to { transform: translate(260px, 120px); } }
 
 /* 무대: 떠다니는 것들의 층. --z(깊이)에 따라 마우스·스크롤에 다르게 비켜나요 */
-.zg-hero { --mx: 0; --my: 0; --sc: 0; position: relative; height: clamp(460px, 74vh, 720px); margin: -8px 0 30px; color: var(--sp-ink); perspective: 900px; }
+.zg-hero { --mx: 0; --my: 0; --sc: 0; position: relative; overflow-x: clip; height: clamp(460px, 74vh, 720px); margin: -8px 0 30px; color: var(--sp-ink); perspective: 900px; }
 .zg-layer { translate: calc(var(--mx) * var(--z, .5) * -46px) calc(var(--my) * var(--z, .5) * -34px + var(--sc) * var(--z, .5) * -140px); }
 @keyframes zg-drift {
   0%   { transform: translate(0, 0) rotate(var(--r0, 0deg)); }
@@ -971,13 +971,6 @@ html[data-skin='space'] body { background: var(--sp-bg); }
 .zg-obj { position: absolute; z-index: 2; animation: zg-drift var(--t) ease-in-out infinite; animation-delay: var(--d); cursor: pointer; transition: filter .3s, opacity .3s; }
 .zg-obj.far { z-index: 1; filter: blur(1.2px) brightness(.75); opacity: .75; }
 .zg-obj:hover, .zg-obj:focus-visible { animation-play-state: paused; filter: none; opacity: 1; z-index: 5; outline: none; }
-.zg-photo { display: block; width: calc(70px + var(--z) * 70px); padding: 6px 6px 18px; background: #f4f2ee; box-shadow: 0 20px 40px -18px rgb(0 0 0 / .85); color: #333; text-decoration: none; }
-.zg-photo img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
-.zg-photo img.sp { filter: blur(10px); }
-.zg-photo small { position: absolute; left: 7px; right: 7px; bottom: 3px; font: 10px/1.3 var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; }
-.zg-tag { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; border-radius: 6px; background: rgb(255 255 255 / .07); border: 1px solid rgb(255 255 255 / .18); color: var(--sp-ink); font-size: calc(11px + var(--z) * 3px); backdrop-filter: blur(6px); white-space: nowrap; }
-.zg-tag i { width: 7px; height: 7px; border-radius: 2px; background: var(--sp-acc); }
-.zg-tag:hover, .zg-tag:focus-visible { border-color: var(--sp-acc); background: rgb(255 255 255 / .12); }
 .zg-down { position: absolute; left: 50%; bottom: 18px; z-index: 3; width: 34px; height: 54px; translate: -50% 0; padding: 0; border: 1px solid color-mix(in srgb, var(--sp-ink) 35%, transparent); border-radius: 20px; background: none; cursor: pointer; }
 .zg-down i { position: absolute; left: 50%; top: 10px; width: 4px; height: 8px; margin-left: -2px; border-radius: 2px; background: var(--sp-ink); animation: zg-scroll 2.6s ease-in-out infinite; }
 @keyframes zg-scroll { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateY(22px); opacity: 0; } 100% { opacity: 0; } }
@@ -1006,8 +999,6 @@ html[data-skin='space'] .modal { background: color-mix(in srgb, var(--sp-bg) 88%
   .zg-obj:nth-of-type(n+5) { display: none; }
   .zg-copy { top: 50%; }
   .zg-obj { scale: .85; }
-  .zg-photo { width: calc(54px + var(--z) * 40px); padding: 4px 4px 14px; }
-  .zg-tag { font-size: 11px; padding: 5px 10px 5px 8px; }
   .skin-space .card.zg-in { animation: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1129,3 +1120,50 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .pl-item:nth-child(4n) { --t: 27s; animation-delay: -3s; }
 .pl-item:hover, .pl-item:focus-visible { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .pl-item { animation: none; } }
+
+/* 무중력 물체: 관측창(글 사진) · 미션 패치(게시판) · 인공위성 */
+.zg-port { display: block; width: calc(78px + var(--z) * 70px); aspect-ratio: 1; border-radius: 50%; filter: drop-shadow(0 18px 26px rgb(0 0 0 / .7)); }
+.zg-glass { position: absolute; inset: 12%; border-radius: 50%; background: #0b0f1c center / cover no-repeat; box-shadow: inset 0 0 18px rgb(0 0 0 / .7), inset 0 0 0 2px rgb(0 0 0 / .5); }
+.zg-glass.sp { filter: blur(8px); }
+.zg-glass::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(140deg, rgb(255 255 255 / .38) 0%, rgb(255 255 255 / .06) 30%, transparent 46%), radial-gradient(circle at 50% 50%, transparent 58%, color-mix(in srgb, var(--sp-acc) 30%, transparent) 100%); }
+.zg-frame, .zg-frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.zg-frame .r1 { fill: none; stroke: #9aa1ad; stroke-width: 7; }
+.zg-frame .r2 { fill: none; stroke: #5d6370; stroke-width: 1.5; }
+.zg-frame .rv circle { fill: #d7dbe2; stroke: #4a505c; stroke-width: .6; }
+.zg-port::before { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: 50%; background: conic-gradient(from 210deg, rgb(255 255 255 / .35), transparent 25%, rgb(0 0 0 / .25) 50%, transparent 75%, rgb(255 255 255 / .35)); mask: radial-gradient(circle, transparent 41%, #000 41.5% 50%, transparent 50.5%); pointer-events: none; }
+.zg-port:hover .zg-glass::after, .zg-port:focus-visible .zg-glass::after { background: linear-gradient(140deg, rgb(255 255 255 / .18), transparent 40%); }
+.zg-patch { width: calc(74px + var(--z) * 46px); aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: none; --dr: 22deg; filter: drop-shadow(0 12px 18px rgb(0 0 0 / .65)); }
+.zg-patch svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.zg-patch .p-bg { fill: color-mix(in srgb, var(--sp-acc) 55%, #1a2a5a); }
+.zg-patch .p-stitch { fill: none; stroke: #f2efe6; stroke-width: 1.4; stroke-dasharray: 2.2 2.4; opacity: .9; }
+.zg-patch .p-in { fill: #0d1430; stroke: #f2efe6; stroke-width: 1.6; }
+.zg-patch .p-orb { fill: none; stroke: var(--sp-acc); stroke-width: 1.6; }
+.zg-patch .p-pl { fill: color-mix(in srgb, var(--sp-acc) 70%, #fff); }
+.zg-patch .p-st { fill: #fff; }
+.zg-patch .p-tx { fill: #f6f3ea; font: 800 10.5px 'Pretendard Variable', Pretendard, system-ui, sans-serif; letter-spacing: .12em; }
+.zg-patch .p-tx.s { font-size: 8px; font-weight: 600; opacity: .8; }
+.zg-patch:hover .p-stitch, .zg-patch:focus-visible .p-stitch { stroke: var(--sp-acc); opacity: 1; }
+.zg-sat { width: calc(80px + var(--z) * 70px); cursor: default; --dr: 40deg; --t: 48s; pointer-events: none; }
+.zg-sat svg { display: block; width: 100%; height: auto; }
+.zg-sat .s-panel rect { fill: #1d3a7a; stroke: #8fa6d6; stroke-width: 1.2; }
+.zg-sat .s-panel path { stroke: #8fa6d6; stroke-width: .7; fill: none; }
+.zg-sat .s-arm { stroke: #b9bec8; stroke-width: 2; fill: none; }
+.zg-sat .s-body { fill: #d9b45a; stroke: #8a6d2a; stroke-width: 1; }
+.zg-sat .s-dish { fill: #e8eaee; stroke: #8b909b; stroke-width: 1; }
+/* 바닥 쪽 행성 가장자리: 여기가 우주라는 걸 알려 주는 커다란 실루엣 하나 */
+.zg-earth { inset: auto auto -118vmax -30vmax !important; width: 150vmax; height: 150vmax; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #04060d 66%, color-mix(in srgb, var(--sp-acc) 55%, #0a1a3a) 69.4%, color-mix(in srgb, var(--sp-acc) 24%, transparent) 70.2%, transparent 72%);
+  opacity: .9; }
+@media (max-width: 640px) {
+  .zg-port { width: calc(54px + var(--z) * 36px); }
+  .zg-patch { width: calc(54px + var(--z) * 28px); }
+  .zg-sat { width: 74px; }
+  .zg-earth { bottom: -128vmax !important; }
+}
+/* 스킨 탭: 떠다닐 글 고르기 */
+.zf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; max-height: 220px; overflow: auto; padding: 2px; }
+.zf-pick { position: relative; aspect-ratio: 1; padding: 0; border: 2px solid transparent; border-radius: 50%; overflow: hidden; background: var(--accent-soft); cursor: pointer; }
+.zf-pick img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .75; }
+.zf-pick.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.zf-pick.on img { opacity: 1; }
+.zf-pick b { position: absolute; right: 2px; bottom: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; display: grid; place-items: center; }

@@ -198,6 +198,7 @@ export const DEFAULT_THEME = {
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
   skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [], skinFonts: {}, showAll: true, bgm: sanitizeBgm(null),
+  spaceFloat: { posts: [], boards: [], sat: true },
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -264,6 +265,12 @@ export function sanitizeTheme(t) {
     shelf: pick(SHELVES, t.shelf),
     pview: pick(PVIEWS, t.pview),
     skinFonts: sanitizeSkinFonts(t.skinFonts),
+    // 우주 유영: 떠다닐 글(최대 6) · 게시판(최대 4) · 인공위성 장식
+    spaceFloat: {
+      posts: Array.isArray(t.spaceFloat?.posts) ? [...new Set(t.spaceFloat.posts.filter((id) => typeof id === 'string' && /^[A-Za-z0-9_-]{4,40}$/.test(id)))].slice(0, 6) : [],
+      boards: Array.isArray(t.spaceFloat?.boards) ? [...new Set(t.spaceFloat.boards.filter((id) => typeof id === 'string' && BOARD_ID_RE.test(id)))].slice(0, 4) : [],
+      sat: t.spaceFloat?.sat !== false,
+    },
     gameBoards: Array.isArray(t.gameBoards) ? [...new Set(t.gameBoards.filter((id) => typeof id === 'string' && BOARD_ID_RE.test(id)))].slice(0, 4) : [],
     skinTone: typeof t.skinTone === 'string' && /^[a-z0-9]{1,16}$/.test(t.skinTone) ? t.skinTone : '',
   };

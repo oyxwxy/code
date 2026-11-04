@@ -1,5 +1,5 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
-import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, isBeta, isBetaSkin, isBetaShelf, isBetaPview, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
+import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, listPosts, isBeta, isBetaSkin, isBetaShelf, isBetaPview, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
 import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette, sanitizeBgm, MAX_BGM } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
@@ -43,7 +43,7 @@ export async function settings({ root, query }) {
 
 // ───────── 내 블로그 미리보기 (꾸미기·스킨 탭 공용) ─────────
 // 저장하지 않은 꾸미기 그대로 내 블로그를 창 안에 띄워요 (창 안의 화면이 부모 창의 __drawerPreview 를 읽어요)
-const pickSkin = (t) => ({ skin: t.skin, shelf: t.shelf, pview: t.pview, skinTone: t.skinTone, gameBoards: t.gameBoards, skinFonts: t.skinFonts });
+const pickSkin = (t) => ({ skin: t.skin, shelf: t.shelf, pview: t.pview, skinTone: t.skinTone, gameBoards: t.gameBoards, skinFonts: t.skinFonts, spaceFloat: t.spaceFloat });
 function openSitePreview(theme) {
   const handle = state.me?.handle;
   if (!handle) return;
@@ -112,6 +112,44 @@ function skinTab() {
       h('p', { class: 'desc' }, (T.showAll ? "'전체'는 늘 맨 위에 있어요. " : "('전체'를 숨겨 둬서 '전체'는 빠져요) ")
         + '고른 게시판이 고른 순서대로 타이틀 메뉴에 보여요. 하나도 안 고르면 앞에서부터 4개가 보여요. 왼쪽 게시판 목록은 그대로예요. 다른 사람에게는 글이 있는 게시판만 보여요.'));
   };
+  // 우주 유영: 화면에 떠다닐 글 사진 · 게시판을 골라요 (안 고르면 최근 글 4개 · 앞쪽 게시판 4개)
+  let myPosts = null;
+  const spaceRow = () => {
+    if (T.skin !== 'space') return null;
+    const F = T.spaceFloat || { posts: [], boards: [], sat: true };
+    const setF = (patch) => set({ spaceFloat: { ...F, ...patch } });
+    const grid = h('div', { class: 'zf-grid' });
+    const paintPosts = () => {
+      if (!myPosts) { grid.replaceChildren(h('p', { class: 'desc' }, '글을 불러오는 중…')); return; }
+      const withPic = myPosts.filter((p) => p.thumb);
+      if (!withPic.length) { grid.replaceChildren(h('p', { class: 'desc' }, '사진이 있는 글이 아직 없어요.')); return; }
+      grid.replaceChildren(...withPic.slice(0, 40).map((p) => {
+        const at = F.posts.indexOf(p.id);
+        return h('button', { class: 'zf-pick' + (at >= 0 ? ' on' : ''), type: 'button', title: p.title || '', onclick: () => {
+          if (at >= 0) setF({ posts: F.posts.filter((x) => x !== p.id) });
+          else if (F.posts.length >= 6) toast('글 사진은 6개까지 고를 수 있어요');
+          else setF({ posts: [...F.posts, p.id] });
+        } }, h('img', { src: p.thumb, alt: '', loading: 'lazy' }), at >= 0 ? h('b', null, at + 1) : null);
+      }));
+    };
+    if (!myPosts) listPosts(state.me.uid).then((ps) => { myPosts = ps; paintPosts(); }).catch(() => { myPosts = []; paintPosts(); });
+    paintPosts();
+    const bsel = F.boards.filter((id) => T.boards.some((b) => b.id === id));
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, `떠다닐 글 사진 · ${F.posts.length}/6`),
+      grid,
+      T.boards.length ? h('span', { class: 'lbl', style: { marginTop: '12px' } }, `떠다닐 게시판 패치 · ${bsel.length}/4`) : null,
+      T.boards.length ? h('div', { class: 'opt-grid cols-4' }, T.boards.map((b) => {
+        const at = bsel.indexOf(b.id);
+        return h('button', { class: 'opt center' + (at >= 0 ? ' on' : ''), type: 'button', onclick: () => {
+          if (at >= 0) setF({ boards: bsel.filter((x) => x !== b.id) });
+          else if (bsel.length >= 4) toast('게시판은 4개까지 고를 수 있어요');
+          else setF({ boards: [...bsel, b.id] });
+        } }, at >= 0 ? h('em', { class: 'skin-note' }, `${at + 1}번째`) : null, h('small', null, b.name));
+      })) : null,
+      h('label', { class: 'switch', style: { marginTop: '12px' } }, h('input', { type: 'checkbox', checked: F.sat, onchange: (e) => setF({ sat: e.target.checked }) }), h('span', { class: 'trk' }), h('span', { class: 'sw-txt' }, '인공위성도 같이 떠다니게')),
+      h('p', { class: 'desc' }, '고른 순서대로 떠다녀요. 하나도 안 고르면 사진이 있는 최근 글 4개와 앞쪽 게시판 4개가 떠다녀요.'));
+  };
   // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
   const toneRow = () => {
     const key = T.skin || T.pview;
@@ -154,7 +192,8 @@ function skinTab() {
       skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬', stars: '글 = 별, 게시판 = 별자리', planets: '글 = 떠 있는 행성', log: '흑백 관측 데이터 표' }),
       skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인', signal: '행성 사진 + 수신된 교신' }),
       toneRow(),
-      gameBoardRow()),
+      gameBoardRow(),
+      spaceRow()),
     h('section', { class: 'panel' }, h('h3', { class: 'panel-title' }, '스킨 글꼴'), fontRow()),
     h('div', { class: 'row between' },
       h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) }) }, icon('eye', 16), '미리보기'),
