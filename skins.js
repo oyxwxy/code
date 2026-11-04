@@ -1,4 +1,4 @@
-// ───────── 스킨 (테스트 중: config.js 의 SKINS_FOR_ALL = false 면 관리자·BETA_HANDLES 에게만 보여요) ─────────
+// ───────── 스킨 (config.js 의 SKINS_FOR_ALL: true 면 전체 공개, false 면 관리자·BETA_HANDLES 에게만) ─────────
 // 페이지 스킨(theme.skin) · 프롬 모음(theme.shelf) · 프롬창(theme.pview) 세 가지를 따로 골라요.
 // 기존 화면 구조는 그대로 두고, 스킨은 겉모양(클래스·장식)만 덧입혀요.
 import { h, icon, fmtDate, copyText, txt, toast } from './util.js';

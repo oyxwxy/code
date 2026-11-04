@@ -2,7 +2,7 @@
 html[data-skin] { --sk-title: Galmuri14, Galmuri11, sans-serif; --sk-ui: Galmuri11, 'Pretendard Variable', sans-serif; }
 html[data-skin='term'] { --sk-title: Galmuri11, monospace; }
 
-/* ═════════ 스킨 (테스트 중 · 관리자만) ═════════
+/* ═════════ 스킨 ═════════
    색은 skins.js 의 색상 프리셋(TONES)이 html 변수로 넣어요. 여기서는 그 변수만 써요.
    html[data-skin] 은 화면 전체, .skin-<이름> 은 블로그 화면 모양이에요. */
 

@@ -67,7 +67,7 @@ export const LAYOUTS = {
   journal: '저널',
 };
 
-// 스킨 (테스트 중 · 관리자만): 페이지 스킨 / 프롬 모음(글 목록) / 프롬창(글 보기)
+// 스킨: 페이지 스킨 / 프롬 모음(글 목록) / 프롬창(글 보기)
 export const SKINS = { '': '없음', home: '홈페이지', term: '터미널', game: '픽셀 아케이드', grid: '그리드 타이틀' };
 export const SHELVES = { '': '위 배치 그대로', records: '레코드 진열', drawer: '서랍', folders: '폴더 인덱스' };
 export const PVIEWS = { '': '기본', float: '유영', card: '신분증', pass: '여권' };

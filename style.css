@@ -154,7 +154,8 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 .head-center .blog-bio { margin-inline: auto; }
 .head-center .head-actions { justify-content: center; }
 .head-banner .banner {
-  height: 190px; border-radius: calc(var(--radius) * 1.2); margin-bottom: -48px; border: 1px solid var(--border);
+  /* 자를 때와 같은 6 : 1 비율로 보여줘요 → 화면 폭이 달라도 양옆이 잘리지 않아요 */
+  height: auto; aspect-ratio: 6 / 1; border-radius: calc(var(--radius) * 1.2); margin-bottom: -48px; border: 1px solid var(--border);
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, var(--bg)), color-mix(in srgb, var(--accent) 12%, var(--bg))) center / cover no-repeat;
 }
 .head-banner .head-in { padding: 0 24px; align-items: flex-start; position: relative; }
@@ -393,7 +394,8 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
   .head-left .head-side .blog-handle, .head-banner .head-side .blog-handle { text-align: left; }
   .head-banner .head-in { flex-direction: column; align-items: flex-start; gap: 4px; padding: 0 12px; }
   .head-banner .head-text { align-self: stretch; padding-top: 6px; }
-  .head-banner .banner { height: 140px; }
+  .head-banner .banner { margin-bottom: -22px; border-radius: var(--radius); }
+  .head-banner .head-side .avatar.lg { width: 68px; height: 68px; font-size: 26px; }
   .avatar.lg { width: 80px; height: 80px; font-size: 30px; }
   .blog-name { font-size: 24px; }
   .grid-2 { grid-template-columns: 1fr; }

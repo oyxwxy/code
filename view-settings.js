@@ -13,7 +13,7 @@ import { parseYouTube, fetchYouTubeTitle, ytThumb } from './bgm.js';
 
 const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['skin', 'sparkle', '스킨'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 // 초대 탭은 관리자에게만 보여요
-// 스킨 탭은 테스트 중이라 관리자(BETA_HANDLES 포함)에게만 보여요
+// 스킨 탭: config.js 의 SKINS_FOR_ALL 이 true 면 모두에게, false 면 관리자(BETA_HANDLES 포함)에게만 보여요
 const tabsFor = (me) => ALL_TABS.filter(([k]) => (k !== 'invite' || me?.isAdmin) && (k !== 'skin' || skinOn()));
 
 export async function settings({ root, query }) {
@@ -71,7 +71,7 @@ function openSitePreview(theme) {
   document.addEventListener('keydown', onKey);
 }
 
-// ───────── 스킨 탭 (테스트 중 · 관리자만) ─────────
+// ───────── 스킨 탭 ─────────
 // 꾸미기 탭과 따로 저장해요. 저장할 때는 지금 저장된 꾸미기에 스킨 값만 덮어써요
 function skinTab() {
   ensureSkinFont();
@@ -145,9 +145,9 @@ function skinTab() {
 
   const build = () => host.replaceChildren(
     h('section', { class: 'panel' },
-      h('h3', { class: 'panel-title' }, '스킨 ', h('small', { class: 'muted' }, '테스트 중 · 관리자만')),
+      h('h3', { class: 'panel-title' }, '스킨'),
       h('div', { class: 'row between skin-pv-row' },
-        h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장하지 않아도 미리보기로 확인할 수 있어요.'),
+        h('p', { class: 'desc' }, '블로그 전체 모양 · 글 목록 · 글 보기 화면을 따로 골라 꾸며요. 저장하지 않아도 미리보기로 확인할 수 있어요.'),
         h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) }) }, icon('eye', 16), '내 블로그 미리보기')),
       skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START' }),
       skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
@@ -680,7 +680,7 @@ function designTab() {
       if (!f) return;
       try {
         // 배너만 Firebase에 직접 저장해요 (나머지 이미지는 ImgBB)
-        const canvas = await openCropper(f, { ratio: 6, outW: 1800, title: '대문 배너 자르기', hint: '블로그 맨 위에 걸리는 큰 이미지예요. 끌어서 위치를, 슬라이더·마우스 휠로 크기를 맞춰요. 작은 화면에서는 양옆이 조금 잘려 보일 수 있어요.' });
+        const canvas = await openCropper(f, { ratio: 6, outW: 1800, title: '대문 배너 자르기', hint: '블로그 맨 위에 걸리는 큰 이미지예요. 끌어서 위치를, 슬라이더·마우스 휠로 크기를 맞춰요. 휴대폰에서도 자른 모양 그대로(6 : 1) 보여요.' });
         if (!canvas) return;
         const id = await saveCroppedCanvas(canvas, state.user.uid, 'bn');
         const old = state.me.theme.banner;
