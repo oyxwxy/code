@@ -939,11 +939,30 @@ function popPrompt(f, p) {
  * ctx: { post, author, handle, boardName, onPlain }
  */
 export function promptView(pview, content, ctx) {
-  if (pview === 'float') return floatView(content, ctx);
-  if (pview === 'pass') return cardView(content, ctx);
-  if (pview === 'card') return idCardView(content, ctx);
-  if (pview === 'signal') return signalView(content, ctx);
-  return null;
+  const view = pview === 'float' ? floatView(content, ctx)
+    : pview === 'pass' ? cardView(content, ctx)
+      : pview === 'card' ? idCardView(content, ctx)
+        : pview === 'signal' ? signalView(content, ctx) : null;
+  if (!view) return null;
+  // 메모: 기본 보기와 같은 말풍선을, 프롬창마다 그 디자인에 맞춘 틀에 담아 아래에 붙여요
+  const memo = memoPanel(content, pview);
+  if (!memo) return view;
+  // '기본 보기' 버튼이 맨 아래에 있는 프롬창은 그 버튼 바로 위에 메모를 넣어요
+  const plain = view.querySelector(':scope > .idc-plain, :scope > .sg-plain');
+  if (plain) { plain.before(memo); return view; }
+  return h('div', { class: 'pv-wrap' }, view, memo);
+}
+const MEMO_HEAD = { float: '{memo}', pass: 'MEMO · 메모', card: 'ATTACHMENT · MEMO', signal: 'LOG · 메모' };
+function memoPanel(content, pview) {
+  const list = Array.isArray(content.memo) && content.memo.length
+    ? content.memo.map((m) => ({ side: m?.side === 'me' ? 'me' : 'them', text: txt(m?.text).trim() })).filter((m) => m.text)
+    : txt(content.notes).trim() ? [{ side: 'them', text: txt(content.notes).trim() }] : [];
+  if (!list.length) return null;
+  const label = txt(content.labels?.notes).trim();
+  return h('section', { class: 'pv-memo pv-memo-' + pview },
+    h('h4', { class: 'pv-memo-head' }, label || MEMO_HEAD[pview] || '메모'),
+    h('div', { class: 'chat memo-chat' }, list.map((m, i) =>
+      h('div', { class: `bubble ${m.side}` + (list[i + 1]?.side !== m.side ? ' tail' : '') + (i && list[i - 1].side !== m.side ? ' first' : '') }, m.text))));
 }
 
 const imgSet = (content) => ({

@@ -1164,3 +1164,32 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .zp-pick { position: relative; width: 84px; aspect-ratio: 6 / 1; padding: 0; border: 2px solid transparent; border-radius: 4px; background: var(--accent-soft) center / cover no-repeat; cursor: pointer; opacity: .7; }
 .zp-pick small { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); padding: 0 4px; border-radius: 3px; background: rgb(0 0 0 / .55); color: #fff; font-size: 10px; line-height: 1.4; }
 .zp-pick.on { border-color: var(--accent); opacity: 1; }
+
+/* ═════════ 프롬창 + 메모: 프롬창마다 그 디자인에 맞춘 틀 ═════════ */
+.pv-wrap { display: flex; flex-direction: column; gap: 18px; }
+.pv-memo { width: 100%; max-width: 780px; margin: 0 auto; padding: 16px 0 18px; }
+.pv-memo-head { margin: 0 20px 8px; font-size: 11px; font-weight: 700; letter-spacing: .16em; }
+.pv-memo .memo-chat { display: flex; flex-direction: column; gap: 4px; padding: 0 20px; }
+/* 유영: 파란 판 + 형광 말풍선 */
+.pv-memo-float { --bg: var(--fl-bg, #1d2bff); --surface: var(--fl-bg, #1d2bff); --text: var(--fl-ink, #fff); --accent: var(--fl-hl, #e8ff3a); --on-accent: var(--fl-hl-ink, #111);
+  width: min(1160px, calc(100vw - 32px)); max-width: none; margin-left: 50%; transform: translateX(-50%); background: var(--bg); color: var(--text); border-radius: 4px; font-family: GalmuriMono11, 'JetBrains Mono', monospace; }
+.pv-memo-float .pv-memo-head { color: var(--fl-mark, #8f9aff); font-weight: 400; letter-spacing: .06em; font-size: 12px; }
+.pv-memo-float .memo-chat { max-width: 680px; margin: 0 auto; width: 100%; }
+.pv-memo-float .bubble.them { --bub: color-mix(in srgb, var(--fl-ink, #fff) 14%, var(--bg)); }
+/* 여권: 종이 쪽지 */
+.pv-memo-pass { --bg: var(--idc-paper2, #fffdf7); --surface: var(--idc-paper2, #fffdf7); --text: var(--idc-ink, #1e2433); --accent: var(--idc-acc2, #2f4f7a); --on-accent: #fff;
+  background: var(--bg); color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); border-radius: 10px; box-shadow: 0 10px 20px -16px rgb(0 0 0 / .45); }
+.pv-memo-pass .pv-memo-head { color: var(--idc-acc, #b8473a); }
+/* 신분증: 붙임 쪽지 */
+.pv-memo-card { --bg: color-mix(in srgb, var(--idv-paper, var(--idc-paper, #f2ede1)) 70%, #fff); --surface: var(--bg); --text: var(--idv-ink, var(--idc-ink, #1b1b1b)); --accent: var(--idv-o, var(--idc-acc, #e8692c)); --on-accent: #fff;
+  position: relative; background: var(--bg); color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 14%, transparent); border-radius: 10px; }
+.pv-memo-card::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 4px; border-radius: 0 3px 3px 0; background: var(--idv-t, var(--idc-acc2, #4fb5ac)); }
+.pv-memo-card .pv-memo-head { color: var(--idv-t, var(--idc-acc2, #4fb5ac)); letter-spacing: .2em; }
+/* 교신: 어두운 수신 기록 */
+.pv-memo-signal { --bg: var(--sp-bg, var(--fl-bg, #06080f)); --surface: var(--bg); --text: var(--sp-ink, #e3e8f5); --accent: var(--sp-acc, #a9c1ff); --on-accent: var(--bg);
+  background: var(--bg); color: var(--text); border: 1px solid rgb(255 255 255 / .1); }
+.pv-memo-signal .pv-memo-head { font: 10.5px 'JetBrains Mono', monospace; letter-spacing: .16em; color: var(--accent); font-weight: 400; }
+.pv-memo-signal .bubble { border-radius: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; }
+.pv-memo-signal .bubble.tail::before, .pv-memo-signal .bubble.tail::after { display: none; }
+.pv-memo-signal .bubble.them { --bub: rgb(255 255 255 / .06); }
+@media (max-width: 640px) { .pv-memo .memo-chat { padding: 0 12px; } .pv-memo-head { margin: 0 12px 8px; } }
