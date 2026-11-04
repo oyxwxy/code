@@ -1,5 +1,5 @@
 import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirmDialog, txt } from './util.js';
-import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, skinOn, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
+import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, skinOn, skinAllowed, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
 import { dressBlog, collectionView } from './skins.js';
 import { useBgm } from './bgm.js';
 import { applyTheme, sanitizeTheme, DEFAULT_THEME, previewTheme } from './theme.js';
@@ -140,7 +140,7 @@ export async function blog({ params, query, root }) {
   const theme = sanitizeTheme(previewTheme(prof.handle) || prof.theme);
   applyTheme(theme);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만 입혀요. 다른 사람에게는 지금 모습 그대로
-  const skin = skinOn() ? theme.skin : '', shelf = skinOn() ? theme.shelf : '';
+  const skin = skinAllowed(theme.skin) ? theme.skin : '', shelf = skinOn() ? theme.shelf : '';
   useBgm(prof.uid || prof.handle, theme.bgm);   // 배경음악 (설정 → 배경음악)
   document.title = `${txt(prof.display) || prof.handle} · ${APP_NAME}`;
   const isOwner = state.user?.uid === prof.uid;

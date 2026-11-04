@@ -1,5 +1,5 @@
 import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
-import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly, skinOn } from './store.js';
+import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly, skinOn, skinAllowed } from './store.js';
 import { promptView, setPageSkin, setViewTone } from './skins.js';
 import { useBgm } from './bgm.js';
 import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME, previewTheme } from './theme.js';
@@ -147,7 +147,7 @@ export async function post({ params, root }) {
   const board = aTheme.boards.find((b) => b.id === p.board);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만. 페이지 스킨 색을 글 보기에도 이어서 입혀요
   const pview = skinOn() ? aTheme.pview : '';
-  if (skinOn() && aTheme.skin) setPageSkin(aTheme.skin, aTheme.skinTone, aTheme.skinFonts?.[aTheme.skin]);
+  if (skinAllowed(aTheme.skin)) setPageSkin(aTheme.skin, aTheme.skinTone, aTheme.skinFonts?.[aTheme.skin]);
   else if (pview) setViewTone(pview, aTheme.skinTone);
   const showBody = (content) => {
     const plain = () => bodyBox.replaceChildren(

@@ -150,8 +150,109 @@ export const TONES = {
     char: idTone('차콜', { paper: '#e7e6e2', ink: '#151515', o: '#151515', t: '#9a9a9a' }),
   },
 };
-/** 고른 프리셋 (없거나 모르는 값이면 첫 번째) */
-export const toneOf = (key, tone) => { const t = TONES[key]; return t ? (t[tone] || Object.values(t)[0]) : null; };
+// ── 새 스킨(테스트 중) 색상 ──
+const SERIF2 = "Georgia, 'Times New Roman', 'Noto Serif KR', serif";
+const flFrom = (c, dark) => ({
+  '--fl-bg': c.flBg || c.bg, '--fl-bg2': c.flBg2 || c.flBg || c.bg, '--fl-ink': c.flInk || c.text, '--fl-sub': c.muted, '--fl-mark': c.accent,
+  '--fl-hl': c.hl || c.accent, '--fl-hl-ink': c.hlInk || (dark ? '#111111' : '#ffffff'), '--fl-blend': dark ? 'luminosity' : 'multiply',
+  '--fl-filter': 'grayscale(1) contrast(1.1)', '--fl-frame': c.flInk || c.text, '--fl-pattern': c.flPattern || 'none', '--fl-pattern-size': c.flPatternSize || 'auto',
+  '--idc-paper': c.idcPaper || (dark ? '#efece4' : c.bg), '--idc-paper2': '#ffffff', '--idc-ink': c.idcInk || (dark ? '#14161f' : c.text), '--idc-acc': c.accent, '--idc-acc2': c.idcAcc2 || c.text,
+});
+const chartTone = (name, c) => ({
+  name, dark: false, sw: [c.paper, c.plate, c.acc],
+  vars: {
+    ...base({ bg: c.paper, surface: c.paper2, text: c.ink, muted: c.muted, border: c.rule, accent: c.plate, soft: c.soft, onAccent: '#ffffff' }),
+    '--font': SERIF2, '--radius': '0px',
+    '--ch-paper': c.paper, '--ch-paper2': c.paper2, '--ch-plate': c.plate, '--ch-line': c.line, '--ch-ink': c.ink, '--ch-acc': c.acc, '--ch-rule': c.rule,
+    ...flFrom({ bg: c.plate, text: c.line, muted: c.line, accent: c.acc, hl: c.acc, hlInk: c.plate, flInk: c.line, idcPaper: c.paper, idcInk: c.ink, idcAcc2: c.plate,
+      flPattern: `radial-gradient(circle, ${c.line} 0 .8px, transparent 1.2px)`, flPatternSize: '23px 19px' }, true),
+  },
+});
+const probeTone = (name, dark, c) => ({
+  name, dark, sw: [c.bg, c.ink, c.acc],
+  vars: {
+    ...base({ bg: c.bg, surface: c.surface, text: c.ink, muted: c.muted, border: c.ink, accent: c.ink, soft: c.soft, onAccent: c.bg }),
+    '--font': "'Pretendard Variable', Pretendard, system-ui, sans-serif", '--radius': '0px',
+    '--pb-bg': c.bg, '--pb-ink': c.ink, '--pb-acc': c.acc, '--pb-grain': c.grain, '--pb-grid': c.grid || 'transparent',
+    ...flFrom({ bg: c.bg, text: c.ink, muted: c.muted, accent: c.acc, hl: c.acc, hlInk: dark ? c.bg : c.ink }, dark),
+  },
+});
+const spaceTone = (name, c) => ({
+  name, dark: true, sw: [c.bg, c.n1, c.acc],
+  vars: {
+    ...base({ bg: c.bg, surface: c.surface, text: c.ink, muted: c.muted, border: 'rgb(255 255 255 / .16)', accent: c.acc, soft: c.soft, onAccent: c.bg }),
+    '--font': "'Pretendard Variable', Pretendard, system-ui, sans-serif", '--radius': '14px',
+    '--sp-bg': c.bg, '--sp-ink': c.ink, '--sp-acc': c.acc, '--sp-n1': c.n1, '--sp-n2': c.n2, '--sp-n3': c.n3,
+    ...flFrom({ bg: c.bg, flBg2: c.n1, text: c.ink, muted: c.muted, accent: c.acc, hl: c.acc, hlInk: c.bg }, true),
+  },
+});
+// 시즌 모자이크: 계절·기념일마다 색과 그림이 바뀌어요. pal 은 모자이크 칸 색(글자 하나 = 색 하나)
+const mosaicTone = (name, c) => ({
+  name, dark: false, sw: [c.bg, c.pal.a, c.pal.b || c.accent], art: c.art, pal: c.pal,
+  vars: {
+    ...base({ bg: c.bg, surface: c.surface, text: c.text, muted: c.muted, border: c.border, accent: c.accent, soft: c.soft, onAccent: '#ffffff' }),
+    '--font': "'Pretendard Variable', Pretendard, system-ui, sans-serif", '--radius': '0px',
+    '--ms-bg': c.bg, '--ms-ink': c.text, '--ms-acc': c.accent,
+    ...flFrom({ bg: c.bg, text: c.text, muted: c.muted, accent: c.accent, hl: c.soft, hlInk: c.text }, false),
+  },
+});
+const TONES2 = {
+  chart: {
+    plate: chartTone('청사진 성도', { paper: '#efe9dc', paper2: '#f7f3ea', plate: '#1d3d8f', line: '#f4f1ea', ink: '#1b2a55', muted: '#6b6f80', acc: '#f4f1ea', rule: '#1b2a55', soft: '#dde3f1' }),
+    ink: chartTone('먹 성도', { paper: '#ece8df', paper2: '#f6f3ec', plate: '#151515', line: '#f2efe8', ink: '#151515', muted: '#6d6a63', acc: '#f2efe8', rule: '#151515', soft: '#dedad1' }),
+    cobalt: chartTone('코발트 · 노랑', { paper: '#eef0f4', paper2: '#f8f9fb', plate: '#1f39c4', line: '#e9edf7', ink: '#14205e', muted: '#646a84', acc: '#f4e64a', rule: '#14205e', soft: '#dfe4f6' }),
+    sepia: chartTone('세피아', { paper: '#efe3cc', paper2: '#f7eedd', plate: '#5a3b22', line: '#f5e9d0', ink: '#4a2f1b', muted: '#7d6650', acc: '#f0c46a', rule: '#4a2f1b', soft: '#e6d6b9' }),
+  },
+  probe: {
+    uranus: probeTone('천왕성', false, { bg: '#d9d9d5', surface: '#e3e3df', ink: '#141414', muted: '#55555a', acc: '#9cc6d3', soft: '#c9cfcf', grain: 'rgb(0 0 0 / .09)' }),
+    blueprint: probeTone('청사진', true, { bg: '#1e4fd6', surface: '#2357e0', ink: '#f2f5ff', muted: '#b7c6ff', acc: '#ffffff', soft: '#2f62e6', grain: 'rgb(255 255 255 / .05)', grid: 'rgb(255 255 255 / .16)' }),
+    nasa: probeTone('관측 필름', true, { bg: '#111111', surface: '#191919', ink: '#ededed', muted: '#9a9a9a', acc: '#ff4a2b', soft: '#262626', grain: 'rgb(255 255 255 / .06)' }),
+    mars: probeTone('화성', false, { bg: '#e7dccd', surface: '#efe6da', ink: '#2a1912', muted: '#7a6457', acc: '#d4552e', soft: '#dccdbd', grain: 'rgb(60 20 0 / .08)' }),
+  },
+  space: {
+    deep: spaceTone('깊은 우주', { bg: '#04060f', surface: '#0b1022', ink: '#e8ecff', muted: '#97a2c8', acc: '#9cc0ff', soft: '#16213f', n1: '#1b2a6b', n2: '#3a1d5c', n3: '#0f4a6b' }),
+    nebula: spaceTone('성운', { bg: '#07040e', surface: '#130a22', ink: '#f6ecff', muted: '#b8a3cc', acc: '#ff9bd6', soft: '#2a143c', n1: '#5c1d5e', n2: '#7a2a3a', n3: '#2a1d6b' }),
+    aurora: spaceTone('오로라', { bg: '#020c0c', surface: '#081a1a', ink: '#e6fff8', muted: '#8fc2b3', acc: '#6effd2', soft: '#0f2e2a', n1: '#0d5a4a', n2: '#1d3a6b', n3: '#3a6b1d' }),
+    dawn: spaceTone('새벽 행성', { bg: '#08060c', surface: '#140f18', ink: '#fff2e6', muted: '#c9ab96', acc: '#ffb36b', soft: '#2e1d16', n1: '#6b3a1d', n2: '#3a1d4a', n3: '#1d2a5a' }),
+  },
+  mosaic: {
+    auto: { name: '자동 (계절·기념일)', dark: false, sw: ['#f6f4ee', '#4c9a52', '#ff8fb1'], vars: {} },
+    xmas: mosaicTone('크리스마스', { bg: '#f6f4ee', surface: '#ffffff', text: '#1d1d1b', muted: '#6d6b63', border: '#d9d6cc', accent: '#c4302b', soft: '#e7f0e3',
+      art: 'xmas', pal: { a: '#4c9a52', b: '#2f7a3b', c: '#7cc06a', d: '#a7d39a', r: '#d63a33', y: '#f3c443', w: '#ffffff', t: '#7a5233' } }),
+    buddha: mosaicTone('부처님 오신 날', { bg: '#fbf6ee', surface: '#ffffff', text: '#2b1d16', muted: '#7d6a5d', border: '#e6d9c8', accent: '#d9486b', soft: '#fde3e8',
+      art: 'lotus', pal: { a: '#f28aa5', b: '#e2557a', c: '#ffc2d0', d: '#ffe1e8', g: '#5aa16b', y: '#f6c64b', r: '#c9303d', k: '#6b4a33' } }),
+    spring: mosaicTone('봄', { bg: '#fbf7f6', surface: '#ffffff', text: '#2c2224', muted: '#7c6c70', border: '#eadfe0', accent: '#e36f92', soft: '#fbe5ec',
+      art: 'blossom', pal: { a: '#f7b6c8', b: '#f093ad', c: '#fbd3de', d: '#fde9ef', t: '#7b5a48', g: '#9fcf8f' } }),
+    summer: mosaicTone('여름', { bg: '#f3f8fa', surface: '#ffffff', text: '#122a33', muted: '#5f7680', border: '#d3e3ea', accent: '#1f8fbf', soft: '#dcf0f8',
+      art: 'sea', pal: { a: '#3fa7d6', b: '#1f7fb3', c: '#8fd1ec', d: '#cdeef8', y: '#ffcf4a', s: '#f2e2b8', w: '#ffffff' } }),
+    autumn: mosaicTone('가을', { bg: '#faf5ee', surface: '#ffffff', text: '#2d1d12', muted: '#7d6655', border: '#eadccb', accent: '#d2602a', soft: '#fbe5d3',
+      art: 'maple', pal: { a: '#e4762f', b: '#c9472b', c: '#f2a64a', d: '#f6c779', t: '#6b4a33', r: '#a8321f' } }),
+    winter: mosaicTone('겨울', { bg: '#f4f6f9', surface: '#ffffff', text: '#18212e', muted: '#677385', border: '#d9e0ea', accent: '#3d6fb6', soft: '#e3ebf6',
+      art: 'snow', pal: { a: '#c9d8ea', b: '#9fb8d6', c: '#e8eff8', d: '#ffffff', m: '#6f87a6', k: '#3d4d63' } }),
+  },
+};
+// 부처님 오신 날 (음력 4월 8일, 양력 날짜)
+const BUDDHA_DAYS = { 2025: '05-05', 2026: '05-24', 2027: '05-13', 2028: '05-02', 2029: '05-20', 2030: '05-09', 2031: '05-28', 2032: '05-16' };
+/** 오늘 날짜에 맞는 모자이크 시즌 */
+export function seasonOf(d = new Date()) {
+  const y = d.getFullYear(), m = d.getMonth() + 1;
+  if (m === 12) return 'xmas';
+  const bd = BUDDHA_DAYS[y];
+  if (bd) {
+    const day = new Date(`${y}-${bd}T00:00:00`);
+    const diff = (day - new Date(y, d.getMonth(), d.getDate())) / 86400000;
+    if (diff >= -1 && diff <= 14) return 'buddha';   // 2주 전부터 다음 날까지
+  }
+  return m <= 2 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'autumn';
+}
+Object.assign(TONES, TONES2);
+/** 고른 프리셋 (없거나 모르는 값이면 첫 번째). 시즌 모자이크의 '자동'은 오늘 날짜로 골라요 */
+export const toneOf = (key, tone) => {
+  const t = TONES[key];
+  if (!t) return null;
+  if (key === 'mosaic' && (!tone || tone === 'auto' || !t[tone])) return t[seasonOf()];
+  return t[tone] || Object.values(t)[0];
+};
 
 let applied = [];
 function setVars(vars) {
@@ -159,7 +260,7 @@ function setVars(vars) {
   // 기본 색(--bg 등)은 다음 화면의 applyTheme 이 다시 정하니까, 스킨 전용 변수만 지워요
   applied.forEach((k) => s.removeProperty(k));
   applied = [];
-  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|gc|fl|idc|idv|sk)-/.test(k)) applied.push(k); }
+  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|gc|fl|idc|idv|sk|ch|pb|sp|ms)-/.test(k)) applied.push(k); }
 }
 
 /** 화면 전체 색(변수)을 스킨으로 바꿔요. 다른 화면으로 가면 app.js 가 data-skin 을 지우고, 다음 화면의 테마가 색을 다시 정해요 */
@@ -196,6 +297,10 @@ export function dressBlog(skin, ctx) {
   else if (skin === 'term') dressTerm(ctx);
   else if (skin === 'game') dressGame(ctx);
   else if (skin === 'grid') dressGrid(ctx);
+  else if (skin === 'chart') dressChart(ctx);
+  else if (skin === 'probe') dressProbe(ctx);
+  else if (skin === 'space') dressSpace(ctx);
+  else if (skin === 'mosaic') dressMosaic(ctx);
 }
 
 // ── 1. 홈페이지: 모눈종이 바탕 위 옛날 브라우저 창 ──
@@ -342,6 +447,286 @@ function dressGrid({ head, body, main, prof, theme, boards, selectBoard }) {
       h('span', { class: 'gc-ring', 'aria-hidden': 'true' }), h('b', null, 'START'), h('span', { class: 'gc-cur', 'aria-hidden': 'true' }, '↖')));
   head.before(hero);
   body.classList.add('gc-body');
+}
+
+// ═════════════════════ 테스트 중인 페이지 스킨 (관리자만) ═════════════════════
+// 같은 블로그는 늘 같은 별자리·모자이크가 나오게, 아이디로 정해지는 난수를 써요
+function seeded(str) {
+  let x = 2166136261;
+  for (const c of String(str)) x = Math.imul(x ^ c.charCodeAt(0), 16777619);
+  return () => { x = (x + 0x6D2B79F5) | 0; let t = Math.imul(x ^ (x >>> 15), 1 | x); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+const roman = (n) => { let s = ''; n = Math.max(1, Math.min(3999, n | 0)); for (const [v, r] of ROMAN) while (n >= v) { s += r; n -= v; } return s; };
+const GREEK = 'αβγδεζηθικλμνξοπρστυφχψω';
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const yearOf = (prof) => (prof.created ? new Date(prof.created).getFullYear() : new Date().getFullYear());
+
+// ── 5. 천문 지도: 종이 위에 찍은 파란 성도 (경위선 · 은하수 점묘 · 별자리 = 게시판) ──
+function starPath(cx, cy, r, n = 6) {
+  const p = [];
+  for (let i = 0; i < n * 2; i++) { const a = (Math.PI / n) * i - Math.PI / 2; const rr = i % 2 ? r * 0.32 : r; p.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`); }
+  return `<polygon points="${p.join(' ')}"/>`;
+}
+function chartSvg(prof, boards, posts) {
+  const W = 1200, H = 420, R = seeded(prof.handle + 'chart');
+  const out = [];
+  // 경위선: 큰 호 3개 + 비스듬한 시간선 3개
+  out.push('<g class="ch-grat" fill="none">');
+  for (let i = 0; i < 3; i++) { const cy = 900 + i * 260, r = 820 + i * 260; out.push(`<circle cx="${560 + i * 40}" cy="${cy}" r="${r}"/>`); }
+  for (let i = 0; i < 3; i++) { const x = 260 + i * 330; out.push(`<line x1="${x}" y1="0" x2="${x + 140 - i * 60}" y2="${H}"/>`); }
+  out.push('</g>');
+  // 은하수: 비스듬한 띠 모양 점묘
+  out.push('<g class="ch-milky">');
+  for (let i = 0; i < 900; i++) {
+    const t = R(), off = (R() + R() + R() - 1.5) * 120;
+    const x = 80 + t * 1040 + off * 0.35, y = H - 40 - t * 360 + off;
+    if (y < 0 || y > H) continue;
+    out.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.6 + R() * 1.1).toFixed(2)}"/>`);
+  }
+  out.push('</g>');
+  // 흩어진 별 + 그리스 문자 이름
+  out.push('<g class="ch-stars">');
+  for (let i = 0; i < 46; i++) {
+    const x = 30 + R() * (W - 60), y = 24 + R() * (H - 48), r = 3 + R() * 7;
+    out.push(starPath(x, y, r, R() < 0.6 ? 6 : 4));
+    if (R() < 0.35) out.push(`<text class="ch-gk" x="${(x + r + 4).toFixed(1)}" y="${(y + 4).toFixed(1)}">${GREEK[i % GREEK.length]}</text>`);
+  }
+  out.push('</g>');
+  // 라벨 (원래 성도의 '10 hours' 자리)
+  out.push(`<g class="ch-lbl"><text x="268" y="26">${posts.length} stars</text><text x="600" y="26">${boards.length} constellations</text>`
+    + `<text x="40" y="${H - 14}" transform="rotate(-13 40 ${H - 14})">since ${yearOf(prof)} · @${esc(prof.handle)}</text></g>`);
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${out.join('')}</svg>`;
+}
+function dressChart({ head, body, main, prof, boards, selectBoard, posts }) {
+  const name = txt(prof.display) || prof.handle;
+  const R = seeded(prof.handle + 'const');
+  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  // 게시판 = 별자리 (최대 5개, 성도 위 자리를 아이디로 정해요)
+  const cons = boards.slice(0, 5).map((b, i) => {
+    const x = 8 + ((i * 19 + R() * 10) % 80), y = 18 + R() * 56;
+    return h('button', { class: 'ch-con', type: 'button', style: { left: x + '%', top: y + '%' }, onclick: () => { selectBoard(b.id); go(); } },
+      h('i', { 'aria-hidden': 'true' }, '✶'), h('span', null, b.name));
+  });
+  const hero = h('section', { class: 'ch-hero' },
+    h('p', { class: 'ch-mapno' }, `Map Nº ${roman(posts.length || 1)}.`),
+    h('div', { class: 'ch-plate' },
+      h('div', { class: 'ch-svg', html: chartSvg(prof, boards, posts) }),
+      h('h1', { class: 'ch-name' }, name),
+      ...cons),
+    h('p', { class: 'ch-caption' }, h('span', null, `${posts.length} hours Right Ascension`), h('b', null, 'POLE'), h('span', null, `${yearOf(prof)} North Polar Distance`)));
+  head.before(hero);
+  body.classList.add('ch-body');
+}
+
+// ── 6. 관측 기록: 거친 종이에 인쇄한 관측 포스터 + 디지털 데이터 표 ──
+function orbitSvg(boards) {
+  const W = 420, H = 150, cx = 210, cy = 78;
+  const out = ['<g fill="none" class="pb-orb">'];
+  const n = Math.max(3, Math.min(7, boards.length + 2));
+  for (let i = 1; i <= n; i++) out.push(`<ellipse cx="${cx}" cy="${cy}" rx="${24 + i * 26}" ry="${8 + i * 9}"/>`);
+  out.push('</g><circle class="pb-sun" cx="210" cy="78" r="13"/>');
+  boards.slice(0, n - 1).forEach((b, i) => {
+    const a = 0.6 + i * 1.7, rx = 24 + (i + 2) * 26, ry = 8 + (i + 2) * 9;
+    const x = cx + Math.cos(a) * rx, y = cy + Math.sin(a) * ry;
+    out.push(`<circle class="pb-planet" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${4 + (i % 3) * 2}"/>`);
+    if (i === 0) out.push(`<text class="pb-orb-lbl" x="${(x - 18).toFixed(1)}" y="${(y - 12).toFixed(1)}">${esc(b.name.toUpperCase().slice(0, 14))}</text>`);
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true">${out.join('')}</svg>`;
+}
+function dressProbe({ head, body, main, prof, boards, selectBoard, posts }) {
+  // 이름을 단어별로 끊어 쌓은 큰 블록 글자 (한 단어면 3~4글자씩). 가장 긴 줄이 칸에 꼭 맞게 글자 크기를 정해요
+  const full = (txt(prof.display) || prof.handle).trim();
+  let lines = full.split(/\s+/).filter(Boolean);
+  if (lines.length === 1 && lines[0].length > 6) { const w = lines[0], per = /[가-힣]/.test(w) ? 2 : Math.ceil(w.length / Math.ceil(w.length / 4)); lines = []; for (let i = 0; i < w.length; i += per) lines.push(w.slice(i, i + per)); }
+  lines = lines.slice(0, 4);
+  const units = (l) => [...l].reduce((n, c) => n + (/[가-힣ㄱ-ㅎ]/.test(c) ? 1 : /[MW]/i.test(c) ? 0.78 : 0.6), 0);
+  const wUnits = Math.max(2.4, ...lines.map(units));
+  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  const last = posts.reduce((m, p) => Math.max(m, p.created || 0), 0);
+  const month = new Date().getMonth();
+  const row = (a, b) => h('div', { class: 'pb-row' }, h('span', null, a), h('span', null, b));
+  const bars = [];
+  const R = seeded(prof.handle + 'bar');
+  for (let i = 0; i < 40; i++) bars.push(h('i', { style: { width: (1 + Math.floor(R() * 3)) + 'px' } }));
+  const hero = h('section', { class: 'pb-hero' },
+    h('div', { class: 'pb-block', style: { '--w': wUnits.toFixed(2) }, 'aria-label': full }, lines.map((l) => h('span', null, l))),
+    h('div', { class: 'pb-side' },
+      h('div', { class: 'pb-top' }, h('span', null, `“DRAWER” OBSERVATION LOG\nBY @${prof.handle}`), h('span', null, `© ${yearOf(prof)} ${prof.handle.toUpperCase()}`)),
+      h('div', { class: 'pb-table' },
+        h('div', { class: 'pb-row head' }, h('span', null, `THE ${(txt(prof.display) || prof.handle).toUpperCase()}`)),
+        row('ENTRIES', String(posts.length)), row('BOARDS', String(boards.length)),
+        h('div', { class: 'pb-gap' }),
+        row('SINCE', String(yearOf(prof))), row('LAST SIGNAL', last ? fmtDate(last) : '—')),
+      h('div', { class: 'pb-dots' }, Array.from({ length: 12 }, (_, i) => h('i', { class: i === month ? 'on' : '' })), h('b', { 'aria-hidden': 'true' }), h('span', { class: 'pb-bar' }, bars)),
+      txt(prof.bio) ? h('p', { class: 'pb-bio' }, txt(prof.bio)) : null,
+      h('div', { class: 'pb-orbit', html: orbitSvg(boards) }),
+      h('div', { class: 'pb-menu' }, boards.slice(0, 5).map((b) => h('button', { type: 'button', onclick: () => { selectBoard(b.id); go(); } }, '+ ' + b.name)),
+        h('button', { class: 'pb-go', type: 'button', onclick: go }, 'CHANGE; REVOLT →'))),
+    ...[[6, 18], [38, 62], [55, 8], [92, 40], [70, 88]].map(([x, y]) => h('i', { class: 'pb-plus', style: { left: x + '%', top: y + '%' }, 'aria-hidden': 'true' }, '+')));
+  head.before(hero);
+  body.classList.add('pb-body');
+}
+
+// ── 7. 우주 유영: 움직이는 별밭 + 성운 + 떠다니는 카드 ──
+function spaceSky(root) {
+  const cv = h('canvas', { class: 'sp-sky', 'aria-hidden': 'true' });
+  const neb = h('div', { class: 'sp-neb', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'));
+  root.prepend(neb, cv);
+  const ctx = cv.getContext('2d');
+  let W = 0, H = 0, stars = [], shoot = null, mx = 0, my = 0, raf = 0;
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+  const resize = () => {
+    W = innerWidth; H = innerHeight; cv.width = W * DPR; cv.height = H * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const n = Math.round(W * H / 2600);
+    stars = Array.from({ length: n }, () => ({ x: Math.random() * W, y: Math.random() * H, z: Math.random(), tw: Math.random() * 6.28, s: 0.002 + Math.random() * 0.01 }));
+  };
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--sp-ink').trim() || '#e8ecff';
+  const draw = (t) => {
+    if (!cv.isConnected) { cancelAnimationFrame(raf); removeEventListener('resize', resize); removeEventListener('pointermove', onMove); return; }
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      const depth = 0.3 + s.z * 0.7;
+      const x = (s.x + mx * depth * 18 + t * 0.004 * depth) % W, y = (s.y + my * depth * 18 + t * 0.0015 * depth) % H;
+      const a = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(s.tw + t * s.s)) * depth;
+      ctx.globalAlpha = a; ctx.fillStyle = color;
+      const r = 0.4 + depth * 1.3;
+      ctx.beginPath(); ctx.arc(x < 0 ? x + W : x, y < 0 ? y + H : y, r, 0, 6.283); ctx.fill();
+      if (depth > 0.93) { ctx.globalAlpha = a * 0.5; ctx.fillRect(x - r * 4, y - 0.4, r * 8, 0.8); ctx.fillRect(x - 0.4, y - r * 4, 0.8, r * 8); }
+    }
+    // 가끔 별똥별
+    if (!shoot && Math.random() < 0.003) shoot = { x: Math.random() * W * 0.8, y: Math.random() * H * 0.4, l: 0 };
+    if (shoot) {
+      shoot.l += 14;
+      const g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x + shoot.l, shoot.y + shoot.l * 0.45);
+      g.addColorStop(0, 'transparent'); g.addColorStop(1, color);
+      ctx.globalAlpha = Math.max(0, 1 - shoot.l / 420); ctx.strokeStyle = g; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(shoot.x + shoot.l, shoot.y + shoot.l * 0.45); ctx.stroke();
+      if (shoot.l > 420) shoot = null;
+    }
+    ctx.globalAlpha = 1;
+    if (!reduced()) raf = requestAnimationFrame(draw);
+  };
+  const onMove = (e) => { mx = (e.clientX / W - 0.5) * -1; my = (e.clientY / H - 0.5) * -1; };
+  resize();
+  addEventListener('resize', resize);
+  addEventListener('pointermove', onMove, { passive: true });
+  raf = requestAnimationFrame(draw);
+}
+function dressSpace({ root, head, body, main, prof, boards, selectBoard }) {
+  spaceSky(root);
+  const name = txt(prof.display) || prof.handle;
+  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  const R = seeded(prof.handle + 'sp');
+  const spark = Array.from({ length: 7 }, (_, i) => h('i', { class: 'sp-spark', 'aria-hidden': 'true', style: { left: (6 + R() * 88) + '%', top: (8 + R() * 80) + '%', '--s': (0.5 + R() * 1.1).toFixed(2), '--d': (R() * 4).toFixed(2) + 's' } }));
+  const hero = h('section', { class: 'sp-hero' },
+    ...spark,
+    h('div', { class: 'sp-pin' }, h('span', null, 'you are here'), h('i', { 'aria-hidden': 'true' })),
+    h('h1', { class: 'sp-name' }, name),
+    h('p', { class: 'sp-sub' }, `@${prof.handle} · drifting since ${yearOf(prof)}`),
+    h('div', { class: 'sp-orbits' }, boards.slice(0, 5).map((b, i) => h('button', { type: 'button', style: { '--i': i }, onclick: () => { selectBoard(b.id); go(); } }, h('i', { 'aria-hidden': 'true' }), b.name))),
+    h('button', { class: 'sp-dive', type: 'button', onclick: go, 'aria-label': '글 목록으로' }, h('span', null, 'dive in'), h('i', { 'aria-hidden': 'true' }, '↓')));
+  head.before(hero);
+  body.classList.add('sp-body');
+}
+
+// ── 8. 시즌 모자이크: 계절·기념일마다 바뀌는 흐릿한 픽셀 그림 ──
+// 그림은 칸 지도로 만들어요: 그림마다 '어느 칸에 어떤 색 글자'를 계산 → 색은 tone.pal
+function artMap(kind, R) {
+  const W = 21, H = 18;
+  const g = Array.from({ length: H }, () => Array(W).fill(''));
+  const put = (x, y, c) => { if (x >= 0 && x < W && y >= 0 && y < H) g[y][x] = c; };
+  const pick = (s) => s[Math.floor(R() * s.length)];
+  const blob = (cx, cy, rx, ry, cols, rough = 0.18) => {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+      if (d < 1 - rough + R() * rough * 2) put(x, y, pick(cols));
+    }
+  };
+  if (kind === 'xmas') {
+    put(10, 0, 'y'); put(9, 1, 'y'); put(10, 1, 'y'); put(11, 1, 'y');
+    for (let r = 0; r < 14; r++) {
+      const half = Math.floor(r * 0.72) + (r % 3 === 0 ? 0 : 1) - (r > 0 && r % 4 === 0 ? 1 : 0);
+      for (let x = 10 - half; x <= 10 + half; x++) put(x, 2 + r, R() < 0.09 ? pick('ry') : pick('aabbccd'));
+    }
+    for (let y = 16; y < 18; y++) for (let x = 9; x <= 11; x++) put(x, y, 't');
+  } else if (kind === 'lotus') {
+    const lan = [[4, 4], [10, 6], [16, 4]];
+    lan.forEach(([cx, cy]) => {
+      for (let y = 0; y < cy - 2; y++) put(cx, y, 'k');
+      for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 2; x <= cx + 2; x++) {
+        const d = (x - cx) ** 2 + (y - cy) ** 2;
+        if (d <= 5) put(x, y, d <= 1 ? 'd' : d <= 2 ? 'c' : R() < 0.5 ? 'a' : 'b');
+      }
+      put(cx, cy + 3, 'y'); put(cx, cy + 4, 'y');
+    });
+    // 아래쪽 연꽃
+    const fl = [[10, 13, 3], [7, 15, 2], [13, 15, 2], [10, 16, 2]];
+    fl.forEach(([cx, cy, r]) => { for (let y = cy - r; y <= cy; y++) for (let x = cx - r; x <= cx + r; x++) if (Math.abs(x - cx) <= r - (cy - y) * 0.6) put(x, y, pick('aabc')); });
+    for (let x = 3; x <= 17; x++) put(x, 17, R() < 0.8 ? 'g' : '');
+  } else if (kind === 'blossom' || kind === 'maple') {
+    const cols = kind === 'blossom' ? 'aabbccd' : 'aabbccdr';
+    blob(10, 6, 8.5, 5.2, cols);
+    for (let y = 10; y < 17; y++) put(10, y, 't');
+    put(11, 12, 't'); put(9, 14, 't'); put(12, 11, 't'); put(8, 13, 't');
+    for (let i = 0; i < 12; i++) put(Math.floor(R() * W), 12 + Math.floor(R() * 6), pick(cols));
+    if (kind === 'blossom') for (let x = 4; x <= 16; x++) if (R() < 0.7) put(x, 17, 'g');
+  } else if (kind === 'sea') {
+    blob(15, 3.2, 2.6, 2.6, 'y', 0.05);
+    for (let y = 8; y < 16; y++) for (let x = 0; x < W; x++) {
+      const wave = Math.sin((x + y * 1.7) * 0.9) > 0.2;
+      put(x, y, y < 10 ? (wave ? 'd' : 'c') : y < 13 ? (wave ? 'c' : 'a') : (wave ? 'a' : 'b'));
+    }
+    for (let y = 16; y < 18; y++) for (let x = 0; x < W; x++) put(x, y, R() < 0.12 ? 'w' : 's');
+  } else {   // snow: 눈 덮인 산 + 내리는 눈
+    const peak = (cx, top, w) => { for (let y = top; y < 15; y++) { const half = Math.floor((y - top) * w); for (let x = cx - half; x <= cx + half; x++) put(x, y, y - top < 2 + (x % 2) ? 'd' : pick('mmk')); } };
+    peak(7, 4, 0.9); peak(14, 6, 1.0);
+    for (let y = 15; y < 18; y++) for (let x = 0; x < W; x++) put(x, y, pick('abcd'));
+    for (let i = 0; i < 16; i++) { const x = Math.floor(R() * W), y = Math.floor(R() * 12); if (!g[y][x]) put(x, y, 'w'); }
+  }
+  return { W, H, g };
+}
+function mosaicArt(tone, seed) {
+  const R = seeded(seed + tone.art);
+  const { W, H, g } = artMap(tone.art, R);
+  const pal = { w: '#ffffff', ...tone.pal };
+  const cells = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const ch = g[y][x];
+    if (ch && pal[ch]) {
+      // 밝게(--l) 또는 어둡게(--k) 살짝 흔들어요 (color-mix 는 음수 % 를 못 써서 둘로 나눠요)
+      const v = R() - 0.5, l = v > 0 ? Math.round(v * 44) : 0, k = v < 0 ? Math.round(-v * 30) : 0;
+      cells.push(h('i', { class: 'on', style: { '--c': pal[ch], '--l': l + '%', '--k': k + '%', '--o': (0.8 + R() * 0.2).toFixed(2) } }));
+      continue;
+    }
+    // 그림 가장자리에 흐릿한 칸을 조금 (손으로 붙인 모자이크 느낌)
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]].map(([dx, dy]) => g[y + dy]?.[x + dx]).find((c) => c && pal[c] && c !== 'w');
+    cells.push(near && R() < 0.45 ? h('i', { class: 'halo', style: { '--c': pal[near], '--o': (0.12 + R() * 0.2).toFixed(2) } }) : h('i'));
+  }
+  return h('div', { class: 'ms-grid', style: { '--cols': W } }, cells);
+}
+const SEASON_COPY = {
+  xmas: ['rockin\' around', '반짝이는 연말 프롬프트를 모았어요'], lotus: ['lotus lanterns', '연등처럼 환하게 밝혀 둔 서랍'], blossom: ['in full bloom', '봄바람 따라 꺼내 보는 서랍'],
+  sea: ['summer tide', '파도처럼 밀려온 프롬프트'], maple: ['falling leaves', '천천히 물드는 가을 서랍'], snow: ['first snow', '눈 내리는 날의 조용한 서랍'],
+};
+function dressMosaic({ head, body, main, prof, theme }) {
+  const tone = toneOf('mosaic', theme.skinTone);
+  const name = txt(prof.display) || prof.handle;
+  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  const [sub, line] = SEASON_COPY[tone.art] || SEASON_COPY.xmas;
+  // 기념일 장식: 크리스마스엔 산타 모자, 부처님 오신 날엔 연등 줄
+  const hat = tone.art === 'xmas' ? h('span', { class: 'ms-hat', 'aria-hidden': 'true', html:
+    '<svg viewBox="0 0 64 48"><path d="M6 40 C14 14 30 4 48 10 C56 13 58 22 60 30 L52 28 C46 22 36 20 30 26 C22 32 18 38 18 42 Z" fill="#d63a33"/><rect x="2" y="36" width="34" height="10" rx="5" fill="#fff"/><circle cx="60" cy="31" r="5" fill="#fff"/></svg>' }) : null;
+  const lanterns = tone.art === 'lotus' ? h('div', { class: 'ms-lanterns', 'aria-hidden': 'true' }, ...['#f28aa5', '#f6c64b', '#e2557a', '#ffc2d0', '#f28aa5'].map((c, i) => h('i', { style: { '--c': c, '--i': i } }))) : null;
+  const hero = h('section', { class: 'ms-hero ms-' + tone.art },
+    h('p', { class: 'ms-brand' }, (txt(prof.display) || prof.handle).toUpperCase()),
+    lanterns,
+    mosaicArt(tone, prof.handle),
+    h('h1', { class: 'ms-title' }, hat, h('span', null, sub)),
+    h('p', { class: 'ms-line' }, `${name} — ${line}`),
+    h('button', { class: 'ms-go', type: 'button', onclick: go }, 'OPEN DRAWER'));
+  head.before(hero);
+  body.classList.add('ms-body');
 }
 
 // ═════════════════════ 프롬 모음 ═════════════════════
