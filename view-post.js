@@ -145,7 +145,7 @@ export async function post({ params, root }) {
   const board = aTheme.boards.find((b) => b.id === p.board);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만. 페이지 스킨 색을 글 보기에도 이어서 입혀요
   const pview = skinOn() ? aTheme.pview : '';
-  if (skinOn() && aTheme.skin) setPageSkin(aTheme.skin, aTheme.skinTone);
+  if (skinOn() && aTheme.skin) setPageSkin(aTheme.skin, aTheme.skinTone, aTheme.skinFonts?.[aTheme.skin]);
   else if (pview) setViewTone(pview, aTheme.skinTone);
   const showBody = (content) => {
     const plain = () => bodyBox.replaceChildren(

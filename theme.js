@@ -23,6 +23,30 @@ export const FONTS = {
   mono:  { name: '코드 느낌', stack: "'JetBrains Mono', 'D2Coding', ui-monospace, 'Pretendard Variable', monospace" },
 };
 
+// 스킨 글꼴: 스킨마다 제목 · 꾸밈(메뉴·라벨) · 본문 글꼴을 따로 골라요 ('' = 스킨 기본)
+export const SKIN_FONTS = {
+  '':        { name: '스킨 기본', stack: '' },
+  pixel:     { name: '갈무리 픽셀', stack: "Galmuri11, 'Pretendard Variable', sans-serif" },
+  pixelbig:  { name: '갈무리 큰 픽셀', stack: 'Galmuri14, Galmuri11, sans-serif' },
+  pixelmono: { name: '갈무리 모노', stack: 'GalmuriMono11, Galmuri11, monospace' },
+  sans:      { name: FONTS.sans.name, stack: FONTS.sans.stack },
+  serif:     { name: FONTS.serif.name, stack: FONTS.serif.stack },
+  round:     { name: FONTS.round.name, stack: FONTS.round.stack },
+  mono:      { name: FONTS.mono.name, stack: FONTS.mono.stack },
+};
+export const SKIN_FONT_SLOTS = ['title', 'ui', 'body'];
+function sanitizeSkinFonts(f) {
+  const out = {};
+  if (!f || typeof f !== 'object') return out;
+  for (const sk of Object.keys(SKINS)) {
+    if (!sk || !f[sk] || typeof f[sk] !== 'object') continue;
+    const one = {};
+    for (const slot of SKIN_FONT_SLOTS) if (typeof f[sk][slot] === 'string' && f[sk][slot] && SKIN_FONTS[f[sk][slot]]) one[slot] = f[sk][slot];
+    if (Object.keys(one).length) out[sk] = one;
+  }
+  return out;
+}
+
 export const LAYOUTS = {
   list:    '리스트',
   grid:    '카드 그리드',
@@ -160,7 +184,7 @@ export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
-  skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [],
+  skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [], skinFonts: {}, showAll: true,
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -219,11 +243,13 @@ export function sanitizeTheme(t) {
     kinds: sanitizeKinds(t.kinds),
     boards: sanitizeBoards(t.boards),
     uncat: t.uncat !== false,
+    showAll: t.showAll !== false,
     favicon: sanitizeFavicon(t.favicon),
     buttons: sanitizeButtons(t.buttons),
     skin: pick(SKINS, t.skin),
     shelf: pick(SHELVES, t.shelf),
     pview: pick(PVIEWS, t.pview),
+    skinFonts: sanitizeSkinFonts(t.skinFonts),
     gameBoards: Array.isArray(t.gameBoards) ? [...new Set(t.gameBoards.filter((id) => typeof id === 'string' && BOARD_ID_RE.test(id)))].slice(0, 4) : [],
     skinTone: typeof t.skinTone === 'string' && /^[a-z0-9]{1,16}$/.test(t.skinTone) ? t.skinTone : '',
   };

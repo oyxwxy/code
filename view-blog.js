@@ -183,13 +183,20 @@ export async function blog({ params, query, root }) {
   // ── 도구줄 ──
   const qBoard = query?.get('board');
   let q = '', tag = null, visFilter = 'all', shown = PAGE;
-  let boardFilter = (qBoard === NONE && showUncat) || boardIds.has(qBoard) ? qBoard : 'all';
+  // '전체'를 숨겼으면(설정 → 게시판) 처음엔 보이는 첫 게시판을 열어요
+  const firstBoard = () => {
+    const b = boards.find((x) => isOwner || posts.some((p) => boardOf(p) === x.id));
+    if (b) return b.id;
+    return showUncat && (isOwner || posts.some((p) => !boardOf(p))) ? NONE : 'all';
+  };
+  const homeBoard = theme.showAll ? 'all' : firstBoard();
+  let boardFilter = (qBoard === NONE && showUncat) || boardIds.has(qBoard) ? qBoard : homeBoard;
   let kindFilter = 'all';
   // 내 블로그에서 특정 게시판을 보고 있으면, 글쓰기를 눌렀을 때 그 게시판이 미리 골라져요
   const writeBoard = () => (isOwner && boardFilter !== 'all' && boardFilter !== NONE && boardIds.has(boardFilter) ? boardFilter : '');
   const writeHref = () => '#/new' + (writeBoard() ? '?board=' + encodeURIComponent(writeBoard()) : '');
   // 보고 있는 게시판을 주소에 남겨요 → 글을 보다가 뒤로 가면 그 게시판으로 돌아와요
-  const blogHash = () => '#/u/' + handle + (boardFilter !== 'all' ? '?board=' + encodeURIComponent(boardFilter) : '');
+  const blogHash = () => '#/u/' + handle + (boardFilter !== homeBoard ? '?board=' + encodeURIComponent(boardFilter) : '');
   const rememberBoard = () => {
     state.lastBlog = { handle, hash: blogHash() };
     if (location.hash !== blogHash()) history.replaceState(history.state, '', blogHash());
@@ -284,7 +291,7 @@ export async function blog({ params, query, root }) {
         onclick: () => { kindFilter = k; shown = PAGE; paintPills(); paint(); } }, ic ? icon(ic, 14) : null, label)));
     // 게시판: 다른 사람에게는 글이 있는 게시판만 보여요. '미분류'는 설정에서 켜고 끌 수 있어요
     const has = new Set(posts.map((p) => boardOf(p) || NONE));
-    const entries = [['all', '전체', 'grid'], ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
+    const entries = [...(theme.showAll || homeBoard === 'all' ? [['all', '전체', 'grid']] : []), ...boards.filter((b) => isOwner || has.has(b.id)).map((b) => [b.id, b.name, b.icon]),
       ...(showUncat && (isOwner || has.has(NONE)) ? [[NONE, '미분류', 'file']] : [])];
     boardBox.replaceChildren(...entries.map(([k, label, ic]) =>
       h('button', { class: 'side-item' + (boardFilter === k ? ' on' : ''), onclick: () => selectBoard(k) },

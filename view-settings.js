@@ -1,6 +1,6 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
 import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS } from './theme.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
 import { colorField, stepper, iconField, datePicker, selectField } from './widgets.js';
@@ -8,11 +8,12 @@ import { TINTS as DD_TINTS } from './dday.js';
 import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { openCropper } from './crop.js';
-import { TONES } from './skins.js';
+import { TONES, ensureSkinFont } from './skins.js';
 
-const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
+const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['skin', 'sparkle', '스킨'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 // 초대 탭은 관리자에게만 보여요
-const tabsFor = (me) => ALL_TABS.filter(([k]) => k !== 'invite' || me?.isAdmin);
+// 스킨 탭은 테스트 중이라 관리자(BETA_HANDLES 포함)에게만 보여요
+const tabsFor = (me) => ALL_TABS.filter(([k]) => (k !== 'invite' || me?.isAdmin) && (k !== 'skin' || skinOn()));
 
 export async function settings({ root, query }) {
   if (!state.me) { location.replace('#/login?next=' + encodeURIComponent('/settings')); return; }
@@ -28,7 +29,7 @@ export async function settings({ root, query }) {
   async function show() {
     content.replaceChildren(loader());
     if (tab !== 'design') applyTheme(state.me.theme);
-    const node = tab === 'profile' ? profileTab() : tab === 'boards' ? boardsTab() : tab === 'design' ? designTab() : tab === 'invite' ? await inviteTab() : backupTab();
+    const node = tab === 'profile' ? profileTab() : tab === 'boards' ? boardsTab() : tab === 'design' ? designTab() : tab === 'skin' ? skinTab() : tab === 'invite' ? await inviteTab() : backupTab();
     content.replaceChildren(node);
   }
   root.append(
@@ -36,6 +37,127 @@ export async function settings({ root, query }) {
     h('div', { class: 'tabs-row' }, tabBar, neighborsOn() ? bellButton() : null), content);
   paintTabs();
   await show();
+}
+
+// ───────── 내 블로그 미리보기 (꾸미기·스킨 탭 공용) ─────────
+// 저장하지 않은 꾸미기 그대로 내 블로그를 창 안에 띄워요 (창 안의 화면이 부모 창의 __drawerPreview 를 읽어요)
+const pickSkin = (t) => ({ skin: t.skin, shelf: t.shelf, pview: t.pview, skinTone: t.skinTone, gameBoards: t.gameBoards, skinFonts: t.skinFonts });
+function openSitePreview(theme) {
+  const handle = state.me?.handle;
+  if (!handle) return;
+  window.__drawerPreview = { handle, theme: sanitizeTheme(theme) };
+  let mobile = false;
+  const src = () => location.pathname + location.search + '#/u/' + encodeURIComponent(handle);
+  const frame = h('iframe', { class: 'pv-frame', title: '내 블로그 미리보기', src: src() });
+  const win = h('div', { class: 'pv-win' });
+  const devBtn = h('button', { class: 'btn ghost sm', type: 'button', onclick: () => {
+    mobile = !mobile; win.classList.toggle('mobile', mobile); devBtn.textContent = mobile ? 'PC 크기' : '모바일 크기';
+  } }, '모바일 크기');
+  const close = () => { back.remove(); document.removeEventListener('keydown', onKey); delete window.__drawerPreview; document.body.style.overflow = ''; };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  win.append(
+    h('div', { class: 'pv-head' },
+      h('b', null, '미리보기'), h('small', null, '저장하기 전 모습이에요 · 안에서 글을 눌러 프롬창도 볼 수 있어요'),
+      h('div', { class: 'pv-tools' },
+        h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { frame.src = src(); } }, '처음으로'),
+        devBtn,
+        h('button', { class: 'btn sm', type: 'button', 'aria-label': '닫기', onclick: close }, icon('x', 16)))),
+    h('div', { class: 'pv-body' }, frame));
+  const back = h('div', { class: 'pv-back', onclick: (e) => { if (e.target === back) close(); } }, win);
+  document.body.append(back);
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('keydown', onKey);
+}
+
+// ───────── 스킨 탭 (테스트 중 · 관리자만) ─────────
+// 꾸미기 탭과 따로 저장해요. 저장할 때는 지금 저장된 꾸미기에 스킨 값만 덮어써요
+function skinTab() {
+  ensureSkinFont();
+  let T = sanitizeTheme(state.me.theme);
+  const host = h('div');
+  const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
+    saveBtn.disabled = true;
+    try {
+      const next = sanitizeTheme({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) });
+      await updateProfile({ theme: next });
+      T = { ...sanitizeTheme(state.me.theme), ...pickSkin(next) };
+      toast('스킨을 저장했어요');
+    } catch (e) { toast(friendly(e)); }
+    finally { saveBtn.disabled = false; }
+  } }, icon('check', 16), '스킨 저장');
+  const set = (patch) => { T = { ...T, ...patch }; build(); };
+
+  const skinRow = (label, map, key, note = {}) => h('div', { class: 'skin-set' },
+    h('span', { class: 'lbl' }, label),
+    h('div', { class: 'opt-grid cols-4' }, Object.entries(map).map(([k, name]) =>
+      h('button', { class: 'opt center' + (T[key] === k ? ' on' : ''), onclick: () => set({ [key]: k }) },
+        h('small', null, name), note[k] ? h('em', { class: 'skin-note' }, note[k]) : null))));
+  // 픽셀 아케이드: 타이틀 화면 메뉴에 보일 게시판 (최대 4개, 고른 순서대로)
+  const gameBoardRow = () => {
+    if (T.skin !== 'game' || !T.boards.length) return null;
+    const sel = (T.gameBoards || []).filter((id) => T.boards.some((b) => b.id === id));
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, `타이틀 메뉴에 보일 게시판 · ${sel.length}/4`),
+      h('div', { class: 'opt-grid cols-4' }, T.boards.map((b) => {
+        const at = sel.indexOf(b.id);
+        return h('button', { class: 'opt center' + (at >= 0 ? ' on' : ''), type: 'button', onclick: () => {
+          if (at >= 0) set({ gameBoards: sel.filter((x) => x !== b.id) });
+          else if (sel.length >= 4) toast('최대 4개까지 고를 수 있어요');
+          else set({ gameBoards: [...sel, b.id] });
+        } }, at >= 0 ? h('em', { class: 'skin-note' }, `${at + 1}번째`) : null, h('small', null, b.name));
+      })),
+      h('p', { class: 'desc' }, T.showAll ? "'전체 보기'는 늘 맨 위에 있어요. 하나도 안 고르면 앞에서부터 4개가 보여요. 다른 사람에게는 글이 있는 게시판만 보여요."
+        : "하나도 안 고르면 앞에서부터 4개가 보여요. ('전체'를 숨겨 둬서 '전체 보기'는 빠져요) 다른 사람에게는 글이 있는 게시판만 보여요."));
+  };
+  // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
+  const toneRow = () => {
+    const key = T.skin || T.pview;
+    const set_ = TONES[key];
+    if (!set_) return null;
+    const cur = set_[T.skinTone] ? T.skinTone : Object.keys(set_)[0];
+    const label = T.skin ? `색상 프리셋 · ${SKINS[T.skin]}` : `색상 프리셋 · ${PVIEWS[T.pview]}`;
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, label),
+      h('div', { class: 'opt-grid cols-4' }, Object.entries(set_).map(([k, t]) =>
+        h('button', { class: 'opt center' + (cur === k ? ' on' : ''), onclick: () => set({ skinTone: k }) },
+          h('span', { class: 'tone-sw', 'aria-hidden': 'true' }, t.sw.map((c) => h('i', { style: { background: c } }))),
+          h('small', null, t.name)))),
+      T.skin && T.pview ? h('p', { class: 'desc' }, '프롬창도 이 색을 따라가요.') : null);
+  };
+  // 글꼴: 스킨마다 따로 기억해요 (제목 · 꾸밈 · 본문)
+  const fontRow = () => {
+    if (!T.skin) return h('p', { class: 'desc' }, '페이지 스킨을 고르면 글꼴을 바꿀 수 있어요.');
+    const cur = T.skinFonts?.[T.skin] || {};
+    const slot = (key, label, note) => h('div', { class: 'skin-font' },
+      h('span', { class: 'lbl' }, label, h('small', null, note)),
+      h('div', { class: 'font-pick' }, Object.entries(SKIN_FONTS).map(([k, f]) =>
+        h('button', { class: 'fp' + ((cur[key] || '') === k ? ' on' : ''), type: 'button', style: f.stack ? { fontFamily: f.stack } : {},
+          onclick: () => set({ skinFonts: { ...T.skinFonts, [T.skin]: { ...cur, [key]: k } } }) },
+          h('b', null, '가나다 Abc'), h('small', null, f.name)))));
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, `글꼴 · ${SKINS[T.skin]}`),
+      slot('title', '제목', '블로그 이름 · 타이틀 · 디데이 숫자'),
+      slot('ui', '꾸밈', '메뉴 · 버튼 · 라벨'),
+      slot('body', '본문', '소개 · 글 목록 · 설명'));
+  };
+
+  const build = () => host.replaceChildren(
+    h('section', { class: 'panel' },
+      h('h3', { class: 'panel-title' }, '스킨 ', h('small', { class: 'muted' }, '테스트 중 · 관리자만')),
+      h('div', { class: 'row between skin-pv-row' },
+        h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장하지 않아도 미리보기로 확인할 수 있어요.'),
+        h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) }) }, icon('eye', 16), '내 블로그 미리보기')),
+      skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START' }),
+      skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
+      skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인' }),
+      toneRow(),
+      gameBoardRow()),
+    h('section', { class: 'panel' }, h('h3', { class: 'panel-title' }, '스킨 글꼴'), fontRow()),
+    h('div', { class: 'row between' },
+      h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) }) }, icon('eye', 16), '미리보기'),
+      saveBtn));
+  build();
+  return host;
 }
 
 // ───────── 디데이 ─────────
@@ -324,11 +446,14 @@ function boardsTab() {
   let dirty = false;
   let uncat = sanitizeTheme(state.me.theme).uncat;
   const uncatTxt = h('span', { class: 'sw-txt' }, uncat ? '보임' : '숨김');
+  let showAll = sanitizeTheme(state.me.theme).showAll;
+  const allTxt = h('span', { class: 'sw-txt' }, showAll ? '보임' : '숨김');
+  const allCb = h('input', { type: 'checkbox', checked: showAll, onchange: (e) => { showAll = e.target.checked; allTxt.textContent = showAll ? '보임' : '숨김'; touch(); } });
   const uncatCb = h('input', { type: 'checkbox', checked: uncat, onchange: (e) => { uncat = e.target.checked; uncatTxt.textContent = uncat ? '보임' : '숨김'; touch(); } });
   const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
     saveBtn.disabled = true;
     try {
-      await saveBoards(boards, { uncat });
+      await saveBoards(boards, { uncat, showAll });
       boards = sanitizeBoards(state.me.theme.boards).map((b) => ({ ...b }));
       dirty = false;
       paint();
@@ -377,8 +502,12 @@ function boardsTab() {
       empty, listEl,
       h('div', { class: 'row' }, newIn, h('button', { class: 'btn', onclick: add }, icon('plus', 15), '추가'))),
     h('section', { class: 'panel' },
+      h('h3', { class: 'panel-title' }, '전체 게시판'),
+      h('p', { class: 'desc' }, '모든 글을 한꺼번에 보여주는 ‘전체’예요. 끄면 블로그 왼쪽 목록에서 빠지고, 블로그에 들어오면 첫 번째 게시판이 먼저 열려요.'),
+      h('label', { class: 'switch' }, allCb, h('span', { class: 'trk' }), allTxt)),
+    h('section', { class: 'panel' },
       h('h3', { class: 'panel-title' }, '미분류 게시판'),
-      h('p', { class: 'desc' }, '게시판을 정하지 않은 글이 모이는 곳이에요. 끄면 블로그 왼쪽 목록에서 빠지고, 그 글들은 ‘전체’에서만 보여요.'),
+      h('p', { class: 'desc' }, '게시판을 정하지 않은 글이 모이는 곳이에요. 끄면 블로그 왼쪽 목록에서 빠지고, 그 글들은 ‘전체’에서만 보여요. (전체도 꺼 두면 다른 사람에게는 안 보여요)'),
       h('label', { class: 'switch' }, uncatCb, h('span', { class: 'trk' }), uncatTxt)),
     h('div', { class: 'row between' }, note, saveBtn));
 }
@@ -410,81 +539,6 @@ function designTab() {
     catch (e) { toast(friendly(e)); }
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '꾸미기 저장');
-
-  // 내 블로그 미리보기: 저장하지 않은 꾸미기 그대로 내 블로그를 창 안에 띄워요 (창 안의 화면이 부모 창의 __drawerPreview 를 읽어요)
-  const previewBtn = h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview() }, icon('eye', 16), '내 블로그 미리보기');
-  function openSitePreview() {
-    const handle = state.me?.handle;
-    if (!handle) return;
-    window.__drawerPreview = { handle, theme: sanitizeTheme(T) };
-    let mobile = false;
-    const src = () => location.pathname + location.search + '#/u/' + encodeURIComponent(handle);
-    const frame = h('iframe', { class: 'pv-frame', title: '내 블로그 미리보기', src: src() });
-    const win = h('div', { class: 'pv-win' });
-    const devBtn = h('button', { class: 'btn ghost sm', type: 'button', onclick: () => {
-      mobile = !mobile; win.classList.toggle('mobile', mobile); devBtn.textContent = mobile ? 'PC 크기' : '모바일 크기';
-    } }, '모바일 크기');
-    const close = () => { back.remove(); document.removeEventListener('keydown', onKey); delete window.__drawerPreview; document.body.style.overflow = ''; };
-    const onKey = (e) => { if (e.key === 'Escape') close(); };
-    win.append(
-      h('div', { class: 'pv-head' },
-        h('b', null, '미리보기'), h('small', null, '저장하기 전 모습이에요 · 안에서 글을 눌러 프롬창도 볼 수 있어요'),
-        h('div', { class: 'pv-tools' },
-          h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { frame.src = src(); } }, '처음으로'),
-          devBtn,
-          h('button', { class: 'btn sm', type: 'button', 'aria-label': '닫기', onclick: close }, icon('x', 16)))),
-      h('div', { class: 'pv-body' }, frame));
-    const back = h('div', { class: 'pv-back', onclick: (e) => { if (e.target === back) close(); } }, win);
-    document.body.append(back);
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', onKey);
-  }
-
-  // 스킨 (테스트 중 · 관리자만)
-  const skinRow = (label, map, key, note = {}) => h('div', { class: 'skin-set' },
-    h('span', { class: 'lbl' }, label),
-    h('div', { class: 'opt-grid cols-4' }, Object.entries(map).map(([k, name]) =>
-      h('button', { class: 'opt center' + (T[key] === k ? ' on' : ''), onclick: () => set({ [key]: k }) },
-        h('small', null, name), note[k] ? h('em', { class: 'skin-note' }, note[k]) : null))));
-  const skinPanel = () => h('section', { class: 'panel' },
-    h('h3', { class: 'panel-title' }, '스킨 ', h('small', { class: 'muted' }, '테스트 중 · 관리자만')),
-    h('div', { class: 'row between skin-pv-row' }, h('p', { class: 'desc' }, '지금은 관리자(테스트 계정)에게만 보이고, 다른 사람에게는 지금 모습 그대로 보여요. 저장하지 않아도 미리보기로 확인할 수 있어요.'), previewBtn),
-    skinRow('페이지 스킨', SKINS, 'skin', { home: '모눈종이 개인 홈', term: 'VHS 파란 화면', game: 'HUD · 메뉴 · PRESS START', grid: '원근 그리드 복도 · START' }),
-    skinRow('프롬 모음 (글 목록)', SHELVES, 'shelf', { records: '비스듬히 꽂힌 커버', drawer: '칸칸이 서랍', folders: '탭 → 파일 → 프롬' }),
-    skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인' }),
-    toneRow(),
-    gameBoardRow());
-  // 픽셀 아케이드: 타이틀 화면 메뉴에 보일 게시판 (최대 4개, 고른 순서대로)
-  const gameBoardRow = () => {
-    if (T.skin !== 'game' || !T.boards.length) return null;
-    const sel = (T.gameBoards || []).filter((id) => T.boards.some((b) => b.id === id));
-    return h('div', { class: 'skin-set' },
-      h('span', { class: 'lbl' }, `타이틀 메뉴에 보일 게시판 · ${sel.length}/4`),
-      h('div', { class: 'opt-grid cols-4' }, T.boards.map((b) => {
-        const at = sel.indexOf(b.id);
-        return h('button', { class: 'opt center' + (at >= 0 ? ' on' : ''), type: 'button', onclick: () => {
-          if (at >= 0) set({ gameBoards: sel.filter((x) => x !== b.id) });
-          else if (sel.length >= 4) toast('최대 4개까지 고를 수 있어요');
-          else set({ gameBoards: [...sel, b.id] });
-        } }, at >= 0 ? h('em', { class: 'skin-note' }, `${at + 1}번째`) : null, h('small', null, b.name));
-      })),
-      h('p', { class: 'desc' }, "'전체 보기'는 늘 맨 위에 있어요. 하나도 안 고르면 앞에서부터 4개가 보여요. 다른 사람에게는 글이 있는 게시판만 보여요."));
-  };
-  // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
-  const toneRow = () => {
-    const key = T.skin || T.pview;
-    const set_ = TONES[key];
-    if (!set_) return null;
-    const cur = set_[T.skinTone] ? T.skinTone : Object.keys(set_)[0];
-    const label = T.skin ? `색상 프리셋 · ${SKINS[T.skin]}` : `색상 프리셋 · ${PVIEWS[T.pview]}`;
-    return h('div', { class: 'skin-set' },
-      h('span', { class: 'lbl' }, label),
-      h('div', { class: 'opt-grid cols-4' }, Object.entries(set_).map(([k, t]) =>
-        h('button', { class: 'opt center' + (cur === k ? ' on' : ''), onclick: () => set({ skinTone: k }) },
-          h('span', { class: 'tone-sw', 'aria-hidden': 'true' }, t.sw.map((c) => h('i', { style: { background: c } }))),
-          h('small', null, t.name)))),
-      T.skin && T.pview ? h('p', { class: 'desc' }, '프롬창도 이 색을 따라가요.') : null);
-  };
 
   const paintPreview = () => {
     preview.replaceChildren(h('div', { class: 'posts layout-' + T.layout }, SAMPLE.map((p) => postCard(p, true))));
@@ -538,7 +592,7 @@ function designTab() {
     const sw = h('div', { class: 'swatches' }, PRESETS.map((p) =>
       h('button', {
         class: 'swatch' + (T.preset === p.id ? ' on' : ''), title: p.name,
-        style: { background: p.bg, '--sw': p.accent },
+        style: { background: p.bg, '--sw': p.accent, '--sw-ink': palette(p.bg, p.accent).text },
         onclick: () => set({ preset: p.id, bg: p.bg, accent: p.accent }),
       }, h('i'), h('span', null, p.name))));
     // 브라우저 기본 색 선택기 대신 직접 만든 선택기 (고르는 동안 바로 적용돼요)
@@ -655,7 +709,6 @@ function designTab() {
         h('h3', { class: 'panel-title' }, '글 목록 배치'),
         h('div', { class: 'opt-grid cols-4' }, Object.entries(LAYOUTS).map(([k, name]) =>
           h('button', { class: 'opt center' + (T.layout === k ? ' on' : ''), onclick: () => set({ layout: k }) }, svg(LAYOUT_ICON[k]), h('small', null, name))))),
-      skinOn() ? skinPanel() : null,
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '모서리'),
         h('div', { class: 'opt-grid cols-3' }, [['sharp', '각지게'], ['soft', '부드럽게'], ['round', '둥글게']].map(([k, name]) =>
@@ -685,9 +738,9 @@ function designTab() {
         h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, bannerMore: T.bannerMore, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon });
+          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, bannerMore: T.bannerMore, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon, showAll: T.showAll, ...pickSkin(T) });
         } }, '기본값으로'),
-        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview() }, icon('eye', 16), '미리보기'), saveBtn)),
+        h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview(T) }, icon('eye', 16), '미리보기'), saveBtn)),
       h('h3', { class: 'preview-title' }, '미리보기'),
       preview);
   }

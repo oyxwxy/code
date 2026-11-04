@@ -6,6 +6,7 @@ import { loadImage, safeUrl } from './images.js';
 import { loadContent } from './store.js';
 import { kindOf, kindLabel, KINDS } from './kinds.js';
 import { PARAM_FIELDS } from './nai.js';
+import { SKIN_FONTS } from './theme.js';
 import { openLightbox } from './lightbox.js';
 
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -158,16 +159,22 @@ function setVars(vars) {
   // 기본 색(--bg 등)은 다음 화면의 applyTheme 이 다시 정하니까, 스킨 전용 변수만 지워요
   applied.forEach((k) => s.removeProperty(k));
   applied = [];
-  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|gc|fl|idc|idv)-/.test(k)) applied.push(k); }
+  for (const [k, v] of Object.entries(vars || {})) { s.setProperty(k, v); if (/^--(hp|tm|gm|gc|fl|idc|idv|sk)-/.test(k)) applied.push(k); }
 }
 
 /** 화면 전체 색(변수)을 스킨으로 바꿔요. 다른 화면으로 가면 app.js 가 data-skin 을 지우고, 다음 화면의 테마가 색을 다시 정해요 */
-export function setPageSkin(skin, tone = '') {
+export function setPageSkin(skin, tone = '', fonts = null) {
   const el = document.documentElement;
   if (!skin) { delete el.dataset.skin; return; }
   ensureSkinFont();
   const t = toneOf(skin, tone);
-  setVars(t?.vars);
+  // 고른 글꼴: 제목(--sk-title) · 꾸밈(--sk-ui) · 본문(--font). 안 고른 칸은 스킨 기본
+  const f = {};
+  const stack = (k) => (k && SKIN_FONTS[k]?.stack) || '';
+  if (stack(fonts?.title)) f['--sk-title'] = stack(fonts.title);
+  if (stack(fonts?.ui)) f['--sk-ui'] = stack(fonts.ui);
+  if (stack(fonts?.body)) f['--font'] = stack(fonts.body);
+  setVars({ ...(t?.vars || {}), ...f });
   el.dataset.skin = skin;
   el.dataset.mode = t?.dark ? 'dark' : 'light';
 }
@@ -183,7 +190,7 @@ export function setViewTone(pview, tone = '') {
  * ctx: { root, head, body, side, main, pickBar, prof, theme, boards, selectBoard, posts }
  */
 export function dressBlog(skin, ctx) {
-  setPageSkin(skin, ctx.theme.skinTone);
+  setPageSkin(skin, ctx.theme.skinTone, ctx.theme.skinFonts?.[skin]);
   ctx.root.classList.add('skin', 'skin-' + skin);
   if (skin === 'home') dressHome(ctx);
   else if (skin === 'term') dressTerm(ctx);
@@ -264,7 +271,7 @@ function dressGame({ root, head, body, main, prof, theme, boards, selectBoard, p
   // 게시판 = 메뉴 (최대 5개). 마우스·포커스가 가면 ▶ 커서가 따라가요
   // 메뉴에 보일 게시판: 꾸미기에서 고른 것(theme.gameBoards, 고른 순서대로) → 없으면 앞에서부터 4개
   const picked = (theme.gameBoards || []).map((id) => boards.find((b) => b.id === id)).filter(Boolean);
-  const items = [{ id: 'all', name: '전체 보기' }, ...(picked.length ? picked : boards).slice(0, 4)];
+  const items = [...(theme.showAll ? [{ id: 'all', name: '전체 보기' }] : []), ...(picked.length ? picked : boards).slice(0, 4)];
   const menu = h('ul', { class: 'gm-menu' }, items.map((b, i) => h('li', null,
     h('button', { class: 'gm-item' + (i === 0 ? ' on' : ''), type: 'button',
       onmouseenter: (e) => mark(e.currentTarget), onfocus: (e) => mark(e.currentTarget),
