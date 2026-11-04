@@ -672,9 +672,10 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
     banner.classList.add('qs-photo');
     // 위치 · 크기는 스킨 탭에서 맞춰요 (이 스킨에서만)
     const P = theme.spacePhoto || {};
-    banner.style.setProperty('--px', (P.x ?? 50) + '%');
-    banner.style.setProperty('--py', (P.y ?? 50) + '%');
-    banner.style.setProperty('--pz', (P.z ?? 100) + '%');
+    const put = (el, q) => { el.style.setProperty('--px', (q?.x ?? 50) + '%'); el.style.setProperty('--py', (q?.y ?? 50) + '%'); el.style.setProperty('--pz', (q?.z ?? 100) + '%'); };
+    put(banner, P);
+    // 슬라이드: 사진마다 따로 (0 = 대표 사진, 1~ = 추가 사진)
+    banner.querySelectorAll(':scope > .banner-slide').forEach((sl, i) => put(sl, i === 0 ? P : P.more?.[i - 1]));
     hero.prepend(banner);
     hero.classList.add('has-photo');
     hero.append(h('p', { class: 'qs-fig', 'aria-hidden': 'true' }, h('b', null, 'FIG. 1'), `observed from @${prof.handle}`));

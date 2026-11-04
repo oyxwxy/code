@@ -1159,3 +1159,8 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .zp-hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: rgb(233 236 243 / .7); pointer-events: none; }
 .zp-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; max-width: 520px; font-size: 13px; }
 .zp-row input[type=range] { flex: 1; accent-color: var(--accent); }
+
+.zp-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.zp-pick { position: relative; width: 84px; aspect-ratio: 6 / 1; padding: 0; border: 2px solid transparent; border-radius: 4px; background: var(--accent-soft) center / cover no-repeat; cursor: pointer; opacity: .7; }
+.zp-pick small { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); padding: 0 4px; border-radius: 3px; background: rgb(0 0 0 / .55); color: #fff; font-size: 10px; line-height: 1.4; }
+.zp-pick.on { border-color: var(--accent); opacity: 1; }

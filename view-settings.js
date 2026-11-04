@@ -151,35 +151,58 @@ function skinTab() {
       })) : null,
       h('p', { class: 'desc' }, '고른 순서대로 이름이 붙은 천체로 표시돼요. 글은 고른 것만 보이고, 게시판은 안 고르면 앞쪽 4개가 보여요.'));
   };
-  // 우주 유영: 무대에 깔리는 대문 배너 사진 위치 · 크기 (이 스킨에서만 쓰여요)
+  // 우주 유영: 무대에 깔리는 대문 배너 사진 위치 · 크기 (이 스킨에서만 쓰여요). 슬라이드 사진은 한 장씩 따로 맞춰요
+  let zpSel = 0;
   const spacePhotoRow = () => {
     if (T.skin !== 'space' || !T.banner) return null;
-    const P = { ...(T.spacePhoto || { x: 50, y: 50, z: 100 }) };
+    const refs = [T.banner, ...(bannerSlideOn() ? T.bannerMore : [])].filter(Boolean);
+    if (zpSel >= refs.length) zpSel = 0;
+    const base = T.spacePhoto || { x: 50, y: 50, z: 100, more: [] };
+    const getP = (i) => ({ x: 50, y: 50, z: 100, ...(i === 0 ? base : (base.more || [])[i - 1] || {}) });
+    let P = getP(zpSel);
     const img = h('div', { class: 'zp-img' });
     const apply = () => { img.style.backgroundPosition = `${P.x}% ${P.y}%`; img.style.backgroundSize = `auto ${P.z}%`; };
-    loadImage(T.banner).then((u) => { if (u) img.style.backgroundImage = `url("${u}")`; });
-    apply();
-    const save_ = () => { T = { ...T, spacePhoto: { ...P } }; };   // 화면을 다시 그리지 않고 값만 바꿔요 (끄는 중에 끊기지 않게)
+    const loadSel = () => { img.style.backgroundImage = ''; loadImage(refs[zpSel]).then((u) => { if (u) img.style.backgroundImage = `url("${u}")`; }); };
+    // 화면을 다시 그리지 않고 값만 바꿔요 (끄는 중에 끊기지 않게)
+    const save_ = () => {
+      const cur = T.spacePhoto || { x: 50, y: 50, z: 100, more: [] };
+      const q = { x: P.x, y: P.y, z: P.z };
+      if (zpSel === 0) T = { ...T, spacePhoto: { ...cur, ...q } };
+      else { const more = [...(cur.more || [])]; while (more.length < zpSel) more.push({ x: 50, y: 50, z: 100 }); more[zpSel - 1] = q; T = { ...T, spacePhoto: { ...cur, more } }; }
+    };
     const box = h('div', { class: 'zp-box', 'aria-label': '끌어서 사진 위치 맞추기' }, img, h('span', { class: 'zp-hint' }, '끌어서 위치를 맞춰요'));
     let drag = null;
     box.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, px: P.x, py: P.y }; box.setPointerCapture(e.pointerId); box.classList.add('dragging'); });
     box.addEventListener('pointermove', (e) => {
       if (!drag) return;
       const r = box.getBoundingClientRect();
-      // 사진을 끄는 방향으로 움직이게: 오른쪽으로 끌면 사진의 왼쪽이 보여요
       P.x = Math.max(0, Math.min(100, Math.round(drag.px - (e.clientX - drag.x) / r.width * 100)));
       P.y = Math.max(0, Math.min(100, Math.round(drag.py - (e.clientY - drag.y) / r.height * 100)));
       apply();
     });
     const end = () => { if (!drag) return; drag = null; box.classList.remove('dragging'); save_(); };
     box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
-    const zoom = h('input', { type: 'range', min: '40', max: '300', value: String(P.z), 'aria-label': '사진 크기', oninput: (e) => { P.z = +e.target.value; zv.textContent = P.z + '%'; apply(); }, onchange: save_ });
     const zv = h('b', null, P.z + '%');
+    const zoom = h('input', { type: 'range', min: '40', max: '300', value: String(P.z), 'aria-label': '사진 크기', oninput: (e) => { P.z = +e.target.value; zv.textContent = P.z + '%'; apply(); }, onchange: save_ });
+    // 사진 고르기 (슬라이드가 있을 때만)
+    const picks = refs.length > 1 ? h('div', { class: 'zp-picks' }, refs.map((ref, i) => {
+      const th = h('button', { class: 'zp-pick' + (i === zpSel ? ' on' : ''), type: 'button', 'aria-label': `${i + 1}번째 사진`, onclick: () => {
+        save_(); zpSel = i; P = getP(i);
+        const cur = T.spacePhoto || {}; if (i > 0) P = { x: 50, y: 50, z: 100, ...((cur.more || [])[i - 1] || {}) }; else P = { x: 50, y: 50, z: 100, ...cur };
+        zoom.value = String(P.z); zv.textContent = P.z + '%';
+        picks.querySelectorAll('.zp-pick').forEach((b, k) => b.classList.toggle('on', k === i));
+        loadSel(); apply();
+      } }, h('small', null, i === 0 ? '대표' : String(i + 1)));
+      loadImage(ref).then((u) => { if (u) th.style.backgroundImage = `url("${u}")`; });
+      return th;
+    })) : null;
+    loadSel(); apply();
     return h('div', { class: 'skin-set' },
-      h('span', { class: 'lbl' }, '무대 사진 위치 · 크기 (대문 배너)'),
+      h('span', { class: 'lbl' }, refs.length > 1 ? '무대 사진 위치 · 크기 (대문 배너 · 슬라이드 사진마다 따로)' : '무대 사진 위치 · 크기 (대문 배너)'),
+      picks,
       box,
       h('div', { class: 'zp-row' }, h('span', null, '크기'), zoom, zv,
-        h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { P.x = 50; P.y = 50; P.z = 100; zoom.value = '100'; zv.textContent = '100%'; apply(); save_(); } }, '처음대로')),
+        h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { P = { x: 50, y: 50, z: 100 }; zoom.value = '100'; zv.textContent = '100%'; apply(); save_(); } }, '처음대로')),
       h('p', { class: 'desc' }, '우주 유영에서만 쓰여요. 다른 스킨과 기본 화면의 대문 배너는 그대로예요. 크기를 줄이면 가로로 긴 사진이 덜 잘려요.'));
   };
   // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
