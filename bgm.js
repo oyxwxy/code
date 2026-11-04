@@ -65,8 +65,9 @@ const ui = {};
 function build() {
   if (S.el) return S.el;
   ui.art = h('span', { class: 'bgm-art', 'aria-hidden': 'true' });
-  ui.disc = h('button', { class: 'bgm-disc', type: 'button', 'aria-label': '배경음악 펼치기', 'aria-expanded': 'false', onclick: () => setOpen(!S.el.classList.contains('open')) },
-    ui.art, h('span', { class: 'bgm-eq', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')));
+  ui.ico = h('span', { class: 'bgm-ico', 'aria-hidden': 'true' }, icon('music', 15));
+  ui.disc = h('button', { class: 'bgm-disc', type: 'button', title: '배경음악', 'aria-label': '배경음악 펼치기', 'aria-expanded': 'false', onclick: () => setOpen(!S.el.classList.contains('open')) },
+    ui.art, ui.ico, h('span', { class: 'bgm-eq', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')));
   ui.title = h('span', { class: 'bgm-title-in' });
   ui.seek = h('input', { class: 'bgm-seek', type: 'range', min: '0', max: '1000', value: '0', step: '1', 'aria-label': '재생 위치',
     oninput: () => { ui.seek.style.setProperty('--p', ui.seek.value / 10 + '%'); },
@@ -101,6 +102,7 @@ function paint() {
   const t = S.tracks[S.order[S.at]];
   S.el.classList.toggle('playing', S.playing);
   ui.play.replaceChildren(icon(S.playing ? 'pause' : 'play', 16));
+  ui.ico.replaceChildren(icon(S.playing ? 'pause' : 'music', 15));
   ui.play.setAttribute('aria-label', S.playing ? '일시정지' : '재생');
   ui.next.disabled = S.tracks.length < 2;
   ui.volBtn.replaceChildren(icon(S.muted || S.vol === 0 ? 'volx' : 'vol', 16));
@@ -233,7 +235,7 @@ export function useBgm(key, cfg) {
   const saved = store.get(VOL_KEY);
   S.vol = saved != null && Number.isFinite(+saved) ? +saved : (cfg.vol ?? 60);
   S.muted = S.vol === 0;
-  setOpen(store.get(OPEN_KEY) === '1');
+  setOpen(store.get(OPEN_KEY) !== '0');   // 처음엔 펼쳐서 보여주고, 접으면 다음부터 접힌 채로
   ui.seek.value = '0'; ui.seek.style.setProperty('--p', '0%'); ui.time.textContent = '0:00';
   paint();
   if (cfg.auto) ensurePlayer();   // 브라우저가 막으면 재생 버튼을 누를 때 시작돼요

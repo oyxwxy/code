@@ -966,11 +966,13 @@ a.board-badge:hover { border-color: var(--accent); }
 .dd-sw-custom { margin-left: 2px; }
 
 /* ───────── 배경음악 플레이어 (왼쪽 아래 작은 원판 · 누르면 펼쳐져요) ───────── */
-.bgm { position: fixed; left: max(12px, env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 90; display: flex; align-items: center; color: var(--text); font-size: 12px; }
+.bgm { position: fixed; left: max(12px, env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 85; display: flex; align-items: center; color: var(--text); font-size: 12px; }
 .bgm[hidden] { display: none; }
-.bgm-disc { position: relative; z-index: 2; flex: none; width: 46px; height: 46px; padding: 3px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 8px 22px -10px rgb(0 0 0 / .45); cursor: pointer; }
-.bgm-art { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--accent-soft) center / cover no-repeat; }
-.bgm-art::after { content: ''; position: absolute; inset: 38%; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 2px rgb(0 0 0 / .12); }
+.bgm-disc { position: relative; z-index: 2; flex: none; width: 50px; height: 50px; padding: 3px; border-radius: 50%; border: 0; background: var(--accent); box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--border), 0 10px 24px -8px rgb(0 0 0 / .5); cursor: pointer; }
+.bgm-art { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--accent) center / cover no-repeat; }
+.bgm-art::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, transparent 30%, rgb(0 0 0 / .18) 31% 33%, transparent 34%); }
+/* 가운데 단추: 음표(멈춤) · 일시정지(재생 중) → 한눈에 플레이어인 걸 알 수 있게 */
+.bgm-ico { position: absolute; left: 50%; top: 50%; z-index: 1; width: 24px; height: 24px; display: grid; place-items: center; transform: translate(-50%, -50%); border-radius: 50%; background: var(--surface); color: var(--accent); box-shadow: 0 1px 4px rgb(0 0 0 / .3); }
 .bgm.playing .bgm-art { animation: bgm-spin 9s linear infinite; }
 @keyframes bgm-spin { to { transform: rotate(360deg); } }
 .bgm-eq { position: absolute; right: -3px; bottom: -3px; display: none; align-items: flex-end; gap: 2px; height: 14px; padding: 2px 3px; border-radius: 6px; background: var(--accent); }
