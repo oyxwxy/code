@@ -1132,3 +1132,17 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .zf-pick.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
 .zf-pick.on img { opacity: 1; }
 .zf-pick b { position: absolute; right: 2px; bottom: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; display: grid; place-items: center; }
+/* 우주 유영 + 대문 배너: 무대 전체에 깔리는 관측 사진 (어둡게, 가장자리는 별밭으로 녹아들게) */
+.qs-hero .qs-photo { position: absolute; inset: 0; z-index: 0; height: auto; margin: 0; aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none; overflow: hidden;
+  background-size: cover; background-position: center;
+  filter: saturate(.65) brightness(.55) contrast(1.12);
+  mix-blend-mode: screen;   /* 사진의 어두운 부분은 비쳐서 뒤의 별이 그대로 보여요 */
+  -webkit-mask-image: radial-gradient(ellipse 46% 56% at 52% 46%, #000 30%, rgb(0 0 0 / .45) 66%, transparent 98%);
+  mask-image: radial-gradient(ellipse 46% 56% at 52% 46%, #000 30%, rgb(0 0 0 / .45) 66%, transparent 98%); }
+.qs-hero .qs-photo .banner-slide { background-size: cover; background-position: center; }
+.qs-hero .qs-photo .banner-dots { bottom: 14px; }
+.qs-hero.has-photo .qs-copy { text-shadow: 0 2px 30px rgb(2 2 5 / .9); }
+.qs-hero.has-photo .qs-body span { text-shadow: 0 1px 8px rgb(2 2 5 / .95); }
+.qs-fig { position: absolute; right: 4%; bottom: 5%; z-index: 2; margin: 0; display: flex; gap: 10px; align-items: baseline; font: 300 11px 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .16em; color: rgb(233 236 243 / .5); text-transform: lowercase; }
+.qs-fig b { font-weight: 500; color: rgb(233 236 243 / .75); letter-spacing: .2em; }
+@media (max-width: 640px) { .qs-fig { right: 5%; bottom: 3%; font-size: 9.5px; } .qs-hero .qs-photo { -webkit-mask-image: radial-gradient(ellipse 70% 52% at 50% 40%, #000 30%, transparent 100%); mask-image: radial-gradient(ellipse 70% 52% at 50% 40%, #000 30%, transparent 100%); } }

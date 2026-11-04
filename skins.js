@@ -660,6 +660,15 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
       h('p', { class: 'qs-coord' }, coordsOf(prof.handle)),
       h('h1', { class: 'qs-name', 'aria-label': name }, letters),
       h('p', { class: 'qs-sub' }, `@${prof.handle} · since ${yearOf(prof)}`)));
+  // 대문 배너가 있으면: 머리말 위 띠 대신, 무대 전체에 깔리는 '관측 사진'이 돼요
+  // 어둡게 가라앉히고 가장자리는 별밭 속으로 녹아들게. 슬라이드(여러 장)도 그대로 넘어가요
+  const banner = head.querySelector(':scope > .banner');
+  if (banner && theme.banner) {
+    banner.classList.add('qs-photo');
+    hero.prepend(banner);
+    hero.classList.add('has-photo');
+    hero.append(h('p', { class: 'qs-fig', 'aria-hidden': 'true' }, h('b', null, 'FIG. 1'), `observed from @${prof.handle}`));
+  }
   head.before(hero);
   body.classList.add('qs-body-wrap');
 
