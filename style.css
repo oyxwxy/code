@@ -964,3 +964,93 @@ a.board-badge:hover { border-color: var(--accent); }
 .dd-sw.auto { width: auto; min-width: 40px; padding: 0 10px; border-radius: 999px; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 700; }
 .dd-sw.auto.on { color: var(--accent); background: var(--accent-soft); }
 .dd-sw-custom { margin-left: 2px; }
+
+/* ───────── 배경음악 플레이어 (왼쪽 아래 작은 원판 · 누르면 펼쳐져요) ───────── */
+.bgm { position: fixed; left: max(12px, env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 90; display: flex; align-items: center; color: var(--text); font-size: 12px; }
+.bgm[hidden] { display: none; }
+.bgm-disc { position: relative; z-index: 2; flex: none; width: 46px; height: 46px; padding: 3px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 8px 22px -10px rgb(0 0 0 / .45); cursor: pointer; }
+.bgm-art { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; background: var(--accent-soft) center / cover no-repeat; }
+.bgm-art::after { content: ''; position: absolute; inset: 38%; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 2px rgb(0 0 0 / .12); }
+.bgm.playing .bgm-art { animation: bgm-spin 9s linear infinite; }
+@keyframes bgm-spin { to { transform: rotate(360deg); } }
+.bgm-eq { position: absolute; right: -3px; bottom: -3px; display: none; align-items: flex-end; gap: 2px; height: 14px; padding: 2px 3px; border-radius: 6px; background: var(--accent); }
+.bgm.playing .bgm-eq { display: flex; }
+.bgm-eq i { width: 2px; height: 100%; background: var(--on-accent); border-radius: 1px; animation: bgm-eq .9s ease-in-out infinite; }
+.bgm-eq i:nth-child(2) { animation-delay: -.3s; } .bgm-eq i:nth-child(3) { animation-delay: -.6s; }
+@keyframes bgm-eq { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+.bgm-panel { display: none; flex-direction: column; gap: 2px; width: min(360px, calc(100vw - 84px)); margin-left: -22px; padding: 6px 8px 6px 30px; background: var(--surface); border: 1px solid var(--border); border-radius: 0 24px 24px 0; box-shadow: 0 8px 22px -12px rgb(0 0 0 / .4); }
+.bgm.open .bgm-panel { display: flex; animation: bgm-in .22s cubic-bezier(.2, .7, .2, 1); }
+@keyframes bgm-in { from { opacity: 0; transform: translateX(-10px); } }
+.bgm-title { overflow: hidden; white-space: nowrap; font-weight: 600; padding-right: 4px; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.bgm-title-in { display: inline-block; }
+.bgm-title-in.mq { animation: bgm-mq 12s linear infinite; }
+@keyframes bgm-mq { 0%, 15% { transform: translateX(0); } 85%, 100% { transform: translateX(var(--mq)); } }
+.bgm-row { display: flex; align-items: center; gap: 2px; }
+.bgm-btn { flex: none; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); cursor: pointer; }
+.bgm-btn:hover:not(:disabled) { background: var(--accent-soft); }
+.bgm-btn:disabled { opacity: .35; cursor: default; }
+.bgm-play { background: var(--accent); color: var(--on-accent); }
+.bgm-play:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+.bgm-bar { flex: 1; min-width: 40px; margin: 0 6px; }
+.bgm-seek, .bgm-vol { --p: 0%; -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: none; cursor: pointer; margin: 0; }
+.bgm-seek::-webkit-slider-runnable-track, .bgm-vol::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) var(--p), var(--border) var(--p)); }
+.bgm-seek::-moz-range-track, .bgm-vol::-moz-range-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) var(--p), var(--border) var(--p)); }
+.bgm-seek::-webkit-slider-thumb, .bgm-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.bgm-seek::-moz-range-thumb, .bgm-vol::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.bgm-time { flex: none; min-width: 32px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bgm-volbox { display: flex; align-items: center; }
+.bgm-vol { width: 0; opacity: 0; transition: width .2s, opacity .2s; }
+.bgm-volbox:hover .bgm-vol, .bgm-volbox:focus-within .bgm-vol { width: 64px; opacity: 1; margin-right: 4px; }
+.bgm-yt { position: absolute; left: 0; bottom: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+@media (hover: none) { .bgm-vol { display: none; } }
+@media (prefers-reduced-motion: reduce) { .bgm.playing .bgm-art, .bgm-eq i, .bgm-title-in.mq { animation: none; } }
+/* 설정 맨 위: 배경음악 · 알림 버튼 */
+.tabs-side { display: flex; gap: 8px; margin-left: auto; flex: none; }
+.tabs-side .bell-btn { margin-left: 0; }
+.bgm-set .row { gap: 8px; }
+.bgm-set .row .input { flex: 1; min-width: 0; }
+.bgm-list { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.bgm-li { display: flex; align-items: center; gap: 8px; }
+.bgm-li .input { flex: 1; min-width: 0; }
+.bgm-li-art { flex: none; width: 64px; height: 36px; border-radius: 6px; background: var(--accent-soft) center / cover no-repeat; }
+.bgm-li-tools { display: flex; flex: none; }
+.bgm-li-tools .btn:first-child .icon, .bgm-li-tools .btn:nth-child(2) .icon { transform: rotate(90deg); }
+.bgm-set-opts { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.bgm-set-volrow { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.bgm-set-volrow input { flex: 1; max-width: 220px; accent-color: var(--accent); }
+
+/* ───────── 모바일 정리 ───────── */
+@media (max-width: 820px) {
+  /* 블로그: 게시판 → 태그 → 글 목록 → 이웃 배너 순서로 (배너가 글보다 먼저 자리를 차지하지 않게) */
+  .blog-body.has-side { display: flex; flex-direction: column; }
+  .blog-side { display: contents; }
+  .blog-side > .side-sec:not(.nb-zone) { order: 1; }
+  .blog-main { order: 2; }
+  .blog-side > .nb-zone { order: 3; margin-top: 8px; }
+  .skin-home .blog-body.has-side { display: grid; }
+}
+@media (max-width: 640px) {
+  /* 도구줄: 필터 줄은 넘치면 옆으로 밀어서 봐요 (여러 줄로 쌓이지 않게) */
+  .toolbar { gap: 8px; }
+  .toolbar .search { flex: 1 1 100%; }
+  .pills, .kind-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-content: flex-start; max-width: 100%; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); padding-right: 18px; }
+  .pills::-webkit-scrollbar { display: none; }
+  .pills .pill { flex: none; }
+  .post-top { gap: 8px; }
+  .sort-bar { flex-wrap: wrap; gap: 4px 12px; }
+  /* 카드 그리드·갤러리: 칸이 좁으니 배지는 작게, '공개'와 게시판 이름은 빼요 (게시판은 위 목록에 있어요) */
+  .layout-grid .card-meta, .layout-masonry .card-meta { gap: 4px; }
+  .layout-grid .card-meta .kind, .layout-grid .card-meta .vis, .layout-masonry .card-meta .kind, .layout-masonry .card-meta .vis { font-size: 10.5px; padding: 2px 6px; gap: 3px; }
+  .layout-grid .card-meta .board-badge, .layout-masonry .card-meta .board-badge, .layout-grid .card-meta .vis-public, .layout-masonry .card-meta .vis-public { display: none; }
+  .layout-grid .card-body, .layout-masonry .card-body { padding: 10px 11px 12px; }
+  .layout-grid .card-title, .layout-masonry .card-title { font-size: 14.5px; }
+  /* 글 보기: 프롬 칸 머리는 버튼이 많아도 이름이 세로로 찌그러지지 않게 */
+  .block-head { flex-wrap: wrap; row-gap: 6px; padding: 8px 10px 8px 14px; }
+  .block-head h3 { white-space: nowrap; flex: 1 1 auto; }
+  /* 설정: 제목 줄 오른쪽에 배경음악·알림 */
+  .ed-top .tabs-side .bell-btn { width: 40px; height: 40px; }
+  /* 배경음악: 펼쳤을 때 화면 폭에 맞게 */
+  .bgm-panel { width: calc(100vw - 80px); }
+  .bgm-time { display: none; }
+}
+.ed-top .tabs-side { margin-left: auto; }

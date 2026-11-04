@@ -35,6 +35,19 @@ export const SKIN_FONTS = {
   mono:      { name: FONTS.mono.name, stack: FONTS.mono.stack },
 };
 export const SKIN_FONT_SLOTS = ['title', 'ui', 'body'];
+
+// 배경음악 (유튜브): 곡 목록 + 섞기 + 자동 재생 시도 + 기본 볼륨
+export const MAX_BGM = 20;
+export function sanitizeBgm(b) {
+  const x = b && typeof b === 'object' ? b : {};
+  const seen = new Set();
+  const tracks = (Array.isArray(x.tracks) ? x.tracks : [])
+    .filter((t) => t && typeof t.id === 'string' && /^[A-Za-z0-9_-]{11}$/.test(t.id) && !seen.has(t.id) && seen.add(t.id))
+    .slice(0, MAX_BGM)
+    .map((t) => ({ id: t.id, t: typeof t.t === 'string' ? t.t.trim().slice(0, 80) : '' }));
+  const vol = Number(x.vol);
+  return { on: x.on !== false, tracks, shuffle: !!x.shuffle, auto: !!x.auto, vol: Number.isFinite(vol) ? Math.max(0, Math.min(100, Math.round(vol))) : 60 };
+}
 function sanitizeSkinFonts(f) {
   const out = {};
   if (!f || typeof f !== 'object') return out;
@@ -184,7 +197,7 @@ export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
   font: 'sans', layout: 'list', radius: 'soft', header: 'center',
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
-  skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [], skinFonts: {}, showAll: true,
+  skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [], skinFonts: {}, showAll: true, bgm: sanitizeBgm(null),
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -244,6 +257,7 @@ export function sanitizeTheme(t) {
     boards: sanitizeBoards(t.boards),
     uncat: t.uncat !== false,
     showAll: t.showAll !== false,
+    bgm: sanitizeBgm(t.bgm),
     favicon: sanitizeFavicon(t.favicon),
     buttons: sanitizeButtons(t.buttons),
     skin: pick(SKINS, t.skin),

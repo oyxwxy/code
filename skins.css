@@ -690,3 +690,72 @@ html[data-skin='grid'] .dd-date { color: var(--muted); font-family: var(--sk-ui)
 .fp small { font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif; font-size: 11.5px; color: var(--muted); }
 .fp:hover { border-color: var(--accent); }
 .fp.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft); }
+
+/* ═════════ 배경음악 플레이어: 페이지 스킨에 맞춰서 ═════════ */
+html[data-skin] .bgm { font-family: var(--sk-ui); }
+html[data-skin='home'] .bgm-disc { border-radius: 2px; border-color: var(--hp-frame); background: linear-gradient(var(--surface), var(--hp-bar2)); box-shadow: 3px 3px 0 var(--hp-shade); }
+html[data-skin='home'] .bgm-art, html[data-skin='home'] .bgm-art::after { border-radius: 0; }
+html[data-skin='home'] .bgm-art::after { display: none; }
+html[data-skin='home'] .bgm.playing .bgm-art { animation: none; }
+html[data-skin='home'] .bgm-panel { border-radius: 0; border-color: var(--hp-frame); background: var(--hp-win); box-shadow: 4px 4px 0 var(--hp-shade); }
+html[data-skin='home'] .bgm-title { background: linear-gradient(var(--hp-bar1), var(--hp-bar2)); margin: -6px -8px 4px -30px; padding: 3px 8px 3px 30px; border-bottom: 1px solid var(--hp-frame); -webkit-mask-image: none; mask-image: none; }
+html[data-skin='home'] .bgm-btn { border-radius: 0; }
+html[data-skin='home'] .bgm-play { background: linear-gradient(var(--surface), var(--hp-bar2)); color: var(--hp-link); border: 1px solid var(--hp-frame); }
+html[data-skin='term'] .bgm { bottom: calc(96px + env(safe-area-inset-bottom)); text-shadow: -1px 0 var(--tm-ca), 1px 0 var(--tm-cb); }
+html[data-skin='term'] .bgm-disc { border-radius: 0; border: 2px solid var(--tm-ink); background: var(--tm-bg); box-shadow: none; }
+html[data-skin='term'] .bgm-art { border-radius: 0; filter: grayscale(1) contrast(1.2); mix-blend-mode: luminosity; }
+html[data-skin='term'] .bgm-art::after { display: none; }
+html[data-skin='term'] .bgm.playing .bgm-art { animation: none; }
+html[data-skin='term'] .bgm-eq { border-radius: 0; background: var(--tm-ink); }
+html[data-skin='term'] .bgm-eq i { background: var(--tm-bg); }
+html[data-skin='term'] .bgm-panel { border-radius: 0; border: 2px solid var(--tm-ink); background: var(--tm-bg); color: var(--tm-ink); box-shadow: none; }
+html[data-skin='term'] .bgm-title::before { content: '▶ NOW PLAYING : '; color: var(--tm-sub); }
+html[data-skin='term'] .bgm-btn { border-radius: 0; color: var(--tm-ink); }
+html[data-skin='term'] .bgm-btn:hover:not(:disabled) { background: var(--tm-ink); color: var(--tm-bg); }
+html[data-skin='term'] .bgm-play { background: var(--tm-ink); color: var(--tm-bg); }
+html[data-skin='term'] .bgm-time { color: var(--tm-ink); }
+html[data-skin='term'] .bgm-seek::-webkit-slider-runnable-track, html[data-skin='term'] .bgm-vol::-webkit-slider-runnable-track { border-radius: 0; background: repeating-linear-gradient(90deg, var(--tm-ink) 0 4px, transparent 4px 6px) 0 0 / var(--p) 100% no-repeat, rgb(255 255 255 / .2); }
+html[data-skin='term'] .bgm-seek::-webkit-slider-thumb, html[data-skin='term'] .bgm-vol::-webkit-slider-thumb { border-radius: 0; background: var(--tm-ink); border-color: var(--tm-bg); }
+html[data-skin='game'] .bgm-disc { border-radius: 0; border: 2px solid var(--gm-ink); background: var(--gm-bg); box-shadow: 3px 3px 0 var(--gm-ink); }
+html[data-skin='game'] .bgm-art { border-radius: 0; image-rendering: pixelated; }
+html[data-skin='game'] .bgm-art::after { display: none; }
+html[data-skin='game'] .bgm.playing .bgm-art { animation: none; }
+html[data-skin='game'] .bgm-eq { border-radius: 0; background: var(--gm-acc); border: 1.5px solid var(--gm-ink); }
+html[data-skin='game'] .bgm-eq i { background: var(--gm-ink); border-radius: 0; }
+html[data-skin='game'] .bgm-panel { border-radius: 0; border: 2px solid var(--gm-ink); background: var(--gm-bg); box-shadow: 4px 4px 0 var(--gm-ink); }
+html[data-skin='game'] .bgm-btn { border-radius: 0; }
+html[data-skin='game'] .bgm-play { background: var(--gm-acc); color: var(--gm-on); border: 2px solid var(--gm-ink); }
+html[data-skin='game'] .bgm-seek::-webkit-slider-runnable-track, html[data-skin='game'] .bgm-vol::-webkit-slider-runnable-track { border-radius: 0; height: 6px; border: 1.5px solid var(--gm-ink); background: linear-gradient(90deg, var(--gm-acc) var(--p), var(--gm-bg) var(--p)); }
+html[data-skin='game'] .bgm-seek::-webkit-slider-thumb, html[data-skin='game'] .bgm-vol::-webkit-slider-thumb { border-radius: 0; margin-top: -4.5px; background: var(--gm-ink); border: 0; }
+html[data-skin='grid'] .bgm-disc { border-radius: 0; border: 1.5px solid var(--gc-acc); background: var(--gc-bg); box-shadow: none; }
+html[data-skin='grid'] .bgm-art { border-radius: 0; filter: grayscale(1) contrast(1.4); }
+html[data-skin='grid'] .bgm-art::after { display: none; }
+html[data-skin='grid'] .bgm.playing .bgm-art { animation: none; }
+html[data-skin='grid'] .bgm-eq { border-radius: 0; background: var(--gc-acc); }
+html[data-skin='grid'] .bgm-eq i { background: var(--gc-on); }
+html[data-skin='grid'] .bgm-panel { border-radius: 0; border: 1.5px solid var(--gc-acc); background: var(--gc-bg); box-shadow: 5px 5px 0 var(--gc-acc); }
+html[data-skin='grid'] .bgm-btn { border-radius: 0; }
+html[data-skin='grid'] .bgm-play { background: var(--gc-acc); color: var(--gc-on); }
+@media (max-width: 640px) { html[data-skin='term'] .bgm { bottom: calc(64px + env(safe-area-inset-bottom)); } }
+
+/* ═════════ 모바일: 픽셀 제목은 작고 가볍게 (테두리·그림자도 얇게) ═════════ */
+@media (max-width: 640px) {
+  .skin-home .blog-name { --l: var(--hp-title-line); font-size: 26px; text-shadow: 1.5px 0 var(--l), -1.5px 0 var(--l), 0 1.5px var(--l), 0 -1.5px var(--l), 1.5px 1.5px var(--l), -1.5px -1.5px var(--l), 1.5px -1.5px var(--l), -1.5px 1.5px var(--l), 3px 3px 0 var(--hp-title-shadow); }
+  .tm-rule { font-size: 19px; gap: 12px; }
+  .gm-hero { height: auto; min-height: 420px; }
+  .gm-title { font-size: clamp(26px, 8.4vw, 36px); line-height: 1.15; text-shadow: 2px 0 var(--o), -2px 0 var(--o), 0 2px var(--o), 0 -2px var(--o), 4px 4px 0 var(--gm-acc2); }
+  .gm-kicker { font-size: 10px; letter-spacing: .2em; margin-bottom: 6px; }
+  .gm-item { font-size: 13px; }
+  .gm-menu { min-width: 0; width: min(240px, 100%); }
+  .gm-press { font-size: 14px; margin-top: 12px; }
+  .gc-hero { height: clamp(360px, 70vh, 460px); }
+  .hp-right { order: 3; }
+  .gc-title { width: 92%; }
+  .gc-title span { font-size: clamp(26px, 8.6vw, 38px); line-height: 1.2; padding: 0 .2em; background-image: none; }
+  .gc-start { padding: 8px 34px; }
+  .gc-start b { font-size: 18px; }
+  html[data-skin='game'] .dd-big { text-shadow: 1.5px 0 var(--o), -1.5px 0 var(--o), 0 1.5px var(--o), 0 -1.5px var(--o), 3px 3px 0 var(--gm-acc2); }
+  /* 유영: '기본 보기'는 아래로 (위 귀퉁이 글과 겹치지 않게) */
+  .fl-stage > .fl-plain { top: auto; bottom: 14px; }
+  .fl-corner.tl, .fl-corner.tr { top: 14px; }
+}

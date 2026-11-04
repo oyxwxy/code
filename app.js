@@ -7,6 +7,7 @@ import { blog, avatarEl } from './view-blog.js';
 import { post } from './view-post.js';
 import { editor } from './view-editor.js';
 import { settings } from './view-settings.js';
+import { bgmRouteStart, bgmSettle } from './bgm.js';
 
 const routes = [
   [/^\/?$/, home],
@@ -49,6 +50,7 @@ async function route() {
   const path = qi >= 0 ? raw.slice(0, qi) : raw;
   const query = new URLSearchParams(qi >= 0 ? raw.slice(qi + 1) : '');
   const token = ++navToken;
+  bgmRouteStart();   // 배경음악: 이번 화면이 쓰지 않으면 다 그린 뒤 멈춰요
   delete document.documentElement.dataset.skin;   // 스킨 색은 화면마다 다시 정해요
   state.writeBoard = '';   // 화면이 바뀌면 '보고 있는 게시판'은 비워요 (블로그 화면이 다시 채워요)
   const root = h('div', { class: 'view' });
@@ -60,12 +62,14 @@ async function route() {
     const m = path.match(re);
     if (m) { matched = { fn, params: m.slice(1).filter((x) => x != null) }; break; }
   }
-  if (!matched) { applyTheme(DEFAULT_THEME); root.append(emptyState('페이지를 찾을 수 없어요', '', h('a', { class: 'btn', href: '#/' }, '처음으로'))); return; }
+  if (!matched) { bgmSettle(); applyTheme(DEFAULT_THEME); root.append(emptyState('페이지를 찾을 수 없어요', '', h('a', { class: 'btn', href: '#/' }, '처음으로'))); return; }
   root.append(loader());
   try {
     root.replaceChildren();
     await matched.fn({ params: matched.params, query, root, isCurrent: () => token === navToken });
+    if (token === navToken) bgmSettle();
   } catch (e) {
+    if (token === navToken) bgmSettle();
     console.error(e);
     if (token !== navToken) return;
     root.replaceChildren(emptyState('문제가 생겼어요', (txt(e?.message) || '알 수 없는 오류가 났어요'), h('a', { class: 'btn', href: '#/' }, '처음으로')));

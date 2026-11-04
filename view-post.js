@@ -1,6 +1,7 @@
 import { h, icon, fmtDate, loader, emptyState, copyText, toast, confirmDialog, txt } from './util.js';
 import { state, getPost, getProfile, loadContent, unlockContent, deletePost, friendly, skinOn } from './store.js';
 import { promptView, setPageSkin, setViewTone } from './skins.js';
+import { useBgm } from './bgm.js';
 import { applyTheme, sanitizeTheme, getButton, DEFAULT_THEME, previewTheme } from './theme.js';
 import { imageGallery } from './gallery.js';
 import { openLightbox } from './lightbox.js';
@@ -142,6 +143,7 @@ export async function post({ params, root }) {
   const handle = txt(author?.handle) || txt(p.handle);
   const authorName = txt(author?.display) || handle;
   const aTheme = sanitizeTheme(authorTheme);
+  useBgm(p.owner, aTheme.bgm);   // 블로그 주인의 배경음악을 글 화면에서도 이어서
   const board = aTheme.boards.find((b) => b.id === p.board);
   // 스킨(테스트 중): 보는 사람이 관리자일 때만. 페이지 스킨 색을 글 보기에도 이어서 입혀요
   const pview = skinOn() ? aTheme.pview : '';

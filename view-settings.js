@@ -1,6 +1,6 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
 import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette } from './theme.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette, sanitizeBgm, MAX_BGM } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
 import { colorField, stepper, iconField, datePicker, selectField } from './widgets.js';
@@ -9,6 +9,7 @@ import { postCard, avatarEl, bannerEl } from './view-blog.js';
 import { backupTab } from './backup.js';
 import { openCropper } from './crop.js';
 import { TONES, ensureSkinFont } from './skins.js';
+import { parseYouTube, fetchYouTubeTitle, ytThumb } from './bgm.js';
 
 const ALL_TABS = [['profile', 'user', '프로필'], ['boards', 'folder', '게시판'], ['design', 'palette', '꾸미기'], ['skin', 'sparkle', '스킨'], ['invite', 'gift', '초대'], ['backup', 'download', '백업·가져오기']];
 // 초대 탭은 관리자에게만 보여요
@@ -33,8 +34,9 @@ export async function settings({ root, query }) {
     content.replaceChildren(node);
   }
   root.append(
-    h('div', { class: 'ed-top' }, h('a', { class: 'back', href: '#/u/' + state.me.handle }, icon('back', 16), '내 블로그'), h('h2', null, '설정')),
-    h('div', { class: 'tabs-row' }, tabBar, neighborsOn() ? bellButton() : null), content);
+    h('div', { class: 'ed-top' }, h('a', { class: 'back', href: '#/u/' + state.me.handle }, icon('back', 16), '내 블로그'), h('h2', null, '설정'),
+      h('div', { class: 'tabs-side' }, bgmButton(), neighborsOn() ? bellButton() : null)),
+    h('div', { class: 'tabs-row' }, tabBar), content);
   paintTabs();
   await show();
 }
@@ -158,6 +160,75 @@ function skinTab() {
       saveBtn));
   build();
   return host;
+}
+
+// ───────── 배경음악 (설정 맨 위, 알림 옆 버튼) ─────────
+function bgmButton() {
+  const btn = h('button', { class: 'bell-btn bgm-set-btn', type: 'button', title: '배경음악', 'aria-label': '배경음악 설정' }, icon('music', 18));
+  btn.addEventListener('click', () => openBgmSettings());
+  return btn;
+}
+function openBgmSettings() {
+  let B = sanitizeTheme(state.me.theme).bgm;
+  B = { ...B, tracks: B.tracks.map((t) => ({ ...t })) };
+  const list = h('div', { class: 'bgm-list' });
+  const urlIn = h('input', { class: 'input', placeholder: '유튜브 링크를 붙여 넣어요 (youtu.be/… 또는 youtube.com/watch?v=…)', 'aria-label': '유튜브 링크' });
+  const addBtn = h('button', { class: 'btn', type: 'button' }, icon('plus', 15), '추가');
+  const add = async () => {
+    const id = parseYouTube(urlIn.value);
+    if (!id) { toast('유튜브 영상 링크를 확인해 주세요'); return; }
+    if (B.tracks.some((t) => t.id === id)) { toast('이미 있는 곡이에요'); return; }
+    if (B.tracks.length >= MAX_BGM) { toast(`곡은 ${MAX_BGM}개까지예요`); return; }
+    const row = { id, t: '' };
+    B.tracks.push(row);
+    urlIn.value = '';
+    paint();
+    row.t = await fetchYouTubeTitle(id);   // 제목은 알아서 채우고, 나중에 고칠 수 있어요
+    paint();
+  };
+  addBtn.addEventListener('click', add);
+  urlIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+  const move = (i, d) => { const j = i + d; if (j < 0 || j >= B.tracks.length) return; [B.tracks[i], B.tracks[j]] = [B.tracks[j], B.tracks[i]]; paint(); };
+  function paint() {
+    list.replaceChildren(...(B.tracks.length ? B.tracks.map((t, i) => h('div', { class: 'bgm-li' },
+      h('span', { class: 'bgm-li-art', style: { backgroundImage: `url("${ytThumb(t.id)}")` } }),
+      h('input', { class: 'input', value: t.t, maxlength: '80', placeholder: '곡 이름 (비우면 유튜브 제목)', 'aria-label': `${i + 1}번째 곡 이름`, oninput: (e) => { t.t = e.target.value; } }),
+      h('div', { class: 'bgm-li-tools' },
+        h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '위로', disabled: i === 0, onclick: () => move(i, -1) }, icon('chevl', 14)),
+        h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '아래로', disabled: i === B.tracks.length - 1, onclick: () => move(i, 1) }, icon('chevr', 14)),
+        h('button', { class: 'btn ghost sm icon', type: 'button', 'aria-label': '빼기', onclick: () => { B.tracks.splice(i, 1); paint(); } }, icon('x', 14)))))
+      : [h('p', { class: 'desc' }, '아직 곡이 없어요. 유튜브 링크를 붙여 넣어 보세요.')]));
+  }
+  paint();
+  const sw = (label, key) => {
+    const txtEl = h('span', { class: 'sw-txt' }, label);
+    return h('label', { class: 'switch' }, h('input', { type: 'checkbox', checked: !!B[key], onchange: (e) => { B[key] = e.target.checked; } }), h('span', { class: 'trk' }), txtEl);
+  };
+  const volOut = h('b', null, B.vol + '%');
+  const vol = h('input', { class: 'bgm-set-vol', type: 'range', min: '0', max: '100', value: String(B.vol), 'aria-label': '처음 볼륨',
+    oninput: (e) => { B.vol = +e.target.value; volOut.textContent = B.vol + '%'; } });
+  const body = h('div', { class: 'bgm-set' },
+    h('p', { class: 'desc' }, '내 블로그와 글 화면 구석에 작은 플레이어가 떠요. 보는 사람이 재생 버튼을 눌러야 소리가 나요(브라우저 정책). 퍼가기를 막아 둔 영상은 자동으로 건너뛰어요.'),
+    h('div', { class: 'row' }, urlIn, addBtn),
+    list,
+    h('div', { class: 'bgm-set-opts' },
+      sw('배경음악 켜기', 'on'),
+      sw('섞어서 듣기', 'shuffle'),
+      sw('들어오면 바로 재생 시도', 'auto'),
+      h('label', { class: 'bgm-set-volrow' }, h('span', null, '처음 볼륨'), vol, volOut)));
+  modal({
+    title: '배경음악', body, wide: true,
+    actions: [
+      { label: '닫기', kind: 'ghost' },
+      { label: '저장', kind: 'primary', onClick: async () => {
+        try {
+          const cur = sanitizeTheme(state.me.theme);
+          await updateProfile({ theme: sanitizeTheme({ ...cur, bgm: sanitizeBgm(B) }) });
+          toast('배경음악을 저장했어요');
+        } catch (e) { toast(friendly(e)); return false; }
+      } },
+    ],
+  });
 }
 
 // ───────── 디데이 ─────────
@@ -535,7 +606,8 @@ function designTab() {
   let dirty = false;
   const saveBtn = h('button', { class: 'btn primary', onclick: async () => {
     saveBtn.disabled = true;
-    try { T = sanitizeTheme(T); await updateProfile({ theme: T }); dirty = false; toast('꾸미기를 저장했어요'); }
+    // 배경음악·스킨은 각자 따로 저장해요 → 지금 저장된 값을 그대로 이어 붙여요
+    try { const cur = sanitizeTheme(state.me.theme); T = sanitizeTheme({ ...T, bgm: cur.bgm, ...pickSkin(cur) }); await updateProfile({ theme: T }); dirty = false; toast('꾸미기를 저장했어요'); }
     catch (e) { toast(friendly(e)); }
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '꾸미기 저장');
@@ -738,7 +810,7 @@ function designTab() {
         h('div', { class: 'kset' }, Object.entries(KINDS).map(([k, v]) => kindRow(k, v)))),
       h('div', { class: 'row between' },
         h('button', { class: 'btn ghost', onclick: async () => {
-          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, bannerMore: T.bannerMore, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon, showAll: T.showAll, ...pickSkin(T) });
+          if (await confirmDialog('꾸미기를 기본값으로 되돌릴까요? (저장하기 전까지는 적용되지 않아요)', { ok: '되돌리기' })) set({ ...DEFAULT_THEME, avatar: T.avatar, banner: T.banner, bannerMore: T.bannerMore, nbBanner: T.nbBanner, neighbors: T.neighbors, kinds: T.kinds, boards: T.boards, uncat: T.uncat, favicon: T.favicon, showAll: T.showAll, bgm: T.bgm, ...pickSkin(T) });
         } }, '기본값으로'),
         h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview(T) }, icon('eye', 16), '미리보기'), saveBtn)),
       h('h3', { class: 'preview-title' }, '미리보기'),
