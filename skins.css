@@ -1146,3 +1146,7 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .qs-fig { position: absolute; right: 4%; bottom: 5%; z-index: 2; margin: 0; display: flex; gap: 10px; align-items: baseline; font: 300 11px 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .16em; color: rgb(233 236 243 / .5); text-transform: lowercase; }
 .qs-fig b { font-weight: 500; color: rgb(233 236 243 / .75); letter-spacing: .2em; }
 @media (max-width: 640px) { .qs-fig { right: 5%; bottom: 3%; font-size: 9.5px; } .qs-hero .qs-photo { -webkit-mask-image: radial-gradient(ellipse 70% 52% at 50% 40%, #000 30%, transparent 100%); mask-image: radial-gradient(ellipse 70% 52% at 50% 40%, #000 30%, transparent 100%); } }
+
+/* 혹시 남은 머리말 배너 띠는 숨겨요 (우주 유영에서는 무대 사진으로만) */
+.skin-space .blog-head > .banner { display: none; }
+.skin-space .blog-head.head-banner .head-in { margin-top: 0; }

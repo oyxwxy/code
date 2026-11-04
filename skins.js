@@ -662,7 +662,12 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
       h('p', { class: 'qs-sub' }, `@${prof.handle} · since ${yearOf(prof)}`)));
   // 대문 배너가 있으면: 머리말 위 띠 대신, 무대 전체에 깔리는 '관측 사진'이 돼요
   // 어둡게 가라앉히고 가장자리는 별밭 속으로 녹아들게. 슬라이드(여러 장)도 그대로 넘어가요
-  const banner = head.querySelector(':scope > .banner');
+  // 머리말을 '대문 배너'로 두지 않았어도, 대문 배너 사진이 있으면 써요
+  let banner = head.querySelector(':scope > .banner');
+  if (!banner && theme.banner) {
+    banner = h('div', { class: 'banner' });
+    loadImage(theme.banner).then((u) => { if (u) banner.style.backgroundImage = `url("${u}")`; });
+  }
   if (banner && theme.banner) {
     banner.classList.add('qs-photo');
     hero.prepend(banner);
