@@ -36,7 +36,9 @@ export async function settings({ root, query }) {
   root.append(
     h('div', { class: 'ed-top' }, h('a', { class: 'back', href: '#/u/' + state.me.handle }, icon('back', 16), '내 블로그'), h('h2', null, '설정'),
       h('div', { class: 'tabs-side' }, bgmButton(), neighborsOn() ? bellButton() : null)),
-    h('div', { class: 'tabs-row' }, tabBar), content);
+    h('div', { class: 'tabs-row' }, tabBar), content,
+    // 지금 브라우저가 쓰고 있는 파일 버전 (올린 파일이 반영됐는지 확인용)
+    h('p', { class: 'app-ver' }, '파일 버전 ' + (new URL(import.meta.url).searchParams.get('v') || '확인 불가')));
   paintTabs();
   await show();
 }

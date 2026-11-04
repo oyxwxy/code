@@ -1060,3 +1060,4 @@ a.board-badge:hover { border-color: var(--accent); }
   .bgm-time { display: none; }
 }
 .ed-top .tabs-side { margin-left: auto; }
+.app-ver { margin: 26px 0 0; text-align: center; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
