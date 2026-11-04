@@ -670,6 +670,11 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
   }
   if (banner && theme.banner) {
     banner.classList.add('qs-photo');
+    // 위치 · 크기는 스킨 탭에서 맞춰요 (이 스킨에서만)
+    const P = theme.spacePhoto || {};
+    banner.style.setProperty('--px', (P.x ?? 50) + '%');
+    banner.style.setProperty('--py', (P.y ?? 50) + '%');
+    banner.style.setProperty('--pz', (P.z ?? 100) + '%');
     hero.prepend(banner);
     hero.classList.add('has-photo');
     hero.append(h('p', { class: 'qs-fig', 'aria-hidden': 'true' }, h('b', null, 'FIG. 1'), `observed from @${prof.handle}`));

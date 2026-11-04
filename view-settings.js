@@ -45,7 +45,7 @@ export async function settings({ root, query }) {
 
 // ───────── 내 블로그 미리보기 (꾸미기·스킨 탭 공용) ─────────
 // 저장하지 않은 꾸미기 그대로 내 블로그를 창 안에 띄워요 (창 안의 화면이 부모 창의 __drawerPreview 를 읽어요)
-const pickSkin = (t) => ({ skin: t.skin, shelf: t.shelf, pview: t.pview, skinTone: t.skinTone, gameBoards: t.gameBoards, skinFonts: t.skinFonts, spaceFloat: t.spaceFloat });
+const pickSkin = (t) => ({ skin: t.skin, shelf: t.shelf, pview: t.pview, skinTone: t.skinTone, gameBoards: t.gameBoards, skinFonts: t.skinFonts, spaceFloat: t.spaceFloat, spacePhoto: t.spacePhoto });
 function openSitePreview(theme) {
   const handle = state.me?.handle;
   if (!handle) return;
@@ -151,6 +151,37 @@ function skinTab() {
       })) : null,
       h('p', { class: 'desc' }, '고른 순서대로 이름이 붙은 천체로 표시돼요. 글은 고른 것만 보이고, 게시판은 안 고르면 앞쪽 4개가 보여요.'));
   };
+  // 우주 유영: 무대에 깔리는 대문 배너 사진 위치 · 크기 (이 스킨에서만 쓰여요)
+  const spacePhotoRow = () => {
+    if (T.skin !== 'space' || !T.banner) return null;
+    const P = { ...(T.spacePhoto || { x: 50, y: 50, z: 100 }) };
+    const img = h('div', { class: 'zp-img' });
+    const apply = () => { img.style.backgroundPosition = `${P.x}% ${P.y}%`; img.style.backgroundSize = `auto ${P.z}%`; };
+    loadImage(T.banner).then((u) => { if (u) img.style.backgroundImage = `url("${u}")`; });
+    apply();
+    const save_ = () => { T = { ...T, spacePhoto: { ...P } }; };   // 화면을 다시 그리지 않고 값만 바꿔요 (끄는 중에 끊기지 않게)
+    const box = h('div', { class: 'zp-box', 'aria-label': '끌어서 사진 위치 맞추기' }, img, h('span', { class: 'zp-hint' }, '끌어서 위치를 맞춰요'));
+    let drag = null;
+    box.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, px: P.x, py: P.y }; box.setPointerCapture(e.pointerId); box.classList.add('dragging'); });
+    box.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const r = box.getBoundingClientRect();
+      // 사진을 끄는 방향으로 움직이게: 오른쪽으로 끌면 사진의 왼쪽이 보여요
+      P.x = Math.max(0, Math.min(100, Math.round(drag.px - (e.clientX - drag.x) / r.width * 100)));
+      P.y = Math.max(0, Math.min(100, Math.round(drag.py - (e.clientY - drag.y) / r.height * 100)));
+      apply();
+    });
+    const end = () => { if (!drag) return; drag = null; box.classList.remove('dragging'); save_(); };
+    box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+    const zoom = h('input', { type: 'range', min: '40', max: '300', value: String(P.z), 'aria-label': '사진 크기', oninput: (e) => { P.z = +e.target.value; zv.textContent = P.z + '%'; apply(); }, onchange: save_ });
+    const zv = h('b', null, P.z + '%');
+    return h('div', { class: 'skin-set' },
+      h('span', { class: 'lbl' }, '무대 사진 위치 · 크기 (대문 배너)'),
+      box,
+      h('div', { class: 'zp-row' }, h('span', null, '크기'), zoom, zv,
+        h('button', { class: 'btn ghost sm', type: 'button', onclick: () => { P.x = 50; P.y = 50; P.z = 100; zoom.value = '100'; zv.textContent = '100%'; apply(); save_(); } }, '처음대로')),
+      h('p', { class: 'desc' }, '우주 유영에서만 쓰여요. 다른 스킨과 기본 화면의 대문 배너는 그대로예요. 크기를 줄이면 가로로 긴 사진이 덜 잘려요.'));
+  };
   // 색상 프리셋: 페이지 스킨이 있으면 그 스킨의 색, 없으면 프롬창의 색 (프롬창은 페이지 스킨 색을 따라가요)
   const toneRow = () => {
     const key = T.skin || T.pview;
@@ -194,7 +225,8 @@ function skinTab() {
       skinRow('프롬창 (글 보기)', PVIEWS, 'pview', { float: '떠다니는 예시 이미지', card: '네임카드 · 바코드', pass: '네임카드 · 우표와 소인', signal: '행성 사진 + 수신된 교신' }),
       toneRow(),
       gameBoardRow(),
-      spaceRow()),
+      spaceRow(),
+      spacePhotoRow()),
     h('section', { class: 'panel' }, h('h3', { class: 'panel-title' }, '스킨 글꼴'), fontRow()),
     h('div', { class: 'row between' },
       h('button', { class: 'btn', type: 'button', onclick: () => openSitePreview({ ...sanitizeTheme(state.me.theme), ...pickSkin(T) }) }, icon('eye', 16), '미리보기'),

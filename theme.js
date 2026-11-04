@@ -199,6 +199,7 @@ export const DEFAULT_THEME = {
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
   skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [], skinFonts: {}, showAll: true, bgm: sanitizeBgm(null),
   spaceFloat: { posts: [], boards: [], sat: true },
+  spacePhoto: { x: 50, y: 50, z: 100 },
 };
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -271,6 +272,11 @@ export function sanitizeTheme(t) {
       boards: Array.isArray(t.spaceFloat?.boards) ? [...new Set(t.spaceFloat.boards.filter((id) => typeof id === 'string' && BOARD_ID_RE.test(id)))].slice(0, 4) : [],
       sat: t.spaceFloat?.sat !== false,
     },
+    // 우주 유영: 무대에 깔리는 대문 배너 사진의 위치(x·y %) · 크기(z %, 100 = 무대 높이에 맞춤)
+    spacePhoto: (() => {
+      const p = t.spacePhoto || {}, n = (v, lo, hi, d) => (Number.isFinite(+v) ? Math.max(lo, Math.min(hi, Math.round(+v))) : d);
+      return { x: n(p.x, 0, 100, 50), y: n(p.y, 0, 100, 50), z: n(p.z, 40, 300, 100) };
+    })(),
     gameBoards: Array.isArray(t.gameBoards) ? [...new Set(t.gameBoards.filter((id) => typeof id === 'string' && BOARD_ID_RE.test(id)))].slice(0, 4) : [],
     skinTone: typeof t.skinTone === 'string' && /^[a-z0-9]{1,16}$/.test(t.skinTone) ? t.skinTone : '',
   };

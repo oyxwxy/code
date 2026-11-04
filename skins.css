@@ -1134,12 +1134,12 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .zf-pick b { position: absolute; right: 2px; bottom: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; display: grid; place-items: center; }
 /* 우주 유영 + 대문 배너: 무대 전체에 깔리는 관측 사진 (어둡게, 가장자리는 별밭으로 녹아들게) */
 .qs-hero .qs-photo { position: absolute; inset: 0; z-index: 0; height: auto; margin: 0; aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none; overflow: hidden;
-  background-size: cover; background-position: center;
+  background-size: auto var(--pz, 100%); background-position: var(--px, 50%) var(--py, 50%); background-repeat: no-repeat;
   filter: saturate(.65) brightness(.55) contrast(1.12);
   mix-blend-mode: screen;   /* 사진의 어두운 부분은 비쳐서 뒤의 별이 그대로 보여요 */
   -webkit-mask-image: radial-gradient(ellipse 46% 56% at 52% 46%, #000 30%, rgb(0 0 0 / .45) 66%, transparent 98%);
   mask-image: radial-gradient(ellipse 46% 56% at 52% 46%, #000 30%, rgb(0 0 0 / .45) 66%, transparent 98%); }
-.qs-hero .qs-photo .banner-slide { background-size: cover; background-position: center; }
+.qs-hero .qs-photo .banner-slide { background-size: auto var(--pz, 100%); background-position: var(--px, 50%) var(--py, 50%); background-repeat: no-repeat; }
 .qs-hero .qs-photo .banner-dots { bottom: 14px; }
 .qs-hero.has-photo .qs-copy { text-shadow: 0 2px 30px rgb(2 2 5 / .9); }
 .qs-hero.has-photo .qs-body span { text-shadow: 0 1px 8px rgb(2 2 5 / .95); }
@@ -1150,3 +1150,12 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 /* 혹시 남은 머리말 배너 띠는 숨겨요 (우주 유영에서는 무대 사진으로만) */
 .skin-space .blog-head > .banner { display: none; }
 .skin-space .blog-head.head-banner .head-in { margin-top: 0; }
+
+/* 스킨 탭: 우주 유영 무대 사진 위치 맞추기 */
+.zp-box { position: relative; width: 100%; max-width: 520px; aspect-ratio: 16 / 9; overflow: hidden; background: #020205; border: 1px solid var(--border); cursor: grab; touch-action: none; user-select: none; }
+.zp-box.dragging { cursor: grabbing; }
+.zp-img { position: absolute; inset: 0; background-repeat: no-repeat; filter: saturate(.65) brightness(.6) contrast(1.1);
+  -webkit-mask-image: radial-gradient(ellipse 46% 56% at 52% 46%, #000 30%, rgb(0 0 0 / .45) 66%, transparent 98%); mask-image: radial-gradient(ellipse 46% 56% at 52% 46%, #000 30%, rgb(0 0 0 / .45) 66%, transparent 98%); }
+.zp-hint { position: absolute; left: 10px; bottom: 8px; font-size: 11px; color: rgb(233 236 243 / .7); pointer-events: none; }
+.zp-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; max-width: 520px; font-size: 13px; }
+.zp-row input[type=range] { flex: 1; accent-color: var(--accent); }
