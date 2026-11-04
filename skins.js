@@ -158,12 +158,13 @@ const flFrom = (c, dark) => ({
   '--fl-filter': 'grayscale(1) contrast(1.1)', '--fl-frame': c.flInk || c.text, '--fl-pattern': c.flPattern || 'none', '--fl-pattern-size': c.flPatternSize || 'auto',
   '--idc-paper': c.idcPaper || (dark ? '#efece4' : c.bg), '--idc-paper2': '#ffffff', '--idc-ink': c.idcInk || (dark ? '#14161f' : c.text), '--idc-acc': c.accent, '--idc-acc2': c.idcAcc2 || c.text,
 });
+// 천문 지도: 글자는 판(파란 바탕) 위에 놓이니까 기본 글자색 = 판 위 선 색
 const chartTone = (name, c) => ({
-  name, dark: false, sw: [c.paper, c.plate, c.acc],
+  name, dark: true, sw: [c.paper, c.plate, c.acc],
   vars: {
-    ...base({ bg: c.paper, surface: c.paper2, text: c.ink, muted: c.muted, border: c.rule, accent: c.plate, soft: c.soft, onAccent: '#ffffff' }),
+    ...base({ bg: c.paper, surface: c.plate2, text: c.line, muted: `color-mix(in srgb, ${c.line} 68%, ${c.plate})`, border: `color-mix(in srgb, ${c.line} 45%, ${c.plate})`, accent: c.acc, soft: c.plate2, onAccent: c.plate }),
     '--font': SERIF2, '--radius': '0px',
-    '--ch-paper': c.paper, '--ch-paper2': c.paper2, '--ch-plate': c.plate, '--ch-line': c.line, '--ch-ink': c.ink, '--ch-acc': c.acc, '--ch-rule': c.rule,
+    '--ch-paper': c.paper, '--ch-plate': c.plate, '--ch-plate2': c.plate2, '--ch-line': c.line, '--ch-ink': c.ink, '--ch-acc': c.acc,
     ...flFrom({ bg: c.plate, text: c.line, muted: c.line, accent: c.acc, hl: c.acc, hlInk: c.plate, flInk: c.line, idcPaper: c.paper, idcInk: c.ink, idcAcc2: c.plate,
       flPattern: `radial-gradient(circle, ${c.line} 0 .8px, transparent 1.2px)`, flPatternSize: '23px 19px' }, true),
   },
@@ -198,10 +199,10 @@ const mosaicTone = (name, c) => ({
 });
 const TONES2 = {
   chart: {
-    plate: chartTone('청사진 성도', { paper: '#efe9dc', paper2: '#f7f3ea', plate: '#1d3d8f', line: '#f4f1ea', ink: '#1b2a55', muted: '#6b6f80', acc: '#f4f1ea', rule: '#1b2a55', soft: '#dde3f1' }),
-    ink: chartTone('먹 성도', { paper: '#ece8df', paper2: '#f6f3ec', plate: '#151515', line: '#f2efe8', ink: '#151515', muted: '#6d6a63', acc: '#f2efe8', rule: '#151515', soft: '#dedad1' }),
-    cobalt: chartTone('코발트 · 노랑', { paper: '#eef0f4', paper2: '#f8f9fb', plate: '#1f39c4', line: '#e9edf7', ink: '#14205e', muted: '#646a84', acc: '#f4e64a', rule: '#14205e', soft: '#dfe4f6' }),
-    sepia: chartTone('세피아', { paper: '#efe3cc', paper2: '#f7eedd', plate: '#5a3b22', line: '#f5e9d0', ink: '#4a2f1b', muted: '#7d6650', acc: '#f0c46a', rule: '#4a2f1b', soft: '#e6d6b9' }),
+    plate: chartTone('청판 성도', { paper: '#ece5d3', plate: '#1c3a8c', plate2: '#21429a', line: '#f3efe3', ink: '#1b2a55', acc: '#f3efe3' }),
+    ink: chartTone('먹판 성도', { paper: '#e9e4d8', plate: '#131313', plate2: '#1c1c1c', line: '#efebe1', ink: '#151515', acc: '#efebe1' }),
+    cobalt: chartTone('코발트 · 노랑', { paper: '#eceef2', plate: '#1d36c2', plate2: '#2340cc', line: '#e9edf7', ink: '#14205e', acc: '#f4e64a' }),
+    night: chartTone('밤하늘 · 금박', { paper: '#e6dfcd', plate: '#0e1530', plate2: '#141d3d', line: '#e9e3cf', ink: '#0e1530', acc: '#e3c26a' }),
   },
   probe: {
     uranus: probeTone('천왕성', false, { bg: '#d9d9d5', surface: '#e3e3df', ink: '#141414', muted: '#55555a', acc: '#9cc6d3', soft: '#c9cfcf', grain: 'rgb(0 0 0 / .09)' }),
@@ -462,62 +463,143 @@ const GREEK = 'αβγδεζηθικλμνξοπρστυφχψω';
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const yearOf = (prof) => (prof.created ? new Date(prof.created).getFullYear() : new Date().getFullYear());
 
-// ── 5. 천문 지도: 종이 위에 찍은 파란 성도 (경위선 · 은하수 점묘 · 별자리 = 게시판) ──
+// ── 5. 천문 지도: 화면 전체가 한 장의 성도(星圖) 판 ──
+// 종이 여백 위에 파란 판을 찍고, 그 판 위에 경위선 · 은하수 점묘 · 별 · 주석 글씨를 판 크기에 맞춰 그려요.
+// 블로그 이름은 별자리 이름처럼, 게시판은 별자리 목록처럼, 도구줄은 범례 상자처럼 보여요.
 function starPath(cx, cy, r, n = 6) {
   const p = [];
-  for (let i = 0; i < n * 2; i++) { const a = (Math.PI / n) * i - Math.PI / 2; const rr = i % 2 ? r * 0.32 : r; p.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`); }
+  for (let i = 0; i < n * 2; i++) { const a = (Math.PI / n) * i - Math.PI / 2; const rr = i % 2 ? r * 0.3 : r; p.push(`${(cx + Math.cos(a) * rr).toFixed(1)},${(cy + Math.sin(a) * rr).toFixed(1)}`); }
   return `<polygon points="${p.join(' ')}"/>`;
 }
-function chartSvg(prof, boards, posts) {
-  const W = 1200, H = 420, R = seeded(prof.handle + 'chart');
-  const out = [];
-  // 경위선: 큰 호 3개 + 비스듬한 시간선 3개
-  out.push('<g class="ch-grat" fill="none">');
-  for (let i = 0; i < 3; i++) { const cy = 900 + i * 260, r = 820 + i * 260; out.push(`<circle cx="${560 + i * 40}" cy="${cy}" r="${r}"/>`); }
-  for (let i = 0; i < 3; i++) { const x = 260 + i * 330; out.push(`<line x1="${x}" y1="0" x2="${x + 140 - i * 60}" y2="${H}"/>`); }
-  out.push('</g>');
-  // 은하수: 비스듬한 띠 모양 점묘
-  out.push('<g class="ch-milky">');
-  for (let i = 0; i < 900; i++) {
-    const t = R(), off = (R() + R() + R() - 1.5) * 120;
-    const x = 80 + t * 1040 + off * 0.35, y = H - 40 - t * 360 + off;
-    if (y < 0 || y > H) continue;
-    out.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.6 + R() * 1.1).toFixed(2)}"/>`);
+function drawSky(el, seed, notes) {
+  const W = Math.round(el.clientWidth), H = Math.round(el.clientHeight);
+  if (W < 50 || H < 50) return;
+  const R = seeded(seed);
+  const o = [];
+  // 적위선: 판 밖 아래쪽에 중심을 둔 큰 원호들
+  const cx = W * (0.35 + R() * 0.3), cy = H + W * 0.9;
+  o.push('<g class="g-arc" fill="none">');
+  for (let i = 0; i < Math.ceil(H / 520) + 2; i++) o.push(`<circle cx="${cx.toFixed(0)}" cy="${cy.toFixed(0)}" r="${(W * 0.9 + 120 + i * 520).toFixed(0)}"/>`);
+  o.push('</g>');
+  // 시간선(적경선): 비스듬히 판을 가로질러요
+  o.push('<g class="g-hr">');
+  const hrs = [];
+  for (let i = 0; i < 4; i++) {
+    const x1 = W * (0.12 + i * 0.27) + (R() - 0.5) * 40, x2 = x1 + (R() - 0.5) * W * 0.35;
+    hrs.push([x1, x2]);
+    o.push(`<line x1="${x1.toFixed(0)}" y1="0" x2="${x2.toFixed(0)}" y2="${H}"/>`);
   }
-  out.push('</g>');
-  // 흩어진 별 + 그리스 문자 이름
-  out.push('<g class="ch-stars">');
-  for (let i = 0; i < 46; i++) {
-    const x = 30 + R() * (W - 60), y = 24 + R() * (H - 48), r = 3 + R() * 7;
-    out.push(starPath(x, y, r, R() < 0.6 ? 6 : 4));
-    if (R() < 0.35) out.push(`<text class="ch-gk" x="${(x + r + 4).toFixed(1)}" y="${(y + 4).toFixed(1)}">${GREEK[i % GREEK.length]}</text>`);
+  o.push('</g>');
+  // 은하수: 판 대각선을 따라 띠 모양으로 찍은 점
+  o.push('<g class="g-milky">');
+  const dots = Math.min(6000, Math.round(W * H / 260));
+  const ax = W * 0.15, ay = H, bx = W * 0.9, by = 0;
+  for (let i = 0; i < dots; i++) {
+    const t = R(), spread = (R() + R() + R() - 1.5) * Math.min(W, 520) * 0.32;
+    const x = ax + (bx - ax) * t + spread * 0.85, y = ay + (by - ay) * t + spread * 0.5;
+    if (x < 0 || x > W || y < 0 || y > H) continue;
+    o.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.5 + R() * 1.05).toFixed(2)}"/>`);
   }
-  out.push('</g>');
-  // 라벨 (원래 성도의 '10 hours' 자리)
-  out.push(`<g class="ch-lbl"><text x="268" y="26">${posts.length} stars</text><text x="600" y="26">${boards.length} constellations</text>`
-    + `<text x="40" y="${H - 14}" transform="rotate(-13 40 ${H - 14})">since ${yearOf(prof)} · @${esc(prof.handle)}</text></g>`);
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${out.join('')}</svg>`;
+  o.push('</g>');
+  // 별 + 그리스 문자
+  o.push('<g class="g-star">');
+  const n = Math.round(W * H / 26000);
+  for (let i = 0; i < n; i++) {
+    const x = R() * W, y = R() * H, big = R() < 0.18, r = big ? 7 + R() * 6 : 2.5 + R() * 4;
+    o.push(starPath(x, y, r, big ? 6 : R() < 0.5 ? 6 : 4));
+    if (big || R() < 0.25) o.push(`<text x="${(x + r + 4).toFixed(0)}" y="${(y + 5).toFixed(0)}">${GREEK[Math.floor(R() * GREEK.length)]}</text>`);
+  }
+  o.push('</g>');
+  // 주석 글씨 (원래 성도의 '10 hours', '30° South Declination' 자리)
+  o.push('<g class="g-note">');
+  hrs.forEach(([x1], i) => o.push(`<text x="${(x1 + 8).toFixed(0)}" y="22">${notes.hours[i % notes.hours.length]}</text>`));
+  let y = 260;
+  notes.decl.forEach((t) => { if (y < H - 60) o.push(`<text x="${(18 + R() * 30).toFixed(0)}" y="${y}" transform="rotate(-11 40 ${y})">${esc(t)}</text>`); y += 340 + R() * 200; });
+  o.push('</g>');
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${o.join('')}</svg>`;
 }
-function dressChart({ head, body, main, prof, boards, selectBoard, posts }) {
-  const name = txt(prof.display) || prof.handle;
-  const R = seeded(prof.handle + 'const');
-  const go = () => main.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
-  // 게시판 = 별자리 (최대 5개, 성도 위 자리를 아이디로 정해요)
-  const cons = boards.slice(0, 5).map((b, i) => {
-    const x = 8 + ((i * 19 + R() * 10) % 80), y = 18 + R() * 56;
-    return h('button', { class: 'ch-con', type: 'button', style: { left: x + '%', top: y + '%' }, onclick: () => { selectBoard(b.id); go(); } },
-      h('i', { 'aria-hidden': 'true' }, '✶'), h('span', null, b.name));
-  });
-  const hero = h('section', { class: 'ch-hero' },
-    h('p', { class: 'ch-mapno' }, `Map Nº ${roman(posts.length || 1)}.`),
-    h('div', { class: 'ch-plate' },
-      h('div', { class: 'ch-svg', html: chartSvg(prof, boards, posts) }),
-      h('h1', { class: 'ch-name' }, name),
-      ...cons),
-    h('p', { class: 'ch-caption' }, h('span', null, `${posts.length} hours Right Ascension`), h('b', null, 'POLE'), h('span', null, `${yearOf(prof)} North Polar Distance`)));
-  head.before(hero);
-  body.classList.add('ch-body');
+function dressChart({ root, head, body, pickBar, prof, boards, posts }) {
+  const year = yearOf(prof);
+  const sky = h('div', { class: 'ch-sky', 'aria-hidden': 'true' });
+  const sheet = h('div', { class: 'ch-sheet' }, sky, head, body);
+  const top = h('div', { class: 'ch-top' }, h('span', null, '@' + prof.handle), h('b', null, `Map Nº ${roman(posts.length || 1)}.`), h('span', null, `Anno ${year}`));
+  const bottom = h('div', { class: 'ch-bottom' }, h('span', null, `${posts.length || 0} hours Right Ascension`), h('b', null, 'SOUTH POLE'), h('span', null, `${boards.length} hours Rt Ascension`));
+  root.replaceChildren(top, sheet, bottom, pickBar);
+  // 블로그 이름: 별자리 이름처럼 (판 위에 비스듬히), 프로필 사진은 행성처럼
+  head.querySelector('.blog-name')?.classList.add('ch-name');
+  const notes = {
+    hours: ['10 hours', '9 hours', `${posts.length} stars`, `${boards.length} constellations`],
+    decl: [`30° South Declination`, `120° Nor Pol Distance`, `@${prof.handle}`, `140° North Polar Distance`, `since ${year}`, `160° North Polar Distance`],
+  };
+  const seed = prof.handle + 'atlas';
+  let t = 0, lastW = 0, lastH = 0;
+  const redraw = () => { clearTimeout(t); t = setTimeout(() => { const w = sky.clientWidth, hh = sky.clientHeight; if (Math.abs(w - lastW) < 2 && Math.abs(hh - lastH) < 40) return; lastW = w; lastH = hh; drawSky(sky, seed, notes); }, 120); };
+  const ro = new ResizeObserver(() => { if (!sheet.isConnected) { ro.disconnect(); return; } redraw(); });
+  ro.observe(sheet);
+  requestAnimationFrame(() => drawSky(sky, seed, notes));
 }
+
+// ── 프롬 모음 4: 별자리 (글 = 별, 게시판 = 별자리) ──
+// 게시판마다 별자리 하나. 글은 별, 같은 게시판 글은 선으로 이어지고, 별에 마우스를 올리면 작은 설명 카드가 떠요.
+// 별 자리: 칸을 고르게 나눈 뒤 위아래로 지그재그 + 살짝 흔들어서, 이름표끼리 겹치지 않게
+function constellationLayout(n, R, perRow) {
+  const rows = Math.ceil(n / perRow);
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / perRow), col = row % 2 ? perRow - 1 - (i % perRow) : i % perRow;   // 줄마다 방향을 바꿔 선이 이어지게
+    const span = perRow > 1 ? 0.8 / (perRow - 1) : 0;
+    const x = 0.07 + col * span + (R() - 0.5) * span * 0.35;
+    const band = 1 / rows, base = 0.16 + row * band * 0.84;
+    const y = base + band * 0.84 * (0.25 + (col % 2 ? 0.45 : 0.1) + (R() - 0.5) * 0.25);
+    pts.push([Math.max(0.04, Math.min(0.9, x)), Math.max(0.14, Math.min(0.92, y))]);
+  }
+  return pts;
+}
+function starsView(rows, ctx) {
+  const groups = new Map();
+  rows.forEach((p) => { const k = ctx.boardOf(p) || '_'; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(p); });
+  const wrap = h('div', { class: 'st-wrap' });
+  const tip = h('div', { class: 'st-tip', role: 'tooltip', hidden: true });
+  let gi = 0;
+  for (const [k, list] of groups) {
+    const R = seeded((k || '_') + 'cons');
+    const name = k === '_' ? 'Incognita' : (ctx.boardName(k) || 'Incognita');
+    const perRow = innerWidth < 640 ? 2 : innerWidth < 1000 ? 4 : 6;
+    const H = 150 + Math.ceil(list.length / perRow) * 96;
+    const box = h('section', { class: 'st-con', style: { height: H + 'px' } });
+    const pts = constellationLayout(list.length, R, perRow);
+    // 선
+    const lines = pts.slice(1).map(([x, y], i) => `<line x1="${(pts[i][0] * 100).toFixed(2)}%" y1="${(pts[i][1] * 100).toFixed(2)}%" x2="${(x * 100).toFixed(2)}%" y2="${(y * 100).toFixed(2)}%"/>`).join('');
+    box.append(h('div', { class: 'st-lines', html: `<svg width="100%" height="100%" aria-hidden="true">${lines}</svg>` }));
+    box.append(h('h4', { class: 'st-name' }, h('i', null, ROMAN_SMALL(gi + 1)), name, h('small', null, `${list.length} stars`)));
+    list.forEach((p, i) => {
+      const [x, y] = pts[i];
+      const big = i === 0 || R() < 0.25;
+      const s = h('a', { class: 'st-star' + (big ? ' big' : '') + (p.vis === 'locked' ? ' locked' : '') + (x > 0.66 ? ' flip' : ''), href: '#/p/' + p.id, style: { left: (x * 100).toFixed(2) + '%', top: (y * 100).toFixed(2) + '%' }, 'aria-label': txt(p.title) || '제목 없음' },
+        h('span', { class: 'st-glyph', 'aria-hidden': 'true', html: `<svg viewBox="-12 -12 24 24">${starPath(0, 0, 11, big ? 6 : 4)}</svg>` }),
+        h('span', { class: 'st-lbl' }, h('i', null, GREEK[i % GREEK.length]), txt(p.title) || '제목 없음'));
+      const show = () => {
+        const th = safeThumb(p.thumb);
+        tip.replaceChildren(
+          th ? h('img', { src: th, alt: '', class: (p.spoiler && p.vis === 'public') || p.thumbSp ? 'sp' : '' }) : null,
+          h('b', null, txt(p.title) || '제목 없음'),
+          h('small', null, [kindLabel(kindOf(p)), fmtDate(p.created)].join(' · ')));
+        tip.hidden = false;
+        const r = s.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
+        const left = Math.min(wr.width - 210, Math.max(0, r.left - wr.left + 18));
+        tip.style.left = left + 'px'; tip.style.top = (r.top - wr.top + 22) + 'px';
+      };
+      s.addEventListener('mouseenter', show); s.addEventListener('focus', show);
+      s.addEventListener('mouseleave', () => { tip.hidden = true; }); s.addEventListener('blur', () => { tip.hidden = true; });
+      box.append(s);
+    });
+    wrap.append(box);
+    gi++;
+  }
+  wrap.append(tip);
+  return wrap;
+}
+const ROMAN_SMALL = (n) => roman(n).toLowerCase() + '.';
 
 // ── 6. 관측 기록: 거친 종이에 인쇄한 관측 포스터 + 디지털 데이터 표 ──
 function orbitSvg(boards) {
@@ -738,6 +820,7 @@ export function collectionView(shelf, rows, ctx) {
   if (shelf === 'records') return recordsView(rows, ctx);
   if (shelf === 'drawer') return drawerView(rows, ctx);
   if (shelf === 'folders') return foldersView(rows, ctx);
+  if (shelf === 'stars') return starsView(rows, ctx);
   return null;
 }
 

@@ -4,7 +4,7 @@ import {
   sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, updatePassword,
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, writeBatch,
 } from './fb.js';
-import { AUTH_DOMAIN, BETA_HANDLES, NEIGHBORS_FOR_ALL, DDAY_FOR_ALL, BANNER_SLIDE_FOR_ALL, SKINS_FOR_ALL, BETA_SKINS } from './config.js';
+import { AUTH_DOMAIN, BETA_HANDLES, NEIGHBORS_FOR_ALL, DDAY_FOR_ALL, BANNER_SLIDE_FOR_ALL, SKINS_FOR_ALL, BETA_SKINS, BETA_SHELVES } from './config.js';
 import { rid, inviteCode, txt } from './util.js';
 import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE, MAX_NEIGHBORS } from './theme.js';
 import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
@@ -436,6 +436,8 @@ export const skinOn = () => SKINS_FOR_ALL || isBeta();
 /** 이 페이지 스킨을 지금 보는 사람에게 보여줘도 되는지 (테스트 중 스킨은 관리자만) */
 export const skinAllowed = (k) => !!k && skinOn() && (!BETA_SKINS.includes(k) || isBeta());
 export const isBetaSkin = (k) => BETA_SKINS.includes(k);
+export const isBetaShelf = (k) => BETA_SHELVES.includes(k);
+export const shelfAllowed = (k) => !!k && skinOn() && (!BETA_SHELVES.includes(k) || isBeta());
 
 export const myNeighbors = () => sanitizeTheme(state.me?.theme).neighbors;
 export const isNeighbor = (uid) => myNeighbors().includes(uid);
