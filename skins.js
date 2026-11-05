@@ -649,7 +649,16 @@ function dressSpace({ root, head, body, main, prof, theme, boards, selectBoard, 
   const spots = [[66, 22], [80, 48], [60, 70], [88, 78], [74, 8], [92, 30], [56, 46], [70, 88], [84, 64], [62, 34]];
   // 좁은 화면에서는 이름표가 오른쪽 끝에서 잘리지 않게 가운데 쪽으로 모아요
   const narrow = innerWidth < 640;
-  bodies.forEach((el, i) => { let [x, y] = spots[i % spots.length]; if (narrow) { x = 44 + (x - 56) * 0.7; y = 18 + y * 0.42; } el.style.left = (x + (R() - 0.5) * 4) + '%'; el.style.top = (y + (R() - 0.5) * 4) + '%'; });
+  // 천체마다 다른 경로·속도로 아주 천천히 떠다녀요 (무중력)
+  const floaty = (el, amp, t0) => {
+    el.style.setProperty('--fx', `${Math.round((R() - 0.5) * amp)}px`);
+    el.style.setProperty('--fy', `${Math.round((R() * 0.6 + 0.4) * amp * (R() < 0.5 ? -1 : 1))}px`);
+    el.style.setProperty('--fr', `${((R() - 0.5) * 3).toFixed(1)}deg`);
+    el.style.setProperty('--ft', `${(t0 + R() * 14).toFixed(1)}s`);
+    el.style.setProperty('--fd', `${(-R() * 20).toFixed(1)}s`);
+  };
+  bodies.forEach((el, i) => { let [x, y] = spots[i % spots.length]; if (narrow) { x = 44 + (x - 56) * 0.7; y = 18 + y * 0.42; } el.style.left = (x + (R() - 0.5) * 4) + '%'; el.style.top = (y + (R() - 0.5) * 4) + '%'; floaty(el, 22, 18); });
+  floaty(here, 16, 24);
 
   const hero = h('section', { class: 'qs-hero' },
     h('span', { class: 'qs-belt l', 'aria-hidden': 'true' }, 'asteroid belt'),

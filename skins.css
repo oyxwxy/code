@@ -1193,3 +1193,18 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 .pv-memo-signal .bubble.tail::before, .pv-memo-signal .bubble.tail::after { display: none; }
 .pv-memo-signal .bubble.them { --bub: rgb(255 255 255 / .06); }
 @media (max-width: 640px) { .pv-memo .memo-chat { padding: 0 12px; } .pv-memo-head { margin: 0 12px 8px; } }
+
+/* 우주 유영 대문: 'you are here' 표시 · 이름 붙은 천체 · 관측 사진도 천천히 둥둥 (무중력) */
+@keyframes qs-float {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  30% { translate: var(--fx) calc(var(--fy) * -1); rotate: var(--fr); }
+  65% { translate: calc(var(--fx) * -.7) var(--fy); rotate: calc(var(--fr) * -.6); }
+}
+.qs-here, .qs-body { animation: qs-float var(--ft, 26s) ease-in-out infinite; animation-delay: var(--fd, 0s); }
+.qs-body:hover, .qs-body:focus-visible { animation-play-state: paused; }
+@keyframes qs-photo-drift {
+  0%, 100% { transform: translate(0, 0) scale(1.04); }
+  50% { transform: translate(-18px, 10px) scale(1.08); }
+}
+.qs-hero .qs-photo { animation: qs-photo-drift 70s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .qs-here, .qs-body, .qs-hero .qs-photo { animation: none; } }
