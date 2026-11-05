@@ -4,7 +4,12 @@ import {
   sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, verifyBeforeUpdateEmail, updatePassword,
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, writeBatch,
 } from './fb.js';
-import { AUTH_DOMAIN, BETA_HANDLES, NEIGHBORS_FOR_ALL, DDAY_FOR_ALL, BANNER_SLIDE_FOR_ALL, SKINS_FOR_ALL, BETA_SKINS, BETA_SHELVES, BETA_PVIEWS } from './config.js';
+import * as CFG from './config.js';
+// config.js 는 각자 고쳐 쓰는 파일이라, 새 항목이 없어도 멈추지 않게 기본값을 둬요
+const { AUTH_DOMAIN, BETA_HANDLES = [], NEIGHBORS_FOR_ALL = true, DDAY_FOR_ALL = true, BANNER_SLIDE_FOR_ALL = true, SKINS_FOR_ALL = true } = CFG;
+const BETA_SKINS = Array.isArray(CFG.BETA_SKINS) ? CFG.BETA_SKINS : [];
+const BETA_SHELVES = Array.isArray(CFG.BETA_SHELVES) ? CFG.BETA_SHELVES : [];
+const BETA_PVIEWS = Array.isArray(CFG.BETA_PVIEWS) ? CFG.BETA_PVIEWS : [];
 import { rid, inviteCode, txt } from './util.js';
 import { DEFAULT_THEME, sanitizeTheme, sanitizeBoards, BOARD_ID_RE, MAX_NEIGHBORS } from './theme.js';
 import { lockWithPassword, lockWithKey, unlock } from './crypto.js';
