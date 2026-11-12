@@ -832,7 +832,7 @@ a.board-badge:hover { border-color: var(--accent); }
 .dd-pill:hover { filter: brightness(.97); }
 .dd-pill svg { flex: none; fill: currentColor; }
 .dd-pill-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dd-wrap { min-width: min(380px, 80vw); }
+.dd-wrap { min-width: 0; }   /* 모달 안쪽(376px)보다 넓게 잡혀 카드가 오른쪽으로 삐져나오던 것 수정 */
 .dd-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 15px; font-weight: 800; letter-spacing: .03em; color: var(--text); }
 .dd-head svg { flex: none; fill: #e0679a; stroke: #e0679a; }
 .dd-head b { margin-left: auto; min-width: 24px; padding: 1px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; text-align: center; }
@@ -858,6 +858,17 @@ a.board-badge:hover { border-color: var(--accent); }
 .dd-date { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: #7b8aa0; }
 @keyframes dd-in { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .dd-card { animation: none; } }
+/* 기본(스킨 없음) 다크 모드: 밝은 파스텔 카드 대신 카드 색을 어둡게 섞어서 */
+:root[data-mode='dark']:not([data-skin]) .dd-card { --dd-hi: color-mix(in srgb, var(--dd-edge) 78%, #fff);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dd-edge) 20%, var(--surface)), color-mix(in srgb, var(--dd-edge) 7%, var(--surface)));
+  border-color: color-mix(in srgb, var(--dd-edge) 30%, transparent); box-shadow: 0 10px 22px -14px rgb(0 0 0 / .7); }
+:root[data-mode='dark']:not([data-skin]) .dd-card.today { border-color: color-mix(in srgb, var(--dd-edge) 70%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dd-edge) 28%, transparent), 0 10px 22px -14px rgb(0 0 0 / .7); }
+:root[data-mode='dark']:not([data-skin]) .dd-card::after { background: radial-gradient(circle, rgb(255 255 255 / .07), rgb(255 255 255 / 0) 70%); }
+:root[data-mode='dark']:not([data-skin]) .dd-ic { background: color-mix(in srgb, var(--dd-edge) 12%, var(--bg)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dd-edge) 30%, transparent); }
+:root[data-mode='dark']:not([data-skin]) .dd-name { color: var(--text); }
+:root[data-mode='dark']:not([data-skin]) .dd-date { color: var(--muted); }
+:root[data-mode='dark']:not([data-skin]) .dd-big { color: var(--dd-hi); }
+:root[data-mode='dark']:not([data-skin]) .dd-tag { color: var(--dd-hi); background: color-mix(in srgb, var(--dd-edge) 16%, transparent); }
 @media (max-width: 420px) { .dd-card { gap: 12px; padding: 14px; } .dd-ic { width: 50px; height: 50px; font-size: 24px; } .dd-n { font-size: 34px; } }
 .dd-edit { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
 .dd-row { border: 1px dashed var(--border); border-radius: var(--r-sm); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
