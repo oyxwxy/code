@@ -67,6 +67,28 @@ export const LAYOUTS = {
   journal: '저널',
 };
 
+// 글 목록 배치: PC와 모바일(화면 너비 640px 이하)을 따로 정해요. layoutM 이 '' 이면 PC와 같게
+export const MOBILE_MQ = '(max-width: 640px)';
+const layMQ = typeof matchMedia === 'function' ? matchMedia(MOBILE_MQ) : null;
+export const isMobileWidth = () => !!layMQ?.matches;
+/** 지금 화면 너비에 맞는 배치 */
+export function layoutOf(t, mobile = isMobileWidth()) {
+  return mobile && LAYOUTS[t?.layoutM] ? t.layoutM : (LAYOUTS[t?.layout] ? t.layout : 'list');
+}
+/** 글 목록 상자에 붙일 class·data 값 (화면 너비가 바뀌면 아래에서 class 를 갈아 끼워요) */
+export function layoutAttrs(t) {
+  const pc = layoutOf(t, false), m = layoutOf(t, true);
+  return { cls: 'layout-' + layoutOf(t), 'data-lay': pc, 'data-lay-m': m };
+}
+const swapLayouts = () => {
+  const mobile = isMobileWidth();
+  document.querySelectorAll('.posts[data-lay]').forEach((el) => {
+    const next = mobile ? el.dataset.layM : el.dataset.lay;
+    for (const k of Object.keys(LAYOUTS)) el.classList.toggle('layout-' + k, k === next);
+  });
+};
+if (layMQ) { if (layMQ.addEventListener) layMQ.addEventListener('change', swapLayouts); else layMQ.addListener?.(swapLayouts); }
+
 // 스킨: 페이지 스킨 / 프롬 모음(글 목록) / 프롬창(글 보기)
 export const SKINS = { '': '없음', home: '홈페이지', term: '터미널', game: '픽셀 아케이드', grid: '그리드 타이틀', chart: '천문 지도', probe: '관측 기록', space: '우주 유영' };
 export const SHELVES = { '': '위 배치 그대로', records: '레코드 진열', drawer: '서랍', folders: '폴더 인덱스', stars: '별자리', planets: '행성', log: '관측 로그' };
@@ -195,7 +217,7 @@ export function setFavicon(f) {
 
 export const DEFAULT_THEME = {
   preset: 'cream', bg: '#f1f8f5', accent: '#678e85',
-  font: 'sans', layout: 'list', radius: 'soft', header: 'center',
+  font: 'sans', layout: 'list', layoutM: '', radius: 'soft', header: 'center',
   avatar: '', banner: '', bannerMore: [], bannerSec: 5, nbBanner: '', neighbors: [], ddays: [], kinds: sanitizeKinds(null), boards: [], uncat: true, favicon: null, buttons: sanitizeButtons(null),
   skin: '', shelf: '', pview: '', skinTone: '', gameBoards: [], skinFonts: {}, showAll: true, bgm: sanitizeBgm(null),
   spaceFloat: { posts: [], boards: [], sat: true },
@@ -246,6 +268,7 @@ export function sanitizeTheme(t) {
     accent: HEX.test(t.accent) ? (t.preset === 'cream' && t.accent.toLowerCase() === '#c2713c' ? d.accent : t.accent) : d.accent,
     font: FONTS[t.font] ? t.font : d.font,
     layout: LAYOUTS[t.layout] ? t.layout : d.layout,
+    layoutM: LAYOUTS[t.layoutM] ? t.layoutM : '',
     radius: RADII[t.radius] ? t.radius : d.radius,
     header: HEADERS[t.header] ? t.header : d.header,
     avatar: typeof t.avatar === 'string' ? t.avatar : '',

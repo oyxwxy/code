@@ -2,7 +2,7 @@ import { h, icon, fmtDate, loader, emptyState, initial, sortable, toast, confirm
 import { state, getProfileByHandle, getProfile, listPosts, savePostOrder, movePosts, friendly, neighborsOn, ddayOn, bannerSlideOn, skinOn, skinAllowed, shelfAllowed, isNeighbor, takeNeighbor, dropNeighbor } from './store.js';
 import { dressBlog, collectionView } from './skins.js';
 import { useBgm } from './bgm.js';
-import { applyTheme, sanitizeTheme, DEFAULT_THEME, previewTheme } from './theme.js';
+import { applyTheme, sanitizeTheme, DEFAULT_THEME, previewTheme, layoutAttrs } from './theme.js';
 import { loadImage, safeUrl } from './images.js';
 import { KINDS, kindOf, kindLabel, kindShown } from './kinds.js';
 import { selectField } from './widgets.js';
@@ -344,7 +344,8 @@ export async function blog({ params, query, root }) {
         return;
       }
     }
-    const box = h('div', { class: 'posts layout-' + theme.layout + (picking ? ' picking' : '') },
+    const lay = layoutAttrs(theme);
+    const box = h('div', { class: 'posts ' + lay.cls + (picking ? ' picking' : ''), 'data-lay': lay['data-lay'], 'data-lay-m': lay['data-lay-m'] },
       rows.slice(0, shown).map((p) => postCard(p, isOwner, isOwner && !picking, boardObj(boardOf(p)))));
     if (isOwner) {
       sortable(box, { item: '.card', handle: '.grip', onSort: (els) => reorder(els.map((e) => e.dataset.id)) });

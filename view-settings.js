@@ -1,6 +1,6 @@
 import { h, icon, fmtDate, toast, copyText, loader, confirmDialog, askText, modal, rid, sortable, txt } from './util.js';
 import { state, neighborsOn, ddayOn, bannerSlideOn, skinOn, listNotifs, markNotifsRead, deleteNotif, updateProfile, saveBoards, createInvite, listInvites, listInvitedMembers, signOutUser, friendly, listPosts, isBeta, isBetaSkin, isBetaShelf, isBetaPview, hasRealEmail, changeEmail, changePassword, changeHandle, handleAvailable, normalizeHandle, HANDLE_RE } from './store.js';
-import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette, sanitizeBgm, MAX_BGM } from './theme.js';
+import { applyTheme, sanitizeTheme, sanitizeBoards, faviconHref, clampIconText, BOARD_ICONS, BUTTONS, BUTTON_ICONS, MAX_BUTTON_LABEL, PRESETS, FONTS, LAYOUTS, RADII, HEADERS, DEFAULT_THEME, MAX_BOARDS, MAX_BOARD_NAME, MAX_DDAYS, sanitizeDdays, MAX_BANNER_MORE, BANNER_SECS, SKINS, SHELVES, PVIEWS, SKIN_FONTS, palette, sanitizeBgm, MAX_BGM, layoutOf } from './theme.js';
 import { KINDS, MAX_KIND_NAME } from './kinds.js';
 import { compressImage, uploadImage, removeImages, makeIcon, saveCroppedCanvas, loadImage } from './images.js';
 import { colorField, stepper, iconField, datePicker, selectField } from './widgets.js';
@@ -692,6 +692,7 @@ const LAYOUT_ICON = {
   grid: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
   masonry: '<rect x="3" y="3" width="8" height="11" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="16" width="8" height="5" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/>',
   journal: '<rect x="6" y="3" width="12" height="9" rx="1.5"/><rect x="6" y="14" width="12" height="3" rx="1.5"/><rect x="6" y="19" width="12" height="2" rx="1"/>',
+  same: '<path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h10V5H7zm3 11h4v1.6h-4z"/>',
 };
 const svg = (inner) => h('span', { class: 'opt-ic', html: `<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" opacity=".85">${inner}</svg>` });
 
@@ -708,8 +709,12 @@ function designTab() {
     finally { saveBtn.disabled = false; }
   } }, icon('check', 16), '꾸미기 저장');
 
+  // 글 목록 배치: 'pc' | 'm' 중 지금 고르는 쪽 (미리보기도 그쪽 모양으로 보여줘요)
+  let layTab = 'pc';
   const paintPreview = () => {
-    preview.replaceChildren(h('div', { class: 'posts layout-' + T.layout }, SAMPLE.map((p) => postCard(p, true))));
+    const m = layTab === 'm';
+    preview.classList.toggle('pv-m', m);
+    preview.replaceChildren(h('div', { class: 'posts layout-' + layoutOf(T, m) }, SAMPLE.map((p) => postCard(p, true))));
   };
   const set = (patch, rebuild = true) => {
     T = { ...T, ...patch };
@@ -874,9 +879,19 @@ function designTab() {
           h('button', { class: 'opt' + (T.font === k ? ' on' : ''), style: { fontFamily: f.stack }, onclick: () => set({ font: k }) },
             h('strong', null, '가나다 Abc'), h('small', null, f.name))))),
       h('section', { class: 'panel' },
-        h('h3', { class: 'panel-title' }, '글 목록 배치'),
-        h('div', { class: 'opt-grid cols-4' }, Object.entries(LAYOUTS).map(([k, name]) =>
-          h('button', { class: 'opt center' + (T.layout === k ? ' on' : ''), onclick: () => set({ layout: k }) }, svg(LAYOUT_ICON[k]), h('small', null, name))))),
+        h('div', { class: 'lay-head' },
+          h('h3', { class: 'panel-title' }, '글 목록 배치'),
+          h('div', { class: 'pills lay-tabs', role: 'tablist' }, [['pc', 'PC'], ['m', '모바일']].map(([k, name]) =>
+            h('button', { class: 'pill sm' + (layTab === k ? ' on' : ''), type: 'button', role: 'tab', 'aria-selected': String(layTab === k),
+              onclick: () => { if (layTab === k) return; layTab = k; paintPreview(); build(); } }, name)))),
+        layTab === 'pc'
+          ? h('div', { class: 'opt-grid cols-4' }, Object.entries(LAYOUTS).map(([k, name]) =>
+            h('button', { class: 'opt center' + (T.layout === k ? ' on' : ''), onclick: () => set({ layout: k }) }, svg(LAYOUT_ICON[k]), h('small', null, name))))
+          : h('div', { class: 'opt-grid cols-5' },
+            h('button', { class: 'opt center' + (!T.layoutM ? ' on' : ''), onclick: () => set({ layoutM: '' }) }, svg(LAYOUT_ICON.same), h('small', null, 'PC와 같게'), h('small', { class: 'opt-sub' }, LAYOUTS[T.layout])),
+            Object.entries(LAYOUTS).map(([k, name]) =>
+              h('button', { class: 'opt center' + (T.layoutM === k ? ' on' : ''), onclick: () => set({ layoutM: k }) }, svg(LAYOUT_ICON[k]), h('small', null, name)))),
+        h('small', { class: 'hint-line' }, layTab === 'pc' ? '모바일 배치를 따로 정하지 않으면 PC와 같게 보여요' : '화면 너비 640px 이하에서 보이는 배치예요')),
       h('section', { class: 'panel' },
         h('h3', { class: 'panel-title' }, '모서리'),
         h('div', { class: 'opt-grid cols-3' }, [['sharp', '각지게'], ['soft', '부드럽게'], ['round', '둥글게']].map(([k, name]) =>

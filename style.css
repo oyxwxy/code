@@ -340,6 +340,26 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
 .opt-grid.cols-2 { grid-template-columns: 1fr 1fr; }
 .opt-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .opt-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.opt-grid.cols-5 { grid-template-columns: repeat(5, 1fr); }
+.opt .opt-sub { margin-top: -6px; font-size: 11.5px; color: var(--muted); }
+/* 글 목록 배치: 제목 옆 PC / 모바일 */
+.lay-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.lay-head .panel-title { margin-bottom: 0; }
+.lay-tabs { flex-wrap: nowrap; }
+/* 꾸미기 미리보기: 모바일 탭에서는 휴대폰 폭으로, 모바일 화면과 같은 모양으로 보여줘요 */
+.preview.pv-m { max-width: 400px; margin-inline: auto; padding: 14px 12px; }
+.preview.pv-m .layout-list .card { flex-direction: column; }
+.preview.pv-m .layout-list .card-thumb { width: 100%; aspect-ratio: 16 / 10; min-height: 0; }
+.preview.pv-m .layout-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.preview.pv-m .layout-masonry { columns: 2; column-gap: 12px; }
+.preview.pv-m .card-body { padding: 11px 12px 13px; }
+.preview.pv-m .card-title { font-size: 15px; }
+.preview.pv-m .layout-journal .card-title { font-size: 20px; }
+.preview.pv-m .layout-grid .card-meta, .preview.pv-m .layout-masonry .card-meta { gap: 4px; }
+.preview.pv-m .layout-grid .card-meta .kind, .preview.pv-m .layout-grid .card-meta .vis, .preview.pv-m .layout-masonry .card-meta .kind, .preview.pv-m .layout-masonry .card-meta .vis { font-size: 10.5px; padding: 2px 6px; gap: 3px; }
+.preview.pv-m .layout-grid .card-meta .board-badge, .preview.pv-m .layout-masonry .card-meta .board-badge, .preview.pv-m .layout-grid .card-meta .vis-public, .preview.pv-m .layout-masonry .card-meta .vis-public { display: none; }
+.preview.pv-m .layout-grid .card-body, .preview.pv-m .layout-masonry .card-body { padding: 10px 11px 12px; }
+.preview.pv-m .layout-grid .card-title, .preview.pv-m .layout-masonry .card-title { font-size: 14.5px; }
 .opt { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; text-align: left; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg); transition: all .15s; }
 .opt.center { align-items: center; text-align: center; gap: 8px; padding: 14px 8px; }
 .opt strong { font-size: 17px; }
@@ -400,6 +420,7 @@ input[type='color'] { width: 44px; height: 34px; padding: 2px; border: 1px solid
   .blog-name { font-size: 24px; }
   .grid-2 { grid-template-columns: 1fr; }
   .opt-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+  .opt-grid.cols-5 { grid-template-columns: repeat(3, 1fr); }
   .auth-card { padding: 24px 20px; }
   .layout-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .layout-masonry { columns: 2; column-gap: 12px; }
