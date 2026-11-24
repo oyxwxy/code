@@ -511,6 +511,18 @@ function constellationLayout(n, R, perRow) {
   }
   return pts;
 }
+// 휴대폰 폭: 별마다 높이 칸을 하나씩 주고 가로만 지그재그 → 이름표가 위아래로 겹치지 않아요
+const ST_TOP = 64, ST_GAP = 54;
+function constellationLayoutNarrow(n, R, H) {
+  const xs = [0.07, 0.42, 0.88, 0.55];   // 0.66보다 오른쪽은 이름표가 왼쪽으로 (flip)
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const x = xs[i % xs.length] + (R() - 0.5) * 0.06;
+    const y = (ST_TOP + i * ST_GAP + ST_GAP / 2 + (R() - 0.5) * 10) / H;
+    pts.push([Math.max(0.04, Math.min(0.93, x)), y]);
+  }
+  return pts;
+}
 function starsView(rows, ctx) {
   // 지금 보고 있는 목록 전체를 별자리 하나로 (전체에서도 게시판별로 나누지 않아요)
   const f = ctx.boardFilter;
@@ -522,10 +534,11 @@ function starsView(rows, ctx) {
   for (const [k, list] of groups) {
     const R = seeded((k || '_') + 'cons');
     const name = k === '_all' ? (ctx.display || 'All stars') : (ctx.boardName(k) || 'Incognita');
-    const perRow = innerWidth < 640 ? 2 : innerWidth < 1000 ? 4 : 6;
-    const H = 150 + Math.ceil(list.length / perRow) * 96;
-    const box = h('section', { class: 'st-con', style: { height: H + 'px' } });
-    const pts = constellationLayout(list.length, R, perRow);
+    const narrow = innerWidth <= 640;
+    const perRow = innerWidth < 1000 ? 4 : 6;
+    const H = narrow ? ST_TOP + list.length * ST_GAP + 24 : 150 + Math.ceil(list.length / perRow) * 96;
+    const box = h('section', { class: 'st-con' + (narrow ? ' narrow' : ''), style: { height: H + 'px' } });
+    const pts = narrow ? constellationLayoutNarrow(list.length, R, H) : constellationLayout(list.length, R, perRow);
     // 선
     const lines = pts.slice(1).map(([x, y], i) => `<line x1="${(pts[i][0] * 100).toFixed(2)}%" y1="${(pts[i][1] * 100).toFixed(2)}%" x2="${(x * 100).toFixed(2)}%" y2="${(y * 100).toFixed(2)}%"/>`).join('');
     box.append(h('div', { class: 'st-lines', html: `<svg width="100%" height="100%" aria-hidden="true">${lines}</svg>` }));
@@ -533,7 +546,7 @@ function starsView(rows, ctx) {
     list.forEach((p, i) => {
       const [x, y] = pts[i];
       const big = i === 0 || R() < 0.25;
-      const s = h('a', { class: 'st-star' + (big ? ' big' : '') + (p.vis === 'locked' ? ' locked' : '') + (x > 0.66 ? ' flip' : ''), href: '#/p/' + p.id, style: { left: (x * 100).toFixed(2) + '%', top: (y * 100).toFixed(2) + '%' }, 'aria-label': txt(p.title) || '제목 없음' },
+      const s = h('a', { class: 'st-star' + (big ? ' big' : '') + (p.vis === 'locked' ? ' locked' : '') + (x > 0.66 ? ' flip' : ''), href: '#/p/' + p.id, style: { left: (x * 100).toFixed(2) + '%', top: (y * 100).toFixed(2) + '%', '--room': ((x > 0.66 ? x : 1 - x) * 100).toFixed(2) + '%' }, 'aria-label': txt(p.title) || '제목 없음' },
         h('span', { class: 'st-glyph', 'aria-hidden': 'true', html: `<svg viewBox="-12 -12 24 24">${starPath(0, 0, 11, big ? 6 : 4)}</svg>` }),
         h('span', { class: 'st-lbl' }, h('i', null, GREEK[i % GREEK.length]), txt(p.title) || '제목 없음'));
       const show = () => {

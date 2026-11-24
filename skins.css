@@ -1292,3 +1292,11 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
   .lg-head > :nth-child(2), .lg-head > :nth-child(6) { display: none; }
   .lg-title { font-size: 13.5px; }
 }
+
+/* ═════════ 모바일: 별자리 (별마다 높이 칸 하나 · 가로 지그재그) ═════════
+   --room = 별 자리에서 이름표 쪽 화면 끝까지 남은 폭. 그만큼만 쓰고 넘치면 … 으로 */
+.st-con.narrow .st-star { max-width: calc(var(--room, 60%) - 12px); }
+.st-con.narrow .st-lbl { min-width: 0; max-width: none; flex: 0 1 auto; font-size: 12.5px; padding: 1px 3px; background: color-mix(in srgb, var(--pl) 72%, transparent); }
+html[data-skin='chart'] .st-con.narrow .st-lbl { background: color-mix(in srgb, var(--ch-plate, var(--pl)) 72%, transparent); }
+.st-con.narrow .st-glyph { flex: none; }
+.st-con.narrow .st-name { font-size: 20px; }
