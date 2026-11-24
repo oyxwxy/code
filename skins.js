@@ -498,16 +498,18 @@ function dressChart({ root, head, body, pickBar, prof, boards, posts }) {
 // ── 프롬 모음 4: 별자리 (글 = 별, 게시판 = 별자리) ──
 // 게시판마다 별자리 하나. 글은 별, 같은 게시판 글은 선으로 이어지고, 별에 마우스를 올리면 작은 설명 카드가 떠요.
 // 별 자리: 칸을 고르게 나눈 뒤 위아래로 지그재그 + 살짝 흔들어서, 이름표끼리 겹치지 않게
-function constellationLayout(n, R, perRow) {
-  const rows = Math.ceil(n / perRow);
+// 높이는 줄마다 고정 칸(px)으로 잡아요 → 글이 많아져도(더 보기) 아래 줄이 판 끝에 눌려 겹치지 않아요
+const ST_ROW_TOP = 72, ST_ROW = 108;
+const constellationHeight = (n, perRow) => ST_ROW_TOP + Math.ceil(n / perRow) * ST_ROW + 24;
+function constellationLayout(n, R, perRow, H) {
   const pts = [];
   for (let i = 0; i < n; i++) {
     const row = Math.floor(i / perRow), col = row % 2 ? perRow - 1 - (i % perRow) : i % perRow;   // 줄마다 방향을 바꿔 선이 이어지게
     const span = perRow > 1 ? 0.8 / (perRow - 1) : 0;
     const x = 0.07 + col * span + (R() - 0.5) * span * 0.35;
-    const band = 1 / rows, base = 0.16 + row * band * 0.84;
-    const y = base + band * 0.84 * (0.25 + (col % 2 ? 0.45 : 0.1) + (R() - 0.5) * 0.25);
-    pts.push([Math.max(0.04, Math.min(0.9, x)), Math.max(0.14, Math.min(0.92, y))]);
+    // 한 줄 안에서 이웃한 별은 위(22px) · 아래(62px)로 엇갈리고 ±10px 흔들려요. 다음 줄과는 최소 48px 떨어져요
+    const y = ST_ROW_TOP + row * ST_ROW + (col % 2 ? 62 : 22) + (R() - 0.5) * 20;
+    pts.push([Math.max(0.04, Math.min(0.9, x)), y / H]);
   }
   return pts;
 }
@@ -571,8 +573,8 @@ function starsView(rows, ctx) {
       const narrow = W <= 600;
       // 이름표 한 칸(별 + 이름) 최소 210px 이 들어가게 한 줄 별 수를 정해요
       const perRow = Math.max(2, Math.min(6, Math.floor((W * 0.8) / 210) + 1));
-      const H = narrow ? ST_TOP + stars.length * ST_GAP + 24 : 150 + Math.ceil(stars.length / perRow) * 108;
-      const pts = narrow ? constellationLayoutNarrow(stars.length, Rl, H) : constellationLayout(stars.length, Rl, perRow);
+      const H = narrow ? ST_TOP + stars.length * ST_GAP + 24 : constellationHeight(stars.length, perRow);
+      const pts = narrow ? constellationLayoutNarrow(stars.length, Rl, H) : constellationLayout(stars.length, Rl, perRow, H);
       // 이름표가 쓸 수 있는 폭: 휴대폰은 화면 끝까지, 넓은 화면은 옆 칸까지
       const span = perRow > 1 ? (W * 0.8) / (perRow - 1) : W;
       box.style.height = H + 'px';
