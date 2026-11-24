@@ -1208,3 +1208,87 @@ html[data-skin='space'] .bgm-disc { box-shadow: 0 0 0 1px rgb(255 255 255 / .2);
 }
 .qs-hero .qs-photo { animation: qs-photo-drift 70s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .qs-here, .qs-body, .qs-hero .qs-photo { animation: none; } }
+
+/* ═════════ 모바일 재배치: 스킨별 (휴대폰 폭 640px 이하) ═════════
+   공통: 리스트 줄 카드에서는 썸네일 구분선을 아래 → 오른쪽으로 */
+@media (max-width: 640px) {
+  .skin-term .layout-list .card-thumb { border-bottom: 0; border-right: 2px solid var(--tm-ink); }
+  .skin-game .layout-list .card-thumb { border-bottom: 0; border-right: 2px solid var(--gm-ink); }
+  .skin-probe .layout-list .card-thumb { border-bottom: 0; border-right: 1.5px solid var(--pb-ink); }
+  .skin-chart .layout-list .card-thumb { margin: 7px 0 7px 7px; min-height: 90px; }
+  .skin-home .layout-list .card-title { font-size: 15px; }
+  .skin-chart .layout-list .card-title { font-size: 16px; }
+
+  /* 1. 홈페이지: 사진은 작게 왼쪽, 이름·디데이는 옆에. 소개·버튼은 아래로 넓게 */
+  .skin-home .blog-head .head-in { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 14px; row-gap: 0; }
+  .skin-home .head-side { grid-row: 1; gap: 3px; }
+  .skin-home .head-side .avatar.lg { width: 56px; height: 56px; font-size: 22px; box-shadow: 3px 3px 0 var(--hp-shade); }
+  .skin-home .head-text { display: contents; }
+  .skin-home .name-row { grid-column: 2; grid-row: 1; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .skin-home .blog-name { font-size: 28px; }
+  .skin-home .blog-bio, .skin-home .head-actions { grid-column: 1 / -1; }
+  .skin-home .blog-bio { margin-top: 12px; }
+  .skin-home .posts, .skin-home .rec-wrap, .skin-home .dw-wrap, .skin-home .fd-wrap { padding: 10px; }
+  .skin-home .side-sec { padding-bottom: 6px; }
+  .skin-home .blog-body.has-side { gap: 12px; }
+  .hp-bar .hp-go { display: none; }
+
+  /* 2. 터미널: 디데이도 왼쪽 줄에 맞추고, 아래 재생 표시는 바탕을 깔아 글과 겹치지 않게 */
+  .skin-term .name-row { align-items: flex-start; }
+  .skin-term .head-side .avatar.lg { width: 60px; height: 60px; }
+  .skin-term .blog-head .head-in { gap: 10px; }
+  .tm-rule { gap: 12px; margin-bottom: 12px; }
+  .tm-foot { padding: 10px 16px calc(8px + env(safe-area-inset-bottom)); background: var(--tm-bg); font-size: 12px; }
+  .tm-foot::before { left: 16px; right: 16px; top: 0; }
+  .tm-play { flex-direction: row; align-items: baseline; gap: 10px; }
+  .tm-play i { margin-left: 14px; }
+  .tm-tc { font-size: 15px; }
+  .skin-term.view { padding-bottom: 110px; }
+
+  /* 3. 픽셀 아케이드: 무대는 낮게, 메뉴 글자는 작게 */
+  .gm-hero { height: 400px; margin-bottom: 20px; box-shadow: 5px 5px 0 var(--gm-ink); }
+  .gm-item { font-size: 13px; }
+  .gm-menu { min-width: 180px; padding: 8px 12px 8px 8px; }
+  .gm-copy { font-size: 10px; }
+
+  /* 5. 천문 지도: 작은 화면에서는 주석 글씨가 소개글 위에 겹치지 않게 빼요 (경위선·별은 그대로) */
+  .ch-sky .g-note { display: none; }
+  .ch-sky text { font-size: 12px; opacity: .4; }
+  .skin-chart .blog-head { margin-bottom: 16px; }
+  .skin-chart .blog-bio { font-size: 14.5px; }
+  .skin-chart .side-item { font-size: 14.5px; }
+
+  /* 6. 관측 기록: 큰 글자 덩어리와 궤도 그림을 줄여서 첫 글이 빨리 보이게.
+        게시판 바로가기(+ 이름)는 아래 게시판 줄과 겹치니 숨기고 'CHANGE; REVOLT'만 남겨요 */
+  .pb-hero { gap: 12px; margin-bottom: 18px; padding-bottom: 14px; }
+  .pb-block span { font-size: min(96px, calc((100cqw - 20px) / var(--w) * .98)); }
+  .pb-side { gap: 10px; }
+  .pb-table { font-size: 12px; }
+  .pb-orbit svg { max-width: 260px; margin-inline: auto; }
+  .pb-menu button:not(.pb-go) { display: none; }
+  .pb-menu .pb-go { margin-left: 0; }
+  .skin-probe .card-title { font-size: 14px; }
+
+  /* 7. 우주 유영: 무대 높이를 줄여요 (천체·이름 위치는 무대 비율을 따라가요) */
+  .qs-hero { height: 470px; margin-bottom: 18px; }
+  .qs-here { width: 64%; }
+  .qs-copy { bottom: 6%; }
+  .qs-coord { margin-bottom: 8px; font-size: 10px; letter-spacing: .16em; }
+  .qs-sub { margin-top: 8px; }
+}
+
+/* ═════════ 모바일 재배치: 프롬 모음 ═════════ */
+@media (max-width: 640px) {
+  /* 레코드 진열: 손가락으로 누르는 커버 가장자리를 조금 넓게 */
+  .rec-row { --step: 32px; --size: 124px; }
+  .rec-stage { height: 380px; padding: 56px 14px 56px; }
+  .rec-cap { font-size: 12px; gap: 8px; }
+  /* 관측 로그: 날짜는 제목 아래 줄로 (잘리지 않게) */
+  .lg-row { grid-template-columns: 30px 50px minmax(0, 1fr); column-gap: 10px; row-gap: 2px; padding: 8px 4px; }
+  .lg-row > .lg-no, .lg-row > .lg-img { grid-row: span 2; }
+  .lg-row > .lg-title { align-self: end; }
+  .lg-row > .lg-date { grid-column: 3; align-self: start; font-size: 11px; opacity: .75; }
+  .lg-head { grid-template-columns: 30px minmax(0, 1fr); }
+  .lg-head > :nth-child(2), .lg-head > :nth-child(6) { display: none; }
+  .lg-title { font-size: 13.5px; }
+}

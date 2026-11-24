@@ -1054,7 +1054,9 @@ function startFloat(stage, fl) {
   if (!fl.length) return;
   const W = () => stage.clientWidth, H = () => stage.clientHeight;
   fl.forEach((f, i) => {
-    f.size = Math.max(70, Math.min(150, W() * (0.11 + (i % 3) * 0.025)));
+    // 휴대폰처럼 좁은 판에서는 사진을 판 폭에 비해 크게 (너무 작아 눌러 보기 어렵지 않게)
+    const narrow = W() < 520;
+    f.size = narrow ? Math.max(84, Math.min(130, W() * (0.25 + (i % 3) * 0.04))) : Math.max(70, Math.min(150, W() * (0.11 + (i % 3) * 0.025)));
     f.el.style.width = f.size + 'px';
     const a = (i / fl.length) * Math.PI * 2 + 0.4;
     f.x = W() / 2 + Math.cos(a) * W() * 0.36 - f.size / 2;

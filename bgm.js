@@ -3,6 +3,7 @@
 // 같은 블로그 안에서 화면을 옮겨 다녀도 끊기지 않고, 다른 블로그나 다른 화면으로 가면 멈춰요.
 // 유튜브 플레이어(API)는 처음 재생을 누를 때 불러와요. 자동 재생은 브라우저가 막을 수 있어요.
 import { h, icon, toast } from './util.js';
+import { isMobileWidth } from './theme.js';
 
 const ID_RE = /^[A-Za-z0-9_-]{11}$/;
 
@@ -90,11 +91,11 @@ function build() {
   document.body.append(S.el);
   return S.el;
 }
-function setOpen(on) {
+function setOpen(on, remember = true) {
   S.el.classList.toggle('open', on);
   ui.disc.setAttribute('aria-expanded', String(on));
   ui.disc.setAttribute('aria-label', on ? '배경음악 접기' : '배경음악 펼치기');
-  store.set(OPEN_KEY, on ? '1' : '0');
+  if (remember) store.set(OPEN_KEY, on ? '1' : '0');
 }
 const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 function paint() {
@@ -235,7 +236,9 @@ export function useBgm(key, cfg) {
   const saved = store.get(VOL_KEY);
   S.vol = saved != null && Number.isFinite(+saved) ? +saved : (cfg.vol ?? 60);
   S.muted = S.vol === 0;
-  setOpen(store.get(OPEN_KEY) !== '0');   // 처음엔 펼쳐서 보여주고, 접으면 다음부터 접힌 채로
+  // 처음엔 펼쳐서 보여주고, 접으면 다음부터 접힌 채로. 휴대폰 폭에서는 글을 가리지 않게 직접 펼친 적이 있을 때만 펼쳐요
+  const openPref = store.get(OPEN_KEY);
+  setOpen(isMobileWidth() ? openPref === '1' : openPref !== '0', false);
   ui.seek.value = '0'; ui.seek.style.setProperty('--p', '0%'); ui.time.textContent = '0:00';
   paint();
   if (cfg.auto) ensurePlayer();   // 브라우저가 막으면 재생 버튼을 누를 때 시작돼요
