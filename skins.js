@@ -533,20 +533,15 @@ function starsView(rows, ctx) {
   let gi = 0;
   for (const [k, list] of groups) {
     const R = seeded((k || '_') + 'cons');
+    const stars = [];
     const name = k === '_all' ? (ctx.display || 'All stars') : (ctx.boardName(k) || 'Incognita');
-    const narrow = innerWidth <= 640;
-    const perRow = innerWidth < 1000 ? 4 : 6;
-    const H = narrow ? ST_TOP + list.length * ST_GAP + 24 : 150 + Math.ceil(list.length / perRow) * 96;
-    const box = h('section', { class: 'st-con' + (narrow ? ' narrow' : ''), style: { height: H + 'px' } });
-    const pts = narrow ? constellationLayoutNarrow(list.length, R, H) : constellationLayout(list.length, R, perRow);
-    // 선
-    const lines = pts.slice(1).map(([x, y], i) => `<line x1="${(pts[i][0] * 100).toFixed(2)}%" y1="${(pts[i][1] * 100).toFixed(2)}%" x2="${(x * 100).toFixed(2)}%" y2="${(y * 100).toFixed(2)}%"/>`).join('');
-    box.append(h('div', { class: 'st-lines', html: `<svg width="100%" height="100%" aria-hidden="true">${lines}</svg>` }));
+    const box = h('section', { class: 'st-con' });
+    const linesEl = h('div', { class: 'st-lines' });
+    box.append(linesEl);
     box.append(h('h4', { class: 'st-name' }, h('i', null, ROMAN_SMALL(gi + 1)), name, h('small', null, `${list.length} stars`)));
     list.forEach((p, i) => {
-      const [x, y] = pts[i];
       const big = i === 0 || R() < 0.25;
-      const s = h('a', { class: 'st-star' + (big ? ' big' : '') + (p.vis === 'locked' ? ' locked' : '') + (x > 0.66 ? ' flip' : ''), href: '#/p/' + p.id, style: { left: (x * 100).toFixed(2) + '%', top: (y * 100).toFixed(2) + '%', '--room': ((x > 0.66 ? x : 1 - x) * 100).toFixed(2) + '%' }, 'aria-label': txt(p.title) || '제목 없음' },
+      const s = h('a', { class: 'st-star' + (big ? ' big' : '') + (p.vis === 'locked' ? ' locked' : ''), href: '#/p/' + p.id, 'aria-label': txt(p.title) || '제목 없음' },
         h('span', { class: 'st-glyph', 'aria-hidden': 'true', html: `<svg viewBox="-12 -12 24 24">${starPath(0, 0, 11, big ? 6 : 4)}</svg>` }),
         h('span', { class: 'st-lbl' }, h('i', null, GREEK[i % GREEK.length]), txt(p.title) || '제목 없음'));
       const show = () => {
@@ -563,7 +558,38 @@ function starsView(rows, ctx) {
       s.addEventListener('mouseenter', show); s.addEventListener('focus', show);
       s.addEventListener('mouseleave', () => { tip.hidden = true; }); s.addEventListener('blur', () => { tip.hidden = true; });
       box.append(s);
+      stars.push(s);
     });
+    // 판의 실제 폭을 재서 배치해요 (사이드바·창 크기에 따라 한 줄 별 수와 이름표 길이가 달라져요)
+    const seed = (k || '_') + 'cons';
+    let lastW = 0;
+    const lay = () => {
+      const W = box.clientWidth;
+      if (!W || Math.abs(W - lastW) < 2) return;
+      lastW = W;
+      const Rl = seeded(seed);
+      const narrow = W <= 600;
+      // 이름표 한 칸(별 + 이름) 최소 210px 이 들어가게 한 줄 별 수를 정해요
+      const perRow = Math.max(2, Math.min(6, Math.floor((W * 0.8) / 210) + 1));
+      const H = narrow ? ST_TOP + stars.length * ST_GAP + 24 : 150 + Math.ceil(stars.length / perRow) * 108;
+      const pts = narrow ? constellationLayoutNarrow(stars.length, Rl, H) : constellationLayout(stars.length, Rl, perRow);
+      // 이름표가 쓸 수 있는 폭: 휴대폰은 화면 끝까지, 넓은 화면은 옆 칸까지
+      const span = perRow > 1 ? (W * 0.8) / (perRow - 1) : W;
+      box.style.height = H + 'px';
+      box.classList.toggle('narrow', narrow);
+      stars.forEach((el, i) => {
+        const [x, y] = pts[i];
+        const flip = x > 0.66;
+        const room = narrow ? (flip ? x : 1 - x) * W : Math.min(span, (flip ? x : 1 - x) * W);
+        el.classList.toggle('flip', flip);
+        el.style.left = (x * 100).toFixed(2) + '%';
+        el.style.top = (y * 100).toFixed(2) + '%';
+        el.style.setProperty('--room', Math.max(60, Math.round(room - 16)) + 'px');
+      });
+      linesEl.innerHTML = `<svg width="100%" height="100%" aria-hidden="true">${pts.slice(1).map(([x, y], i) => `<line x1="${(pts[i][0] * 100).toFixed(2)}%" y1="${(pts[i][1] * 100).toFixed(2)}%" x2="${(x * 100).toFixed(2)}%" y2="${(y * 100).toFixed(2)}%"/>`).join('')}</svg>`;
+    };
+    requestAnimationFrame(lay);
+    if (typeof ResizeObserver === 'function') new ResizeObserver(lay).observe(box);
     wrap.append(box);
     gi++;
   }
